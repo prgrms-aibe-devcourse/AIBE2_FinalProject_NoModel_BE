@@ -11,7 +11,7 @@
         <include resource="log/console-appender.xml"/>
         <include resource="log/logstash-appender.xml"/>
 
-        <logger name="ticketaka" level="DEBUG" />
+        <logger name="nomodel" level="DEBUG" />
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
