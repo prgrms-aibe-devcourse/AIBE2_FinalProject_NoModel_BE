@@ -40,11 +40,9 @@ out/
 .env
 *.env
 
-### ELK Stack Data ###
-elk/elasticsearch/data/
-elk/logstash/data/
-elk/kibana/data/
-elk/filebeat/data/
+### ELK Stack ###
+elk/
+src/main/resources/config/
 
 ### Docker ###
 docker-compose.override.yml
