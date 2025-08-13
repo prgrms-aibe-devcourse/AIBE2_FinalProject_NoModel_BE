@@ -188,6 +188,12 @@ Prometheus에서 다음 알림이 설정됨:
 1. Actuator 엔드포인트 확인: `curl http://localhost:8080/api/actuator/prometheus`
 2. Prometheus 타겟 상태 확인: http://localhost:9090/targets
 
+**ELK 로그 수집 안됨**:
+1. Spring Boot → Logstash 연결 확인: `curl -v localhost:5001` (Logstash TCP 포트)
+2. Logstash 상태 확인: `curl http://localhost:9600` (Logstash API)
+3. Elasticsearch 상태 확인: `curl -u elastic:elastic http://localhost:9200/_cluster/health`
+4. Kibana에서 인덱스 패턴 확인: http://localhost:5601
+
 **Grafana 대시보드 로딩 안됨**:
 1. Prometheus 데이터소스 연결 확인
 2. 브라우저 캐시 클리어
