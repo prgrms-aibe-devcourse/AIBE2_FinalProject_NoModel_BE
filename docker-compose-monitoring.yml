@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # k6 Performance Testing Tool
+  k6:
+    image: grafana/k6:latest
+    container_name: k6-performance
+    networks:
+      - monitoring
+    volumes:
+      - ./k6:/scripts
+      - ./k6/results:/results
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true
+    command: run --out experimental-prometheus-rw /scripts/load-test.js
+    depends_on:
+      - prometheus
+    profiles:
+      - test
+
+  # Prometheus Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-metrics
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    restart: unless-stopped
+
+  # Grafana Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-dashboard
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Node Exporter for System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.cpu'
+      - '--collector.meminfo'
+      - '--collector.filesystem'
+      - '--collector.diskstats'
+      - '--collector.netdev'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
+    name: monitoring-network
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

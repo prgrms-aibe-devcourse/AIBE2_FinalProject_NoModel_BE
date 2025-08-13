@@ -2,7 +2,9 @@ spring:
   profiles:
     active:
       - local
+      - monitoring
   config:
     import: 
       - optional:file:.env[.properties]
       - optional:classpath:config/application-docker.yml
+      - optional:classpath:config/application-monitoring.yml

@@ -1,0 +1,32 @@
+apiVersion: 1
+
+providers:
+  - name: 'SpringBoot'
+    orgId: 1
+    folder: 'Spring Boot'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/spring-boot
+
+  - name: 'K6Performance'
+    orgId: 1
+    folder: 'Performance Testing'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/k6
+
+  - name: 'Infrastructure'
+    orgId: 1
+    folder: 'Infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/infrastructure
