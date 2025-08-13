@@ -11,7 +11,7 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://host.docker.internal:8080';
+const BASE_URL = 'http://host.docker.internal:8080/api';
 
 export default function() {
   // 헬스 체크
@@ -22,13 +22,13 @@ export default function() {
   });
   
   // 기본 API 엔드포인트 체크
-  response = http.get(`${BASE_URL}/api/health`);
+  response = http.get(`${BASE_URL}/health`);
   check(response, {
     'API health endpoint responds': (r) => r.status === 200 || r.status === 404,
   });
   
   // 정적 리소스 체크
-  response = http.get(`${BASE_URL}/`);
+  response = http.get(`http://host.docker.internal:8080/`);
   check(response, {
     'Root endpoint responds': (r) => r.status === 200 || r.status === 404,
   });

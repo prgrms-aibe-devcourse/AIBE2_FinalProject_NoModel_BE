@@ -31,7 +31,7 @@ docker-compose -f docker-compose-monitoring.yml ps
 ### 2. 접속 정보
 - **Grafana**: http://localhost:3000 (admin/admin123)
 - **Prometheus**: http://localhost:9090
-- **Spring Boot**: http://localhost:8080
+- **Spring Boot**: http://localhost:8080/api
 
 ### 3. 성능 테스트 실행
 ```bash
@@ -185,7 +185,7 @@ Prometheus에서 다음 알림이 설정됨:
 3. 네트워크 연결 확인
 
 **Prometheus 메트릭 수집 안됨**:
-1. Actuator 엔드포인트 확인: `curl http://localhost:8080/actuator/prometheus`
+1. Actuator 엔드포인트 확인: `curl http://localhost:8080/api/actuator/prometheus`
 2. Prometheus 타겟 상태 확인: http://localhost:9090/targets
 
 **Grafana 대시보드 로딩 안됨**:

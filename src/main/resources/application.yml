@@ -1,8 +1,11 @@
+server:
+  servlet:
+    context-path: /api
+
 spring:
   profiles:
     active:
-      - local
-      - monitoring
+      - prod
   config:
     import: 
       - optional:file:.env[.properties]

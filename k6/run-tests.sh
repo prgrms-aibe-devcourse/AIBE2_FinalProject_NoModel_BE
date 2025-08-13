@@ -214,7 +214,7 @@ fi
 
 # Spring Boot 애플리케이션 실행 확인
 echo "🔍 Spring Boot 애플리케이션 상태 확인 중..."
-if ! curl -s http://localhost:8080/actuator/health >/dev/null; then
+if ! curl -s http://localhost:8080/api/actuator/health >/dev/null; then
     echo -e "${RED}❌ Spring Boot 애플리케이션이 실행되지 않고 있습니다.${NC}"
     echo "애플리케이션을 먼저 시작해주세요: ./gradlew bootRun"
     exit 1

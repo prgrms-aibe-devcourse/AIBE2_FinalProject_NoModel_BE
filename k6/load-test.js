@@ -70,7 +70,7 @@ switch (TEST_TYPE) {
 export const options = selectedOptions;
 
 // 기본 URL 설정
-const BASE_URL = 'http://host.docker.internal:8080';
+const BASE_URL = 'http://host.docker.internal:8080/api';
 
 // 테스트 데이터
 const testData = {
@@ -141,7 +141,7 @@ function testUserRegistration() {
     },
   };
   
-  const response = http.post(`${BASE_URL}/api/users/register`, payload, params);
+  const response = http.post(`${BASE_URL}/users/register`, payload, params);
   
   const success = check(response, {
     'User registration status is 201 or 409': (r) => [201, 409].includes(r.status),
@@ -156,7 +156,7 @@ function testUserRegistration() {
 // 상품 카탈로그 테스트
 function testProductCatalog() {
   // 상품 목록 조회
-  const listResponse = http.get(`${BASE_URL}/api/products`);
+  const listResponse = http.get(`${BASE_URL}/products`);
   
   const listSuccess = check(listResponse, {
     'Product list status is 200': (r) => r.status === 200,
@@ -169,7 +169,7 @@ function testProductCatalog() {
   }
   
   // 상품 검색 테스트
-  const searchResponse = http.get(`${BASE_URL}/api/products/search?q=Product`);
+  const searchResponse = http.get(`${BASE_URL}/products/search?q=Product`);
   
   const searchSuccess = check(searchResponse, {
     'Product search status is 200': (r) => r.status === 200,
@@ -184,7 +184,7 @@ function testProductCatalog() {
 // 데이터베이스 연산 테스트
 function testDatabaseOperations() {
   // 복잡한 쿼리 시뮬레이션
-  const response = http.get(`${BASE_URL}/api/reports/summary`);
+  const response = http.get(`${BASE_URL}/reports/summary`);
   
   const success = check(response, {
     'Database query status is 200 or 404': (r) => [200, 404].includes(r.status),
