@@ -8,11 +8,7 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - xpack.security.enabled=true
-      - xpack.security.enrollment.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - xpack.security.transport.ssl.enabled=false
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=false  # 개발환경에서 보안 비활성화
     ulimits:
       memlock:
         soft: -1
@@ -26,7 +22,7 @@ services:
     networks:
       - elk-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f -u elastic:${ELASTIC_PASSWORD} http://localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -38,8 +34,6 @@ services:
     container_name: nomodel-logstash
     environment:
       - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
-      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
-      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
     volumes:
       - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
@@ -68,8 +62,6 @@ services:
     container_name: nomodel-kibana
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=${KIBANA_SYSTEM_USERNAME}
-      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
       - SERVER_HOST=0.0.0.0
     ports:
       - "5601:5601"
@@ -126,5 +118,5 @@ networks:
     driver: bridge
     name: nomodel_elk_network
   nomodel-network:
-    external: true
+    driver: bridge
     name: nomodel_network
