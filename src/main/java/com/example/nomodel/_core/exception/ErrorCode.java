@@ -11,6 +11,15 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
     EMAIL_ALREADY_EXISTS("EAE001", HttpStatus.CONFLICT, "Email already exists"),
+    MEMBER_NOT_ACTIVE("MNA001", HttpStatus.FORBIDDEN, "Member is not active"),
+    
+    // JWT 관련 에러
+    INVALID_JWT_TOKEN("IJT001", HttpStatus.BAD_REQUEST, "Invalid JWT token"),
+    EMPTY_JWT_CLAIMS("EJC001", HttpStatus.BAD_REQUEST, "JWT claims is empty"),
+    AUTHENTICATION_FAILED("AF001", HttpStatus.UNAUTHORIZED, "Authentication failed"),
+    ACCESS_DENIED("AD001", HttpStatus.FORBIDDEN, "Access denied"),
+    INVALID_JWT_SIGNATURE("IJS001", HttpStatus.BAD_REQUEST, "Invalid JWT signature"),
+    NO_AUTHORITIES_IN_TOKEN("NAT001", HttpStatus.FORBIDDEN, "No authorities in token"),
     ;
 
     private final String errorCode;
