@@ -4,6 +4,7 @@ import com.example.nomodel._core.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Getter
 @Entity
@@ -51,5 +52,23 @@ public class Member extends BaseTimeEntity {
 
     public void deactivate() {
         this.status = Status.SUSPENDED;
+    }
+
+    /**
+     * 비밀번호 검증
+     * @param rawPassword 입력된 비밀번호
+     * @param passwordEncoder 비밀번호 인코더
+     * @return 비밀번호 일치 여부
+     */
+    public boolean validatePassword(String rawPassword, PasswordEncoder passwordEncoder) {
+        return this.password.matches(rawPassword, passwordEncoder);
+    }
+
+    /**
+     * 회원 상태가 활성화되어 있는지 확인
+     * @return 활성화 여부
+     */
+    public boolean isActive() {
+        return this.status == Status.ACTIVE;
     }
 }
