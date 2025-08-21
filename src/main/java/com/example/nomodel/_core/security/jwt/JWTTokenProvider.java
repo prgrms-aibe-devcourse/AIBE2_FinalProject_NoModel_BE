@@ -76,12 +76,10 @@ public class JWTTokenProvider {
 
         // Access 토큰 제작
         String accessToken = Jwts.builder()
-                // 이메일 주입
-                .setSubject(email)
+                // memberId를 subject로 사용 (불변값)
+                .setSubject(String.valueOf(memberId))
                 // 권한 주입
                 .claim(AUTHORITIES_KEY, authorities)
-                // memberId 주입 (null이 아닐 때만)
-                .claim(MEMBER_ID_KEY, memberId)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
                 // 토큰 발행 시간 정보
                 .setIssuedAt(now)
@@ -138,12 +136,11 @@ public class JWTTokenProvider {
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        // memberId 가져오기
-        Long memberId = claims.get(MEMBER_ID_KEY, Long.class);
-        String email = claims.getSubject();
+        // subject에서 memberId 가져오기
+        Long memberId = Long.valueOf(claims.getSubject());
 
-        // CustomUserDetails 객체를 Principal로 사용
-        CustomUserDetails principal = new CustomUserDetails(memberId, email, "", authorities);
+        // CustomUserDetails 객체를 Principal로 사용 (email은 필요 시 DB에서 조회)
+        CustomUserDetails principal = new CustomUserDetails(memberId, null, "", authorities);
 
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
