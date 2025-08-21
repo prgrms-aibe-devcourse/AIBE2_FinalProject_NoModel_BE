@@ -23,6 +23,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
+        return String.valueOf(memberId);
+    }
+    
+    public String getEmail() {
         return email;
     }
 
