@@ -1,5 +1,6 @@
 package com.example.nomodel._core.aop;
 
+import com.example.nomodel._core.logging.StructuredLogger;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,8 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class ServicePerformanceAspect {
 
     private final MeterRegistry meterRegistry;
+    private final StructuredLogger structuredLogger;
     
     // 메소드별 실행 통계 저장
     private final ConcurrentHashMap<String, MethodStatistics> methodStats = new ConcurrentHashMap<>();
@@ -92,13 +96,14 @@ public class ServicePerformanceAspect {
             // 통계 업데이트
             updateStatistics(metricName, executionTime, true);
             
-            // 성능 임계값 체크
-            checkPerformanceThreshold(metricName, executionTime);
+            // ELK Stack 구조화 로깅 (Prometheus는 메트릭만)
+            Map<String, Object> context = createPerformanceContext(joinPoint, executionTime, true);
+            structuredLogger.logPerformance(
+                log, "SERVICE", metricName, executionTime, "SUCCESS", context
+            );
             
-            // 디버그 로깅
-            if (log.isDebugEnabled()) {
-                log.debug("[Service Performance] {} executed in {}ms", metricName, executionTime);
-            }
+            // 성능 임계값 체크 (ELK에서 분석용)
+            checkPerformanceThreshold(metricName, executionTime);
             
             return result;
             
@@ -117,9 +122,14 @@ public class ServicePerformanceAspect {
             // 통계 업데이트
             updateStatistics(metricName, executionTime, false);
             
-            // 에러 로깅
-            log.error("[Service Performance] {} failed after {}ms: {}", 
-                     metricName, executionTime, e.getMessage());
+            // ELK Stack 구조화 에러 로깅
+            Map<String, Object> context = createPerformanceContext(joinPoint, executionTime, false);
+            context.put("errorMessage", e.getMessage());
+            context.put("errorType", e.getClass().getSimpleName());
+            
+            structuredLogger.logPerformance(
+                log, "SERVICE", metricName, executionTime, "FAILURE", context
+            );
             
             throw e;
         }
@@ -145,20 +155,38 @@ public class ServicePerformanceAspect {
     }
     
     /**
-     * 성능 임계값 체크 및 경고
+     * 성능 컨텍스트 생성 (ELK Stack용)
+     */
+    private Map<String, Object> createPerformanceContext(ProceedingJoinPoint joinPoint, 
+                                                        long executionTime, boolean success) {
+        Map<String, Object> context = new HashMap<>();
+        Method method = getMethod(joinPoint);
+        
+        context.put("className", method.getDeclaringClass().getSimpleName());
+        context.put("methodName", method.getName());
+        context.put("parameterCount", joinPoint.getArgs().length);
+        context.put("success", success);
+        
+        // 성능 카테고리 분류 (ELK에서 필터링용)
+        if (executionTime > SLOW_METHOD_THRESHOLD_MS) {
+            context.put("performanceCategory", "SLOW");
+        } else if (executionTime > WARNING_METHOD_THRESHOLD_MS) {
+            context.put("performanceCategory", "WARNING");
+        } else {
+            context.put("performanceCategory", "NORMAL");
+        }
+        
+        return context;
+    }
+    
+    /**
+     * 성능 임계값 체크 (메트릭 수집만 - 로깅은 StructuredLogger에서)
      */
     private void checkPerformanceThreshold(String metricName, long executionTime) {
+        // Prometheus 메트릭만 업데이트 (ELK와 중복 제거)
         if (executionTime > SLOW_METHOD_THRESHOLD_MS) {
-            log.warn("[SLOW METHOD] {} took {}ms (threshold: {}ms)", 
-                    metricName, executionTime, SLOW_METHOD_THRESHOLD_MS);
-            
-            // 메트릭 카운터 증가
             meterRegistry.counter("service.method.slow", 
                     "method", metricName).increment();
-                    
-        } else if (executionTime > WARNING_METHOD_THRESHOLD_MS) {
-            log.info("[PERFORMANCE WARNING] {} took {}ms (warning at: {}ms)", 
-                    metricName, executionTime, WARNING_METHOD_THRESHOLD_MS);
         }
     }
     

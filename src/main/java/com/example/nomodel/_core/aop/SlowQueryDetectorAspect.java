@@ -1,5 +1,6 @@
 package com.example.nomodel._core.aop;
 
+import com.example.nomodel._core.logging.StructuredLogger;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public class SlowQueryDetectorAspect {
 
     private final MeterRegistry meterRegistry;
+    private final StructuredLogger structuredLogger;
     
     // 느린 쿼리 임계값 (밀리초) - application.yml에서 설정 가능
     @Value("${monitoring.slow-query.threshold-ms:1000}")
@@ -83,41 +85,133 @@ public class SlowQueryDetectorAspect {
             // 실행 시간 계산
             long executionTime = System.currentTimeMillis() - startTime;
             
-            // 메트릭 기록
+            // Prometheus 메트릭 기록 (메트릭만)
             recordQueryMetrics(queryIdentifier, executionTime, true);
             
-            // Slow Query 체크
-            checkSlowQuery(queryIdentifier, executionTime, parameters);
+            // ELK Stack 구조화 로깅
+            Map<String, Object> queryDetails = createQueryDetails(queryIdentifier, parameters, executionTime, true);
+            structuredLogger.logQueryAnalysis(
+                log, queryIdentifier, determineQueryType(queryIdentifier), executionTime, queryDetails
+            );
             
-            // 디버그 로깅
-            if (log.isDebugEnabled() && executionTime > 100) {
-                log.debug("[Query Performance] {} executed in {}ms", queryIdentifier, executionTime);
-            }
+            // Slow Query 체크 (알림용)
+            checkSlowQuery(queryIdentifier, executionTime, parameters);
             
             return result;
             
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
             
-            // 실패 메트릭 기록
+            // Prometheus 메트릭 기록 (메트릭만)
             recordQueryMetrics(queryIdentifier, executionTime, false);
             
-            // 에러 로깅
-            log.error("[Query Error] {} failed after {}ms: {}", 
-                     queryIdentifier, executionTime, e.getMessage());
+            // ELK Stack 구조화 에러 로깅
+            Map<String, Object> queryDetails = createQueryDetails(queryIdentifier, parameters, executionTime, false);
+            queryDetails.put("errorMessage", e.getMessage());
+            queryDetails.put("errorType", e.getClass().getSimpleName());
+            
+            structuredLogger.logQueryAnalysis(
+                log, queryIdentifier, determineQueryType(queryIdentifier), executionTime, queryDetails
+            );
             
             throw e;
         }
     }
     
     /**
-     * 쿼리 메트릭 기록
+     * 쿼리 메트릭 기록 (Prometheus용)
      */
     private void recordQueryMetrics(String queryIdentifier, long executionTime, boolean success) {
         meterRegistry.timer("repository.query.execution",
                 "query", queryIdentifier,
                 "status", success ? "success" : "failure")
-                .record(executionTime, TimeUnit.MILLISECONDS);
+                .record(executionTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * 쿼리 세부 정보 생성 (ELK Stack용)
+     */
+    private Map<String, Object> createQueryDetails(String queryIdentifier, Map<String, Object> parameters, 
+                                                  long executionTime, boolean success) {
+        Map<String, Object> details = new HashMap<>();
+        
+        details.put("success", success);
+        details.put("parameterCount", parameters.size());
+        details.put("hasParameters", !parameters.isEmpty());
+        
+        // 성능 카테고리 분류
+        if (executionTime > slowQueryThresholdMs) {
+            details.put("performanceCategory", "CRITICAL");
+        } else if (executionTime > warningThresholdMs) {
+            details.put("performanceCategory", "WARNING");
+        } else {
+            details.put("performanceCategory", "NORMAL");
+        }
+        
+        // 쿼리 패턴 분석
+        String methodName = queryIdentifier.toLowerCase();
+        if (methodName.contains("findall") || methodName.contains("getall")) {
+            details.put("queryPattern", "BULK_SELECT");
+        } else if (methodName.contains("findby")) {
+            details.put("queryPattern", "CONDITIONAL_SELECT");
+        } else if (methodName.contains("save") || methodName.contains("insert")) {
+            details.put("queryPattern", "INSERT_UPDATE");
+        } else if (methodName.contains("delete")) {
+            details.put("queryPattern", "DELETE");
+        } else {
+            details.put("queryPattern", "UNKNOWN");
+        }
+        
+        // 최적화 제안 (ELK에서 분석용)
+        if (executionTime > slowQueryThresholdMs) {
+            details.put("optimizationSuggestions", generateOptimizationSuggestions(queryIdentifier, executionTime));
+        }
+        
+        return details;
+    }
+    
+    /**
+     * 쿼리 유형 결정
+     */
+    private String determineQueryType(String queryIdentifier) {
+        String methodName = queryIdentifier.toLowerCase();
+        if (methodName.contains("find") || methodName.contains("get") || methodName.contains("select")) {
+            return "SELECT";
+        } else if (methodName.contains("save") || methodName.contains("insert") || methodName.contains("update")) {
+            return "INSERT_UPDATE";
+        } else if (methodName.contains("delete")) {
+            return "DELETE";
+        } else {
+            return "UNKNOWN";
+        }
+    }
+    
+    /**
+     * 최적화 제안 생성 (ELK Stack용)
+     */
+    private List<String> generateOptimizationSuggestions(String queryIdentifier, long executionTime) {
+        List<String> suggestions = new ArrayList<>();
+        
+        // 메소드명 기반 제안
+        String methodName = queryIdentifier.toLowerCase();
+        
+        if (methodName.contains("findall") || methodName.contains("getall")) {
+            suggestions.add("Consider using pagination for large result sets");
+        }
+        
+        if (methodName.contains("findby") && !methodName.contains("id")) {
+            suggestions.add("Check if an index exists on the search column");
+        }
+        
+        if (executionTime > 5000) {
+            suggestions.add("Query exceeds 5 seconds - consider query optimization or caching");
+        }
+        
+        if (methodName.contains("join") || methodName.contains("fetch")) {
+            suggestions.add("Review JOIN strategy - consider lazy loading or batch fetching");
+        }
+        
+        return suggestions;
     }
     
     /**

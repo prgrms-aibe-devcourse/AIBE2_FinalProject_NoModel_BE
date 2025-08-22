@@ -1,6 +1,7 @@
 package com.example.nomodel._core.aop;
 
 import com.example.nomodel._core.aop.annotation.Auditable;
+import com.example.nomodel._core.logging.StructuredLogger;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -41,6 +42,7 @@ public class AuditLoggingAspect {
 
     private final MeterRegistry meterRegistry;
     private final ObjectMapper objectMapper;
+    private final StructuredLogger structuredLogger;
     
     // 감사 통계 저장
     private final ConcurrentHashMap<String, AuditStatistics> auditStats = new ConcurrentHashMap<>();
@@ -83,8 +85,8 @@ public class AuditLoggingAspect {
         AuditContext context = createAuditContext(joinPoint, auditable);
         String auditId = generateAuditId();
         
-        // 실행 전 로깅
-        logAuditStart(auditId, context, joinPoint);
+        // ELK Stack 최적화 감사 로깅 (시작)
+        logAuditStart(auditId, context, joinPoint, auditable);
         
         long startTime = System.currentTimeMillis();
         
@@ -92,7 +94,7 @@ public class AuditLoggingAspect {
             // 메소드 실행
             Object result = joinPoint.proceed();
             
-            // 성공 시 감사 로그
+            // ELK Stack 최적화 감사 로깅 (성공)
             long executionTime = System.currentTimeMillis() - startTime;
             logAuditSuccess(auditId, context, result, executionTime, auditable);
             
@@ -105,7 +107,7 @@ public class AuditLoggingAspect {
             return result;
             
         } catch (Exception e) {
-            // 실패 시 감사 로그
+            // ELK Stack 최적화 감사 로깅 (실패)
             long executionTime = System.currentTimeMillis() - startTime;
             logAuditFailure(auditId, context, e, executionTime);
             
@@ -120,93 +122,87 @@ public class AuditLoggingAspect {
     }
     
     /**
-     * 감사 시작 로깅
+     * ELK Stack 최적화 감사 로깅 (시작)
      */
-    private void logAuditStart(String auditId, AuditContext context, ProceedingJoinPoint joinPoint) {
-        Map<String, Object> auditLog = new LinkedHashMap<>();
-        auditLog.put("auditId", auditId);
-        auditLog.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        auditLog.put("event", "AUDIT_START");
-        auditLog.put("action", context.getAction());
-        auditLog.put("category", context.getCategory());
-        auditLog.put("level", context.getLevel());
-        auditLog.put("userId", context.getUserId());
-        auditLog.put("userName", context.getUserName());
-        auditLog.put("userRoles", context.getUserRoles());
-        auditLog.put("method", context.getMethodName());
-        auditLog.put("className", context.getClassName());
-        auditLog.put("clientIp", context.getClientIp());
-        auditLog.put("userAgent", context.getUserAgent());
-        auditLog.put("sessionId", context.getSessionId());
+    private void logAuditStart(String auditId, AuditContext context, ProceedingJoinPoint joinPoint, Auditable auditable) {
+        // ELK Stack 구조화 로깅 사용
+        Map<String, Object> details = new HashMap<>();
+        details.put("auditId", auditId);
+        details.put("event", "AUDIT_START");
+        details.put("method", context.getMethodName());
+        details.put("className", context.getClassName());
+        details.put("clientIp", context.getClientIp());
+        details.put("userAgent", context.getUserAgent());
+        details.put("sessionId", context.getSessionId());
+        details.put("userRoles", context.getUserRoles());
         
         // 파라미터 로깅
         if (context.isLogParameters()) {
-            auditLog.put("parameters", maskSensitiveData(extractParameters(joinPoint)));
+            details.put("parameters", maskSensitiveData(extractParameters(joinPoint)));
         }
         
-        log.info("[AUDIT] {}", formatAuditLog(auditLog));
-        
-        // 높은 중요도의 경우 별도 로그 레벨
-        if (context.getLevel() == Auditable.AuditLevel.HIGH) {
-            log.warn("[CRITICAL_AUDIT] Critical business action initiated: {} by user: {}", 
-                    context.getAction(), context.getUserName());
-        }
+        structuredLogger.logAudit(
+            log, "AUDIT_START", context.getAction(), context.getCategory(),
+            context.getLevel().name(), context.getUserId(), context.getUserName(), details
+        );
     }
     
     /**
-     * 감사 성공 로깅
+     * ELK Stack 최적화 감사 로깅 (성공)
      */
     private void logAuditSuccess(String auditId, AuditContext context, Object result, 
                                 long executionTime, Auditable auditable) {
-        Map<String, Object> auditLog = new LinkedHashMap<>();
-        auditLog.put("auditId", auditId);
-        auditLog.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        auditLog.put("event", "AUDIT_SUCCESS");
-        auditLog.put("action", context.getAction());
-        auditLog.put("category", context.getCategory());
-        auditLog.put("level", context.getLevel());
-        auditLog.put("userId", context.getUserId());
-        auditLog.put("executionTimeMs", executionTime);
-        auditLog.put("status", "SUCCESS");
+        Map<String, Object> details = new HashMap<>();
+        details.put("auditId", auditId);
+        details.put("event", "AUDIT_SUCCESS");
+        details.put("executionTimeMs", executionTime);
+        details.put("status", "SUCCESS");
         
         // 결과 로깅
         if (auditable.logResult() && result != null) {
-            auditLog.put("result", maskSensitiveData(result));
+            details.put("result", maskSensitiveData(result));
         }
         
-        log.info("[AUDIT] {}", formatAuditLog(auditLog));
-        
-        // 중요한 작업의 경우 성공 알림
-        if (context.getLevel() == Auditable.AuditLevel.HIGH) {
-            log.warn("[CRITICAL_AUDIT] Critical business action completed: {} by user: {} in {}ms", 
-                    context.getAction(), context.getUserName(), executionTime);
+        // 성능 카테고리 분류
+        if (executionTime > 2000) {
+            details.put("performanceCategory", "SLOW");
+        } else if (executionTime > 1000) {
+            details.put("performanceCategory", "WARNING");
+        } else {
+            details.put("performanceCategory", "NORMAL");
         }
+        
+        structuredLogger.logAudit(
+            log, "AUDIT_SUCCESS", context.getAction(), context.getCategory(),
+            context.getLevel().name(), context.getUserId(), context.getUserName(), details
+        );
     }
     
     /**
-     * 감사 실패 로깅
+     * ELK Stack 최적화 감사 로깅 (실패)
      */
     private void logAuditFailure(String auditId, AuditContext context, Exception e, long executionTime) {
-        Map<String, Object> auditLog = new LinkedHashMap<>();
-        auditLog.put("auditId", auditId);
-        auditLog.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        auditLog.put("event", "AUDIT_FAILURE");
-        auditLog.put("action", context.getAction());
-        auditLog.put("category", context.getCategory());
-        auditLog.put("level", context.getLevel());
-        auditLog.put("userId", context.getUserId());
-        auditLog.put("executionTimeMs", executionTime);
-        auditLog.put("status", "FAILURE");
-        auditLog.put("errorType", e.getClass().getSimpleName());
-        auditLog.put("errorMessage", e.getMessage());
+        Map<String, Object> details = new HashMap<>();
+        details.put("auditId", auditId);
+        details.put("event", "AUDIT_FAILURE");
+        details.put("executionTimeMs", executionTime);
+        details.put("status", "FAILURE");
+        details.put("errorType", e.getClass().getSimpleName());
+        details.put("errorMessage", e.getMessage());
         
-        log.error("[AUDIT] {}", formatAuditLog(auditLog));
-        
-        // 중요한 작업 실패 시 즉시 알림
-        if (context.getLevel() == Auditable.AuditLevel.HIGH) {
-            log.error("[CRITICAL_AUDIT_FAILURE] Critical business action failed: {} by user: {} - Error: {}", 
-                    context.getAction(), context.getUserName(), e.getMessage());
+        // 오류 심각도 분류
+        if (e instanceof SecurityException) {
+            details.put("errorSeverity", "CRITICAL");
+        } else if (e instanceof IllegalArgumentException) {
+            details.put("errorSeverity", "MEDIUM");
+        } else {
+            details.put("errorSeverity", "HIGH");
         }
+        
+        structuredLogger.logAudit(
+            log, "AUDIT_FAILURE", context.getAction(), context.getCategory(),
+            context.getLevel().name(), context.getUserId(), context.getUserName(), details
+        );
     }
     
     /**
