@@ -21,29 +21,33 @@ public class JWTTokenFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+        String token = jwtTokenProvider.resolveToken(httpRequest);
+        String requestURI = httpRequest.getRequestURI();
 
-        // Request Header 에서 JWT Token 추출
-        String token = jwtTokenProvider.resolveToken((HttpServletRequest) servletRequest);
-        String requestURI = ((HttpServletRequest) servletRequest).getRequestURI();
-
-        // 토큰 유효성 검사
-        /*
-            토큰 재발급 요청 시
-            refresh token 을 요청 headers 에 Authorization 키로 받으면
-            token 이 존재하기 때문에
-            getAuthentication 메소드가 동작
-            -> 내부적으로 권한에 대한 정보가 없기 때문에 Exception 발생
-            => 토큰 재발급 요청 path 인 경우 필터 패스
-         */
-        if(token != null && jwtTokenProvider.validateToken(token)) {
-            if(!requestURI.equals("/api/auth/reissue") && !requestURI.equals("/api/auth/logout")) {
-                Authentication authentication = jwtTokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                log.info("{} 님이 로그인 하였습니다.", authentication.getName());
+        // 토큰이 존재하고, refresh/logout 경로가 아닌 경우에만 인증 처리
+        if (token != null && !isAuthExcludedPath(requestURI)) {
+            // 토큰 유효성 검증
+            if (jwtTokenProvider.validateToken(token)) {
+                try {
+                    Authentication authentication = jwtTokenProvider.getAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Security Context에 인증 정보 저장 완료: {}", authentication.getName());
+                } catch (Exception e) {
+                    log.error("인증 정보 설정 실패", e);
+                }
             }
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
+    }
+
+    /**
+     * JWT 필터에서 제외할 경로 확인
+     * refresh와 logout은 서비스 레이어에서 직접 토큰 검증
+     */
+    private boolean isAuthExcludedPath(String requestURI) {
+        return requestURI.equals("/api/auth/refresh") || 
+               requestURI.equals("/api/auth/logout");
     }
 }

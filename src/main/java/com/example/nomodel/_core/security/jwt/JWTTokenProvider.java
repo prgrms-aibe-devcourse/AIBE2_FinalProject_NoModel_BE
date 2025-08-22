@@ -84,7 +84,7 @@ public class JWTTokenProvider {
                 // 토큰 발행 시간 정보
                 .setIssuedAt(now)
                 // 만료시간 주입
-                .setExpiration(new Date(now.getTime() + accessTokenLifetime))
+                .setExpiration(new Date(now.getTime() + accessTokenLifetime * 1000))
                 // 암호화
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
@@ -93,21 +93,32 @@ public class JWTTokenProvider {
         String refreshToken = Jwts.builder()
                 .claim(CLAIM_TYPE, TYPE_REFRESH)
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + refreshTokenLifetime))
+                .setExpiration(new Date(now.getTime() + refreshTokenLifetime * 1000))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
 
-        return new AuthTokenDTO(BEARER_TYPE, accessToken, accessTokenLifetime, refreshToken, refreshTokenLifetime);
+        return new AuthTokenDTO(BEARER_TYPE, accessToken, accessTokenLifetime * 1000, refreshToken, refreshTokenLifetime * 1000);
     }
 
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
             return true;
-        } catch (SecurityException | JwtException e) {
-            throw new ApplicationException(ErrorCode.INVALID_JWT_SIGNATURE);
+        } catch (io.jsonwebtoken.security.SecurityException e) {
+            log.error("JWT 서명이 유효하지 않습니다.", e);
+            return false;
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.error("JWT 토큰이 유효하지 않습니다.", e);
+            return false;
+        } catch (ExpiredJwtException e) {
+            log.error("JWT 토큰이 만료되었습니다.", e);
+            return false;
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            log.error("지원하지 않는 JWT 토큰입니다.", e);
+            return false;
         } catch (IllegalArgumentException e) {
-            throw new ApplicationException(ErrorCode.EMPTY_JWT_CLAIMS);
+            log.error("JWT claims가 비어있습니다.", e);
+            return false;
         }
     }
 
