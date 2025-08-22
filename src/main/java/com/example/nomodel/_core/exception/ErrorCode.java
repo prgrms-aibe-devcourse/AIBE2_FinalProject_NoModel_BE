@@ -18,6 +18,7 @@ public enum ErrorCode {
     
     // JWT 관련 에러
     INVALID_JWT_TOKEN("IJT001", HttpStatus.BAD_REQUEST, "Invalid JWT token"),
+    EXPIRED_JWT_TOKEN("EJT001", HttpStatus.UNAUTHORIZED, "JWT token expired"),
     EMPTY_JWT_CLAIMS("EJC001", HttpStatus.BAD_REQUEST, "JWT claims is empty"),
     AUTHENTICATION_FAILED("AF001", HttpStatus.UNAUTHORIZED, "Authentication failed"),
     ACCESS_DENIED("AD001", HttpStatus.FORBIDDEN, "Access denied"),
