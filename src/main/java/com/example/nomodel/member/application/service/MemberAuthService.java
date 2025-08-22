@@ -100,8 +100,8 @@ public class MemberAuthService {
         Authentication authentication = authenticationManagerBuilder.getObject()
                 .authenticate(authenticationToken);
 
-        // JWT 토큰 생성
-        AuthTokenDTO authTokenDTO = jwtTokenProvider.generateToken(authentication);
+        // JWT 토큰 생성 - memberId를 명시적으로 전달
+        AuthTokenDTO authTokenDTO = jwtTokenProvider.generateToken(email, member.getId(), authentication.getAuthorities());
 
         // 리프레시 토큰을 Redis에 저장
         RefreshToken refreshToken = RefreshToken.builder()
@@ -169,8 +169,11 @@ public class MemberAuthService {
             throw new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // 3. 리프레시 토큰으로 직접 삭제
-        refreshTokenRedisRepository.deleteByRefreshToken(refreshToken);
+        // 3. 리프레시 토큰 조회 후 삭제
+        RefreshToken storedToken = refreshTokenRedisRepository.findByRefreshToken(refreshToken);
+        if (storedToken != null) {
+            refreshTokenRedisRepository.deleteById(storedToken.getId());
+        }
         
         // TODO: 선택사항 - 액세스 토큰을 블랙리스트에 추가하여 만료 전까지 사용 불가능하게 할 수 있음
         // blacklistTokenService.addToBlacklist(accessToken);
