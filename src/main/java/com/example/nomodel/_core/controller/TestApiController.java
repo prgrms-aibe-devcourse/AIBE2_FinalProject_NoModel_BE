@@ -21,7 +21,7 @@ import java.util.Map;
  */
 @Tag(name = "Test API", description = "테스트 및 데모용 API")
 @RestController
-@RequestMapping("/api/test")
+@RequestMapping("/test")
 public class TestApiController {
 
     /**
