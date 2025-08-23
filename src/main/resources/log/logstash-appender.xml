@@ -35,7 +35,10 @@
         <keepAliveDuration>5 minutes</keepAliveDuration>
         <reconnectionDelay>10 second</reconnectionDelay>
         
-        <!-- 비동기 처리를 위한 링 버퍼 설정 -->
-        <ringBufferSize>1024</ringBufferSize>
+        <!-- 비동기 처리를 위한 링 버퍼 설정 - 실시간 전송을 위해 작게 설정 -->
+        <ringBufferSize>128</ringBufferSize>
+        
+        <!-- 즉시 전송을 위한 설정 -->
+        <immediateFlush>true</immediateFlush>
     </appender>
 </included>
