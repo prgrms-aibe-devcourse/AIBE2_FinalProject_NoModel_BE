@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/demo")
+@RequestMapping("/demo")
 @RequiredArgsConstructor
 @Tag(name = "API Demo", description = "비즈니스 중요도별 API 데모")
 @BusinessCritical(domain = BusinessDomain.GENERAL, level = CriticalLevel.MEDIUM, description = "API 데모 컨트롤러")
