@@ -1,0 +1,55 @@
+<included>
+    <!-- Production Logstash Appender - Optimized for high-throughput performance -->
+    <appender name="LOGSTASH-PROD" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <!-- Logstash destination -->
+        <destination>localhost:5001</destination>
+        
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Production environment metadata -->
+            <customFields>{"application":"nomodel","environment":"production","service":"spring-boot","version":"1.0.0","profile":"prod"}</customFields>
+            
+            <!-- Field name mapping for Kibana -->
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <message>message</message>
+                <level>log_level</level>
+                <thread>thread_name</thread>
+                <logger>logger_name</logger>
+            </fieldNames>
+            
+            <!-- Include essential context only -->
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+            <includeContext>false</includeContext>
+            
+            <!-- Exclude caller data for performance (significant impact in production) -->
+            <includeCallerData>false</includeCallerData>
+            
+            <!-- Shortened logger names for performance -->
+            <shortenedLoggerNameLength>25</shortenedLoggerNameLength>
+            
+            <!-- Exclude key-value pairs for performance -->
+            <includeKeyValue>false</includeKeyValue>
+            
+            <!-- Compact JSON format for network efficiency -->
+            <!-- No pretty printing decorator for production -->
+        </encoder>
+        
+        <!-- Connection settings optimized for high availability -->
+        <keepAliveDuration>10 minutes</keepAliveDuration>
+        <reconnectionDelay>30 second</reconnectionDelay>
+        <connectionTimeout>30 second</connectionTimeout>
+        
+        <!-- Larger ring buffer for high-throughput batching -->
+        <ringBufferSize>512</ringBufferSize>
+        
+        <!-- Batched flush for performance -->
+        <immediateFlush>false</immediateFlush>
+        
+        <!-- Longer write timeout for stability -->
+        <writeTimeout>30 second</writeTimeout>
+        
+        <!-- Enable TCP no delay for better throughput -->
+        <tcpNoDelay>true</tcpNoDelay>
+    </appender>
+</included>

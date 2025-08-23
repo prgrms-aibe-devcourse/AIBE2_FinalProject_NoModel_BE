@@ -1,0 +1,176 @@
+groups:
+  - name: business_critical_alerts
+    rules:
+      # Business API Performance Alerts
+      - alert: BusinessAPIHighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~".*(auth|member|user|payment|order).*"}[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          category: business_performance
+          alert_type: response_time
+        annotations:
+          summary: "Business API high latency detected"
+          description: "Business API {{ $labels.uri }} ({{ $labels.method }}) P95 latency is {{ $value }}s (threshold: 1.0s)"
+          runbook_url: "https://wiki.company.com/runbooks/api-performance"
+
+      - alert: BusinessAPIErrorRateHigh
+        expr: rate(http_server_requests_seconds_count{uri=~".*(auth|member|user|payment|order).*", status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{uri=~".*(auth|member|user|payment|order).*"}[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          category: business_reliability
+          alert_type: error_rate
+        annotations:
+          summary: "Business API error rate too high"
+          description: "Business API {{ $labels.uri }} error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+          runbook_url: "https://wiki.company.com/runbooks/api-errors"
+
+      # Authentication & Security Alerts
+      - alert: AuthenticationFailureSpike
+        expr: rate(security_events_total{event_type="auth_failure"}[1m]) * 60 > 10
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          alert_type: auth_failure
+        annotations:
+          summary: "High authentication failure rate detected"
+          description: "Authentication failures: {{ $value }} per minute (threshold: 10/min)"
+          runbook_url: "https://wiki.company.com/runbooks/security-incidents"
+
+      - alert: SuspiciousPasswordChangeActivity
+        expr: rate(security_events_total{event_type="password_change"}[1m]) * 60 > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+          alert_type: password_activity
+        annotations:
+          summary: "Unusual password change activity"
+          description: "Password changes: {{ $value }} per minute (threshold: 5/min)"
+          runbook_url: "https://wiki.company.com/runbooks/security-monitoring"
+
+      # Database Performance Alerts (Actuator metrics)
+      - alert: DatabaseConnectionPoolExhaustion
+        expr: hikaricp_connections_active{pool="HikariPool-1"} / hikaricp_connections_max{pool="HikariPool-1"} > 0.8
+        for: 1m
+        labels:
+          severity: warning
+          category: database_performance
+          alert_type: connection_pool
+        annotations:
+          summary: "Database connection pool usage high"
+          description: "Connection pool utilization: {{ $value | humanizePercentage }} (threshold: 80%)"
+          runbook_url: "https://wiki.company.com/runbooks/database-performance"
+
+      - alert: SlowQueryDetected
+        expr: business_query_execution_time_ms > 2000
+        for: 0m
+        labels:
+          severity: warning
+          category: database_performance
+          alert_type: slow_query
+        annotations:
+          summary: "Slow database query detected"
+          description: "Query {{ $labels.query }} execution time: {{ $value }}ms (threshold: 2000ms)"
+          runbook_url: "https://wiki.company.com/runbooks/slow-queries"
+
+      # Business Metrics Alerts
+      - alert: PaymentTransactionFailureHigh
+        expr: rate(business_audit_events_total{category="PAYMENT", status="FAILURE"}[5m]) / rate(business_audit_events_total{category="PAYMENT"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          category: business_critical
+          alert_type: transaction_failure
+        annotations:
+          summary: "High payment failure rate"
+          description: "Payment failure rate: {{ $value | humanizePercentage }} (threshold: 10%)"
+          runbook_url: "https://wiki.company.com/runbooks/payment-issues"
+
+      - alert: CriticalBusinessOperationDown
+        expr: rate(business_audit_events_total{category=~"PAYMENT|USER|SECURITY", level="HIGH"}[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: business_availability
+          alert_type: operation_down
+        annotations:
+          summary: "Critical business operations appear to be down"
+          description: "No critical business events ({{ $labels.category }}) detected for 5 minutes"
+          runbook_url: "https://wiki.company.com/runbooks/business-outage"
+
+      # Application Health Alerts (Actuator)
+      - alert: ApplicationDown
+        expr: up{job="spring-boot-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: system_availability
+          alert_type: application_down
+        annotations:
+          summary: "Spring Boot application is down"
+          description: "Application has been down for more than 1 minute"
+          runbook_url: "https://wiki.company.com/runbooks/application-outage"
+
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: system_performance
+          alert_type: memory_usage
+        annotations:
+          summary: "High JVM memory usage"
+          description: "JVM heap usage: {{ $value | humanizePercentage }} (threshold: 80%)"
+          runbook_url: "https://wiki.company.com/runbooks/memory-issues"
+
+      - alert: HighGCPressure
+        expr: rate(jvm_gc_collection_seconds_sum[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: system_performance
+          alert_type: gc_pressure
+        annotations:
+          summary: "High garbage collection pressure"
+          description: "GC time percentage: {{ $value | humanizePercentage }} (threshold: 10%)"
+          runbook_url: "https://wiki.company.com/runbooks/gc-tuning"
+
+  - name: business_sla_alerts
+    rules:
+      # SLA-based alerts for business operations
+      - alert: BusinessAPISLABreach
+        expr: |
+          (
+            histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~".*(auth|member|user|payment|order).*"}[5m])) > 2.0
+            or
+            rate(http_server_requests_seconds_count{uri=~".*(auth|member|user|payment|order).*", status=~"5.."}[5m]) / rate(http_server_requests_seconds_count{uri=~".*(auth|member|user|payment|order).*"}[5m]) > 0.02
+          )
+        for: 5m
+        labels:
+          severity: critical
+          category: sla_breach
+          alert_type: business_sla
+        annotations:
+          summary: "Business API SLA breach detected"
+          description: "Business API {{ $labels.uri }} is breaching SLA requirements (P95 > 2s or error rate > 2%)"
+          runbook_url: "https://wiki.company.com/runbooks/sla-response"
+
+      - alert: DatabaseSLABreach
+        expr: |
+          (
+            business_query_execution_time_ms > 5000
+            or
+            hikaricp_connections_active{pool="HikariPool-1"} / hikaricp_connections_max{pool="HikariPool-1"} > 0.9
+          )
+        for: 3m
+        labels:
+          severity: critical
+          category: sla_breach
+          alert_type: database_sla
+        annotations:
+          summary: "Database SLA breach detected"
+          description: "Database performance is breaching SLA requirements"
+          runbook_url: "https://wiki.company.com/runbooks/database-sla"
