@@ -1,67 +1,97 @@
 package com.example.nomodel._core.config;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
+import com.example.nomodel._core.security.jwt.JWTTokenFilter;
+import com.example.nomodel._core.security.jwt.JWTTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${spring.profiles.active:default}")
-    private String activeProfile;
+    private final JWTTokenProvider jwtTokenProvider;
+
+    private static final String[] WHITE_LIST = {
+            "/",
+            "/error",
+            "/api/auth/**",
+            "/api/qr/**",
+            "/api/face/**",
+            "/api/admin/kakao/token/**",
+            "/api/swagger-ui/**",
+            "/api/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/api/health/**",
+            "/api/actuator/**",
+            "/h2-console/**",
+            "/favicon.ico",
+    };
+
+    private static final String[] ADMIN_LIST = {
+            "/api/admin/**"
+    };
+
+    private static final String[] BAN_LIST = {
+            "/vendor/**"
+    };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authz -> {
-            // 모든 환경에서 항상 허용
-            authz.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
-                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll();
-            
-            // 개발 환경에서만 허용 (local, dev, test, monitoring 프로필)
-            if (isDevelopmentProfile()) {
-                authz.requestMatchers("/h2-console/**").permitAll()
-                     .requestMatchers("/api/test/**").permitAll();
-            }
-            
-            // 나머지 모든 요청은 인증 필요
-            authz.anyRequest().authenticated();
-        });
-
-        // CSRF 설정
-        http.csrf(csrf -> {
-            csrf.ignoringRequestMatchers("/actuator/**")
-                .ignoringRequestMatchers("/swagger-ui/**", "/v3/api-docs/**");
-            
-            // 개발 환경에서만 추가 CSRF 제외
-            if (isDevelopmentProfile()) {
-                csrf.ignoringRequestMatchers("/h2-console/**", "/api/test/**");
-            }
-        });
-
-        // Headers 설정
-        http.headers(headers -> {
-            if (isDevelopmentProfile()) {
-                headers.frameOptions(frameOptions -> frameOptions.sameOrigin()); // H2 Console용
-            } else {
-                headers.frameOptions(frameOptions -> frameOptions.deny()); // Production에서는 더 엄격하게
-            }
-        });
-
-        return http.build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
-    /**
-     * 개발 환경인지 확인하는 메서드
-     */
-    private boolean isDevelopmentProfile() {
-        return activeProfile.contains("local") || 
-               activeProfile.contains("dev") || 
-               activeProfile.contains("test") || 
-               activeProfile.contains("monitoring");
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+
+        httpSecurity.csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement((sessionManagement) ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests((request) -> request
+                        .requestMatchers(WHITE_LIST).permitAll()
+                        .requestMatchers(ADMIN_LIST).hasAuthority("ADMIN")
+                        .requestMatchers(BAN_LIST).denyAll()
+                        .anyRequest().authenticated())
+                .headers(AbstractHttpConfigurer::disable  // H2 콘솔에서 프레임 사용 허용
+                )
+                .exceptionHandling(exception -> {
+                    exception.authenticationEntryPoint(authenticationEntryPoint());
+                    exception.accessDeniedHandler(accessDeniedHandler());
+                })
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+        return httpSecurity.build();
+    }
+
+    private AuthenticationEntryPoint authenticationEntryPoint() {
+        return (request, response, authException) -> {
+            throw new ApplicationException(ErrorCode.AUTHENTICATION_FAILED);
+        };
+    }
+
+    private AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            throw new ApplicationException(ErrorCode.ACCESS_DENIED);
+        };
     }
 }
