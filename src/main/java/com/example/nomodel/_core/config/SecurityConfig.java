@@ -19,6 +19,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -30,21 +31,21 @@ public class SecurityConfig {
     private static final String[] WHITE_LIST = {
             "/",
             "/error",
-            "/api/auth/**",
-            "/api/qr/**",
-            "/api/face/**",
-            "/api/admin/kakao/token/**",
-            "/api/swagger-ui/**",
-            "/api/v3/api-docs/**",
-            "/swagger-ui.html",
-            "/api/health/**",
-            "/api/actuator/**",
+            "/auth/**",          // context-path 제거 (실제: /api/auth/**)
+            "/qr/**",            // context-path 제거 (실제: /api/qr/**)
+            "/face/**",          // context-path 제거 (실제: /api/face/**)
+            "/admin/kakao/token/**", // context-path 제거 (실제: /api/admin/kakao/token/**)
+            "/swagger-ui/**",    // context-path 제거 (실제: /api/swagger-ui/**)
+            "/v3/api-docs/**",   // context-path 제거 (실제: /api/v3/api-docs/**)
+            "/swagger-ui.html",  // context-path 제거
+            "/health/**",        // context-path 제거 (실제: /api/health/**)
+            "/actuator/**",      // 이미 올바름
             "/h2-console/**",
             "/favicon.ico",
     };
 
     private static final String[] ADMIN_LIST = {
-            "/api/admin/**"
+            "/admin/**"    // context-path 제거 (실제: /api/admin/**)
     };
 
     private static final String[] BAN_LIST = {
@@ -68,16 +69,25 @@ public class SecurityConfig {
                 .sessionManagement((sessionManagement) ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((request) -> request
+                        // Actuator endpoints 먼저 허용 (JWT 필터보다 우선)
+                        .requestMatchers("/api/actuator/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        // 나머지 WHITE_LIST 허용
                         .requestMatchers(WHITE_LIST).permitAll()
+                        // 관리자 권한 필요
                         .requestMatchers(ADMIN_LIST).hasAuthority("ADMIN")
+                        // 금지된 경로
                         .requestMatchers(BAN_LIST).denyAll()
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated())
+                .anonymous(anonymous -> anonymous.authorities("ROLE_ANONYMOUS"))
                 .headers(AbstractHttpConfigurer::disable  // H2 콘솔에서 프레임 사용 허용
                 )
                 .exceptionHandling(exception -> {
                     exception.authenticationEntryPoint(authenticationEntryPoint());
                     exception.accessDeniedHandler(accessDeniedHandler());
                 })
+                // JWT 필터 활성화
                 .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
@@ -85,13 +95,17 @@ public class SecurityConfig {
 
     private AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
-            throw new ApplicationException(ErrorCode.AUTHENTICATION_FAILED);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\":\"Authentication failed\",\"message\":\"" + authException.getMessage() + "\"}");
         };
     }
 
     private AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
-            throw new ApplicationException(ErrorCode.ACCESS_DENIED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\":\"Access denied\",\"message\":\"" + accessDeniedException.getMessage() + "\"}");
         };
     }
 }
