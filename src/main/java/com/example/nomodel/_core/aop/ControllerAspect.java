@@ -1,5 +1,6 @@
 package com.example.nomodel._core.aop;
 
+import com.example.nomodel._core.aop.annotation.BusinessCritical;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel._core.logging.StructuredLogger;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 /**
  * Controller 레이어 AOP
- * API 요청/응답 로깅 및 성능 모니터링
+ * API 비즈니스 로직 중심 로깅 (HTTP 메트릭은 Actuator가 처리)
  */
 @Slf4j
 @Aspect
@@ -33,9 +34,6 @@ public class ControllerAspect {
     private final StructuredLogger structuredLogger;
 
     private static final int ERROR_STACK_TRACE_LIMIT = 3;
-    private static final String LOG_FORMAT_REQUEST = "[API Request] {} {} - Method: {}";
-    private static final String LOG_FORMAT_RESPONSE = "[API Response] {} {} - Status: {} - Time: {}ms";
-    private static final String LOG_FORMAT_ERROR = "[API Error] {} {} - Exception: {} - Time: {}ms";
 
     /**
      * Controller 패키지 내 모든 public 메소드를 대상으로 하는 Pointcut
@@ -59,10 +57,10 @@ public class ControllerAspect {
     public void pointcut() {}
 
     /**
-     * Controller 메소드 실행 전후 로깅 및 성능 측정
+     * Controller 메소드 비즈니스 로직 로깅 (상세 로깅만, 메트릭은 Actuator가 처리)
      */
     @Around("pointcut()")
-    public Object aroundLog(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+    public Object logBusinessRequests(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
         // HTTP 요청 정보 추출
         HttpServletRequest request = getHttpServletRequest();
         String httpMethod = request != null ? request.getMethod() : "UNKNOWN";
@@ -76,15 +74,22 @@ public class ControllerAspect {
         StopWatch stopWatch = new StopWatch(methodName);
         stopWatch.start();
 
-        // ELK Stack 최적화된 구조화 로깅
-        Map<String, Object> requestInfo = new HashMap<>();
-        requestInfo.put("parameters", extractParameterInfo(proceedingJoinPoint.getArgs()));
-        requestInfo.put("method", methodName);
+        // 비즈니스 API인 경우만 상세 로깅 (일반적인 HTTP 메트릭은 Actuator가 처리)
+        boolean isBusinessApi = isBusinessCriticalApi(proceedingJoinPoint);
         
-        structuredLogger.logApiRequest(
-            log, httpMethod, requestUri, methodName,
-            0, 0, requestInfo
-        );
+        if (isBusinessApi) {
+            Map<String, Object> requestInfo = new HashMap<>();
+            requestInfo.put("parameters", extractParameterInfo(proceedingJoinPoint.getArgs()));
+            requestInfo.put("method", methodName);
+            requestInfo.put("businessType", getBusinessDomain(proceedingJoinPoint).name());
+            requestInfo.put("businessDomain", getBusinessDomain(proceedingJoinPoint).getDescription());
+            requestInfo.put("criticalLevel", getCriticalLevel(proceedingJoinPoint).name());
+            
+            structuredLogger.logApiRequest(
+                log, httpMethod, requestUri, methodName,
+                0, 0, requestInfo
+            );
+        }
 
         try {
             // 실제 메소드 실행
@@ -93,18 +98,25 @@ public class ControllerAspect {
             // 시간 측정 종료
             stopWatch.stop();
 
-            // ELK Stack 최적화된 구조화 로깅 (응답)
-            int statusCode = getStatusCode(response);
-            Map<String, Object> responseInfo = new HashMap<>();
-            responseInfo.put("responseType", response.getClass().getSimpleName());
-            if (log.isDebugEnabled()) {
-                responseInfo.put("responseData", getResponseSummary(response));
+            // 비즈니스 API인 경우만 상세 응답 로깅
+            if (isBusinessApi) {
+                int statusCode = getStatusCode(response);
+                Map<String, Object> responseInfo = new HashMap<>();
+                responseInfo.put("responseType", response.getClass().getSimpleName());
+                responseInfo.put("businessType", getBusinessDomain(proceedingJoinPoint).name());
+                responseInfo.put("businessDomain", getBusinessDomain(proceedingJoinPoint).getDescription());
+                responseInfo.put("criticalLevel", getCriticalLevel(proceedingJoinPoint).name());
+                responseInfo.put("executionCategory", categorizeExecutionTime(stopWatch.getTotalTimeMillis()));
+                
+                if (log.isDebugEnabled()) {
+                    responseInfo.put("responseData", getResponseSummary(response));
+                }
+                
+                structuredLogger.logApiRequest(
+                    log, httpMethod, requestUri, methodName,
+                    stopWatch.getTotalTimeMillis(), statusCode, responseInfo
+                );
             }
-            
-            structuredLogger.logApiRequest(
-                log, httpMethod, requestUri, methodName,
-                stopWatch.getTotalTimeMillis(), statusCode, responseInfo
-            );
 
             return response;
 
@@ -112,10 +124,15 @@ public class ControllerAspect {
             // 시간 측정 종료
             stopWatch.stop();
 
-            // ELK Stack 최적화된 에러 로깅
+            // API 에러는 항상 로깅 (비즈니스 영향도 분석용)
             Map<String, Object> errorInfo = new HashMap<>();
             errorInfo.put("exceptionType", e.getClass().getSimpleName());
             errorInfo.put("exceptionMessage", e.getMessage());
+            errorInfo.put("businessType", getBusinessDomain(proceedingJoinPoint).name());
+            errorInfo.put("businessDomain", getBusinessDomain(proceedingJoinPoint).getDescription());
+            errorInfo.put("criticalLevel", getCriticalLevel(proceedingJoinPoint).name());
+            errorInfo.put("isBusinessCritical", isBusinessApi);
+            
             if (log.isDebugEnabled()) {
                 errorInfo.put("stackTrace", getShortStackTrace(e));
             }
@@ -202,6 +219,78 @@ public class ControllerAspect {
         }
         
         return Map.of("type", response.getClass().getSimpleName());
+    }
+    
+    /**
+     * 비즈니스 중요 API 판단 (어노테이션 기반)
+     */
+    private boolean isBusinessCriticalApi(ProceedingJoinPoint joinPoint) {
+        Method method = getMethod(joinPoint);
+        Class<?> targetClass = method.getDeclaringClass();
+        
+        // 1. 메소드 레벨 @BusinessCritical 어노테이션 확인
+        BusinessCritical methodAnnotation = method.getAnnotation(BusinessCritical.class);
+        if (methodAnnotation != null) {
+            return true;
+        }
+        
+        // 2. 클래스 레벨 @BusinessCritical 어노테이션 확인
+        BusinessCritical classAnnotation = targetClass.getAnnotation(BusinessCritical.class);
+        return classAnnotation != null;
+    }
+    
+    /**
+     * BusinessCritical 어노테이션에서 비즈니스 도메인 추출
+     */
+    private BusinessCritical.BusinessDomain getBusinessDomain(ProceedingJoinPoint joinPoint) {
+        Method method = getMethod(joinPoint);
+        Class<?> targetClass = method.getDeclaringClass();
+        
+        // 메소드 레벨이 우선
+        BusinessCritical methodAnnotation = method.getAnnotation(BusinessCritical.class);
+        if (methodAnnotation != null) {
+            return methodAnnotation.domain();
+        }
+        
+        // 클래스 레벨 확인
+        BusinessCritical classAnnotation = targetClass.getAnnotation(BusinessCritical.class);
+        if (classAnnotation != null) {
+            return classAnnotation.domain();
+        }
+        
+        return BusinessCritical.BusinessDomain.GENERAL;
+    }
+    
+    /**
+     * BusinessCritical 어노테이션에서 중요도 레벨 추출
+     */
+    private BusinessCritical.CriticalLevel getCriticalLevel(ProceedingJoinPoint joinPoint) {
+        Method method = getMethod(joinPoint);
+        Class<?> targetClass = method.getDeclaringClass();
+        
+        // 메소드 레벨이 우선
+        BusinessCritical methodAnnotation = method.getAnnotation(BusinessCritical.class);
+        if (methodAnnotation != null) {
+            return methodAnnotation.level();
+        }
+        
+        // 클래스 레벨 확인
+        BusinessCritical classAnnotation = targetClass.getAnnotation(BusinessCritical.class);
+        if (classAnnotation != null) {
+            return classAnnotation.level();
+        }
+        
+        return BusinessCritical.CriticalLevel.MEDIUM;
+    }
+    
+    
+    /**
+     * 실행 시간 카테고리 분류
+     */
+    private String categorizeExecutionTime(long executionTimeMs) {
+        if (executionTimeMs > 2000) return "SLOW";
+        if (executionTimeMs > 1000) return "WARNING";
+        return "NORMAL";
     }
     
     /**
