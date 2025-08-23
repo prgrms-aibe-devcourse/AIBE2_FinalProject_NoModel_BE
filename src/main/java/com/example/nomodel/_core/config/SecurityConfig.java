@@ -19,6 +19,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -68,30 +69,43 @@ public class SecurityConfig {
                 .sessionManagement((sessionManagement) ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests((request) -> request
+                        // Actuator endpoints 먼저 허용 (JWT 필터보다 우선)
+                        .requestMatchers("/api/actuator/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+                        // 나머지 WHITE_LIST 허용
                         .requestMatchers(WHITE_LIST).permitAll()
+                        // 관리자 권한 필요
                         .requestMatchers(ADMIN_LIST).hasAuthority("ADMIN")
+                        // 금지된 경로
                         .requestMatchers(BAN_LIST).denyAll()
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated())
+                .anonymous(anonymous -> anonymous.authorities("ROLE_ANONYMOUS"))
                 .headers(AbstractHttpConfigurer::disable  // H2 콘솔에서 프레임 사용 허용
                 )
                 .exceptionHandling(exception -> {
                     exception.authenticationEntryPoint(authenticationEntryPoint());
                     exception.accessDeniedHandler(accessDeniedHandler());
-                })
-                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                });
+                // JWT 필터는 마지막에 추가 (인증이 필요한 요청에만 적용)
+                // .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
 
     private AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> {
-            throw new ApplicationException(ErrorCode.AUTHENTICATION_FAILED);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\":\"Authentication failed\",\"message\":\"" + authException.getMessage() + "\"}");
         };
     }
 
     private AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
-            throw new ApplicationException(ErrorCode.ACCESS_DENIED);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"error\":\"Access denied\",\"message\":\"" + accessDeniedException.getMessage() + "\"}");
         };
     }
 }

@@ -1,7 +1,7 @@
 package com.example.nomodel._core.aop;
 
+import com.example.nomodel._core.aop.annotation.BusinessCritical;
 import com.example.nomodel._core.logging.StructuredLogger;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -15,14 +15,14 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /**
- * Repository 레이어 Slow Query 감지 AOP
- * 느린 쿼리 자동 감지 및 보고
+ * Repository 레이어 쿼리 분석 AOP
+ * @BusinessCritical 어노테이션 기반의 느린 쿼리 감지 및 비즈니스 영향도 분석
+ * (메트릭은 Actuator 연계)
  */
 @Slf4j
 @Aspect
@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SlowQueryDetectorAspect {
 
-    private final MeterRegistry meterRegistry;
     private final StructuredLogger structuredLogger;
+    // MeterRegistry 제거: JDBC 메트릭은 Actuator가 자동 수집
     
     // 느린 쿼리 임계값 (밀리초) - application.yml에서 설정 가능
     @Value("${monitoring.slow-query.threshold-ms:1000}")
@@ -85,27 +85,20 @@ public class SlowQueryDetectorAspect {
             // 실행 시간 계산
             long executionTime = System.currentTimeMillis() - startTime;
             
-            // Prometheus 메트릭 기록 (메트릭만)
-            recordQueryMetrics(queryIdentifier, executionTime, true);
-            
-            // ELK Stack 구조화 로깅
-            Map<String, Object> queryDetails = createQueryDetails(queryIdentifier, parameters, executionTime, true);
-            structuredLogger.logQueryAnalysis(
-                log, queryIdentifier, determineQueryType(queryIdentifier), executionTime, queryDetails
-            );
-            
-            // Slow Query 체크 (알림용)
-            checkSlowQuery(queryIdentifier, executionTime, parameters);
+            // 비즈니스 중요 쿼리 또는 느린 쿼리만 로깅 (@BusinessCritical 어노테이션 기반)
+            if (executionTime > warningThresholdMs || isBusinessCriticalQuery(joinPoint)) {
+                Map<String, Object> queryDetails = createQueryDetails(queryIdentifier, parameters, executionTime, true);
+                structuredLogger.logQueryAnalysis(
+                    log, queryIdentifier, determineQueryType(queryIdentifier), executionTime, queryDetails
+                );
+            }
             
             return result;
             
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
             
-            // Prometheus 메트릭 기록 (메트릭만)
-            recordQueryMetrics(queryIdentifier, executionTime, false);
-            
-            // ELK Stack 구조화 에러 로깅
+            // 쿼리 실패는 항상 로깅 (비즈니스 영향도 분석)
             Map<String, Object> queryDetails = createQueryDetails(queryIdentifier, parameters, executionTime, false);
             queryDetails.put("errorMessage", e.getMessage());
             queryDetails.put("errorType", e.getClass().getSimpleName());
@@ -119,13 +112,21 @@ public class SlowQueryDetectorAspect {
     }
     
     /**
-     * 쿼리 메트릭 기록 (Prometheus용)
+     * 비즈니스 중요 쿼리 판단 (@BusinessCritical 어노테이션 기반)
      */
-    private void recordQueryMetrics(String queryIdentifier, long executionTime, boolean success) {
-        meterRegistry.timer("repository.query.execution",
-                "query", queryIdentifier,
-                "status", success ? "success" : "failure")
-                .record(executionTime, java.util.concurrent.TimeUnit.MILLISECONDS);
+    private boolean isBusinessCriticalQuery(ProceedingJoinPoint joinPoint) {
+        Method method = getMethod(joinPoint);
+        Class<?> targetClass = method.getDeclaringClass();
+        
+        // 1. 메소드 레벨 @BusinessCritical 어노테이션 확인
+        BusinessCritical methodAnnotation = method.getAnnotation(BusinessCritical.class);
+        if (methodAnnotation != null) {
+            return true;
+        }
+        
+        // 2. 클래스 레벨 @BusinessCritical 어노테이션 확인
+        BusinessCritical classAnnotation = targetClass.getAnnotation(BusinessCritical.class);
+        return classAnnotation != null;
     }
     
     /**
@@ -214,139 +215,6 @@ public class SlowQueryDetectorAspect {
         return suggestions;
     }
     
-    /**
-     * Slow Query 체크 및 처리
-     */
-    private void checkSlowQuery(String queryIdentifier, long executionTime, Map<String, Object> parameters) {
-        if (executionTime > slowQueryThresholdMs) {
-            // 심각한 Slow Query
-            handleSlowQuery(queryIdentifier, executionTime, parameters, "CRITICAL");
-            
-            // 알림 메트릭 증가
-            meterRegistry.counter("repository.slow.query.critical",
-                    "query", queryIdentifier).increment();
-            
-        } else if (executionTime > warningThresholdMs) {
-            // 경고 수준 Slow Query
-            log.warn("[SLOW QUERY WARNING] {} took {}ms (warning threshold: {}ms)",
-                    queryIdentifier, executionTime, warningThresholdMs);
-            
-            // 경고 메트릭 증가
-            meterRegistry.counter("repository.slow.query.warning",
-                    "query", queryIdentifier).increment();
-        }
-    }
-    
-    /**
-     * Slow Query 처리
-     */
-    private void handleSlowQuery(String queryIdentifier, long executionTime, 
-                                 Map<String, Object> parameters, String severity) {
-        // 로그 기록
-        log.error("[SLOW QUERY {}] {} took {}ms (threshold: {}ms)",
-                severity, queryIdentifier, executionTime, slowQueryThresholdMs);
-        
-        // 파라미터 로깅
-        if (!parameters.isEmpty()) {
-            log.error("[SLOW QUERY PARAMS] {}", formatParameters(parameters));
-        }
-        
-        // 분석 제안 로깅
-        logOptimizationSuggestions(queryIdentifier, executionTime);
-        
-        // 히스토리에 추가
-        addToHistory(new SlowQueryRecord(
-                queryIdentifier,
-                executionTime,
-                parameters,
-                severity,
-                LocalDateTime.now()
-        ));
-        
-        // 임계값을 크게 초과한 경우 스택 트레이스 기록
-        if (executionTime > slowQueryThresholdMs * 3) {
-            logStackTrace();
-        }
-    }
-    
-    /**
-     * 최적화 제안 로깅
-     */
-    private void logOptimizationSuggestions(String queryIdentifier, long executionTime) {
-        List<String> suggestions = new ArrayList<>();
-        
-        // 메소드명 기반 제안
-        String methodName = queryIdentifier.toLowerCase();
-        
-        if (methodName.contains("findall") || methodName.contains("getall")) {
-            suggestions.add("Consider using pagination for large result sets");
-        }
-        
-        if (methodName.contains("findby") && !methodName.contains("id")) {
-            suggestions.add("Check if an index exists on the search column");
-        }
-        
-        if (executionTime > 5000) {
-            suggestions.add("Query exceeds 5 seconds - consider query optimization or caching");
-        }
-        
-        if (methodName.contains("join") || methodName.contains("fetch")) {
-            suggestions.add("Review JOIN strategy - consider lazy loading or batch fetching");
-        }
-        
-        if (!suggestions.isEmpty()) {
-            log.error("[OPTIMIZATION SUGGESTIONS] for {}:", queryIdentifier);
-            suggestions.forEach(s -> log.error("  - {}", s));
-        }
-    }
-    
-    /**
-     * 히스토리에 추가
-     */
-    private void addToHistory(SlowQueryRecord record) {
-        slowQueryHistory.offer(record);
-        
-        // 크기 제한
-        while (slowQueryHistory.size() > MAX_HISTORY_SIZE) {
-            slowQueryHistory.poll();
-        }
-        
-        // 주기적으로 요약 보고 (10개마다)
-        if (slowQueryHistory.size() % 10 == 0) {
-            generateSlowQueryReport();
-        }
-    }
-    
-    /**
-     * Slow Query 리포트 생성
-     */
-    private void generateSlowQueryReport() {
-        if (slowQueryHistory.isEmpty()) {
-            return;
-        }
-        
-        Map<String, List<SlowQueryRecord>> groupedByQuery = slowQueryHistory.stream()
-                .collect(Collectors.groupingBy(SlowQueryRecord::getQueryIdentifier));
-        
-        log.warn("=== SLOW QUERY REPORT ===");
-        log.warn("Total slow queries in history: {}", slowQueryHistory.size());
-        
-        groupedByQuery.forEach((query, records) -> {
-            long avgTime = (long) records.stream()
-                    .mapToLong(SlowQueryRecord::getExecutionTime)
-                    .average()
-                    .orElse(0);
-            
-            long maxTime = records.stream()
-                    .mapToLong(SlowQueryRecord::getExecutionTime)
-                    .max()
-                    .orElse(0);
-            
-            log.warn("Query: {} - Count: {}, Avg: {}ms, Max: {}ms",
-                    query, records.size(), avgTime, maxTime);
-        });
-        log.warn("========================");
-    }
     
     /**
      * 파라미터 추출
@@ -381,18 +249,6 @@ public class SlowQueryDetectorAspect {
         return parameters.entrySet().stream()
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .collect(Collectors.joining(", "));
-    }
-    
-    /**
-     * 스택 트레이스 로깅
-     */
-    private void logStackTrace() {
-        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-        log.error("[SLOW QUERY STACK TRACE]");
-        Arrays.stream(stackTrace)
-                .limit(10)
-                .filter(element -> element.getClassName().startsWith("com.example.nomodel"))
-                .forEach(element -> log.error("  at {}", element));
     }
     
     /**

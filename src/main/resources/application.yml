@@ -5,7 +5,7 @@ server:
 spring:
   profiles:
     active:
-      - prod
+      - local
   config:
     import: 
       - optional:file:.env[.properties]
