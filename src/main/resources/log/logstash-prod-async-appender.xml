@@ -1,0 +1,72 @@
+<included>
+    <!-- Production Logstash Appender with Async Wrapper - Maximum throughput -->
+    <appender name="LOGSTASH-PROD-SYNC" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <!-- Logstash destination -->
+        <destination>localhost:5001</destination>
+        
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Production environment metadata -->
+            <customFields>{"application":"nomodel","environment":"production","service":"spring-boot","version":"1.0.0","profile":"prod","async":"true"}</customFields>
+            
+            <!-- Field name mapping for Kibana -->
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <message>message</message>
+                <level>log_level</level>
+                <thread>thread_name</thread>
+                <logger>logger_name</logger>
+            </fieldNames>
+            
+            <!-- Include essential context only -->
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>false</includeStructuredArguments>
+            <includeContext>false</includeContext>
+            
+            <!-- Exclude caller data for maximum performance -->
+            <includeCallerData>false</includeCallerData>
+            
+            <!-- Minimal logger names -->
+            <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
+            
+            <!-- Exclude key-value pairs for performance -->
+            <includeKeyValue>false</includeKeyValue>
+        </encoder>
+        
+        <!-- Connection settings optimized for high availability -->
+        <keepAliveDuration>15 minutes</keepAliveDuration>
+        <reconnectionDelay>60 second</reconnectionDelay>
+        <connectionTimeout>45 second</connectionTimeout>
+        
+        <!-- Large ring buffer for maximum batching -->
+        <ringBufferSize>1024</ringBufferSize>
+        
+        <!-- Batched flush for maximum throughput -->
+        <immediateFlush>false</immediateFlush>
+        
+        <!-- Extended write timeout for stability under load -->
+        <writeTimeout>60 second</writeTimeout>
+        
+        <!-- Enable TCP optimizations -->
+        <tcpNoDelay>true</tcpNoDelay>
+    </appender>
+    
+    <!-- Async wrapper for non-blocking logging -->
+    <appender name="LOGSTASH-PROD" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOGSTASH-PROD-SYNC" />
+        
+        <!-- Large queue for high-throughput buffering -->
+        <queueSize>2048</queueSize>
+        
+        <!-- Never block application threads -->
+        <neverBlock>true</neverBlock>
+        
+        <!-- Discard threshold to prevent memory issues -->
+        <discardingThreshold>20</discardingThreshold>
+        
+        <!-- Include caller data in async processing -->
+        <includeCallerData>false</includeCallerData>
+        
+        <!-- Maximum flush time -->
+        <maxFlushTime>5000</maxFlushTime>
+    </appender>
+</included>
