@@ -31,21 +31,21 @@ public class SecurityConfig {
     private static final String[] WHITE_LIST = {
             "/",
             "/error",
-            "/api/auth/**",
-            "/api/qr/**",
-            "/api/face/**",
-            "/api/admin/kakao/token/**",
-            "/api/swagger-ui/**",
-            "/api/v3/api-docs/**",
-            "/swagger-ui.html",
-            "/api/health/**",
-            "/api/actuator/**",
+            "/auth/**",          // context-path 제거 (실제: /api/auth/**)
+            "/qr/**",            // context-path 제거 (실제: /api/qr/**)
+            "/face/**",          // context-path 제거 (실제: /api/face/**)
+            "/admin/kakao/token/**", // context-path 제거 (실제: /api/admin/kakao/token/**)
+            "/swagger-ui/**",    // context-path 제거 (실제: /api/swagger-ui/**)
+            "/v3/api-docs/**",   // context-path 제거 (실제: /api/v3/api-docs/**)
+            "/swagger-ui.html",  // context-path 제거
+            "/health/**",        // context-path 제거 (실제: /api/health/**)
+            "/actuator/**",      // 이미 올바름
             "/h2-console/**",
             "/favicon.ico",
     };
 
     private static final String[] ADMIN_LIST = {
-            "/api/admin/**"
+            "/admin/**"    // context-path 제거 (실제: /api/admin/**)
     };
 
     private static final String[] BAN_LIST = {
@@ -86,9 +86,9 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> {
                     exception.authenticationEntryPoint(authenticationEntryPoint());
                     exception.accessDeniedHandler(accessDeniedHandler());
-                });
-                // JWT 필터는 마지막에 추가 (인증이 필요한 요청에만 적용)
-                // .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                })
+                // JWT 필터 활성화
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }

@@ -66,7 +66,7 @@ public class JWTTokenFilter extends GenericFilterBean {
             return true;
         }
         
-        // WHITE_LIST 경로들은 JWT 인증 건너뛰기
+        // context-path를 고려하여 실제 요청 경로 체크
         String[] whiteList = {
             "/",
             "/error",
@@ -79,6 +79,7 @@ public class JWTTokenFilter extends GenericFilterBean {
             "/swagger-ui.html",
             "/api/health/**",
             "/api/actuator/**",
+            "/actuator/**",
             "/h2-console/**",
             "/favicon.ico"
         };
