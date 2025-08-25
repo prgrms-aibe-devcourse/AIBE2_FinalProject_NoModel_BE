@@ -116,19 +116,20 @@ class JWTTokenProviderTest {
 
     @Test
     @DisplayName("유효하지 않은 토큰 검증")
-    void validateToken_InvalidToken_ThrowsException() {
+    void validateToken_InvalidToken_ReturnsFalse() {
         // given
         String invalidToken = "invalid.jwt.token";
 
-        // when & then
-        assertThatThrownBy(() -> jwtTokenProvider.validateToken(invalidToken))
-                .isInstanceOf(ApplicationException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_JWT_SIGNATURE);
+        // when
+        boolean result = jwtTokenProvider.validateToken(invalidToken);
+
+        // then
+        assertThat(result).isFalse();
     }
 
     @Test
     @DisplayName("만료된 토큰 검증")
-    void validateToken_ExpiredToken_ThrowsException() {
+    void validateToken_ExpiredToken_ReturnsFalse() {
         // given - 이미 만료된 토큰 생성
         String expiredToken = Jwts.builder()
                 .setSubject("1")
@@ -139,10 +140,11 @@ class JWTTokenProviderTest {
                 .signWith(Keys.hmacShaKeyFor(Base64.getDecoder().decode(secretKey)))
                 .compact();
 
-        // when & then
-        assertThatThrownBy(() -> jwtTokenProvider.validateToken(expiredToken))
-                .isInstanceOf(ApplicationException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXPIRED_JWT_TOKEN);
+        // when
+        boolean result = jwtTokenProvider.validateToken(expiredToken);
+
+        // then
+        assertThat(result).isFalse();
     }
 
     @Test
