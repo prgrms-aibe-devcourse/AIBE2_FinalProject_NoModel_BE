@@ -45,7 +45,7 @@ class MemberAuthControllerTest {
         SignUpRequestDto requestDto = new SignUpRequestDto("testUser", "test@example.com", "password123");
 
         // when & then
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
@@ -63,7 +63,7 @@ class MemberAuthControllerTest {
         SignUpRequestDto requestDto = new SignUpRequestDto("", "invalid-email", "1");
 
         // when & then
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
@@ -84,7 +84,7 @@ class MemberAuthControllerTest {
         given(memberAuthService.login(any(LoginRequestDto.class))).willReturn(responseDto);
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
@@ -107,7 +107,7 @@ class MemberAuthControllerTest {
                 .willThrow(new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
@@ -123,7 +123,7 @@ class MemberAuthControllerTest {
         LoginRequestDto requestDto = new LoginRequestDto("", "123");
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andDo(print())
@@ -142,7 +142,7 @@ class MemberAuthControllerTest {
         given(memberAuthService.refreshToken(any())).willReturn(responseDto);
 
         // when & then
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/auth/refresh")
                         .header("Authorization", "Bearer refresh-token-value"))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -160,7 +160,7 @@ class MemberAuthControllerTest {
                 .willThrow(new ApplicationException(ErrorCode.TOKEN_NOT_FOUND));
 
         // when & then
-        mockMvc.perform(post("/api/auth/refresh"))
+        mockMvc.perform(post("/auth/refresh"))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
@@ -171,7 +171,7 @@ class MemberAuthControllerTest {
     @DisplayName("로그아웃 성공")
     void logout_Success() throws Exception {
         // when & then
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/auth/logout")
                         .header("Authorization", "Bearer refresh-token-value"))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -189,7 +189,7 @@ class MemberAuthControllerTest {
                 .when(memberAuthService).logout(any());
 
         // when & then
-        mockMvc.perform(post("/api/auth/logout"))
+        mockMvc.perform(post("/auth/logout"))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
