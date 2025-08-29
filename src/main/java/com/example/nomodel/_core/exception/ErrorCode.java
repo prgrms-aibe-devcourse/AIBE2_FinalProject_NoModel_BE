@@ -29,6 +29,10 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN("IRT001", HttpStatus.UNAUTHORIZED, "Invalid refresh token"),
     INVALID_TOKEN_TYPE("ITT001", HttpStatus.BAD_REQUEST, "Invalid token type"),
     REFRESH_TOKEN_NOT_FOUND("RTNF001", HttpStatus.NOT_FOUND, "Refresh token not found"),
+    
+    // 신고 관련 에러
+    REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
+    REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
     ;
 
     private final String errorCode;
