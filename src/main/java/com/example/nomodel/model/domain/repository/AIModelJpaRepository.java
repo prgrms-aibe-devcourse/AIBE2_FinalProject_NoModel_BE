@@ -1,0 +1,93 @@
+package com.example.nomodel.model.domain.repository;
+
+import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.OwnType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
+
+    /**
+     * 공개된 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.isPublic = true")
+    List<AIModel> findByIsPublicTrue();
+
+    /**
+     * 특정 소유자의 모델 조회
+     */
+    List<AIModel> findByOwnerId(Long ownerId);
+
+    /**
+     * 소유 타입별 모델 조회
+     */
+    List<AIModel> findByOwnType(OwnType ownType);
+
+    /**
+     * 공개된 관리자 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.ownType = :ownType AND m.isPublic = true")
+    List<AIModel> findByOwnTypeAndIsPublicTrue(@Param("ownType") OwnType ownType);
+
+    /**
+     * 특정 소유자의 공개/비공개 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.ownerId = :ownerId AND m.isPublic = :isPublic")
+    List<AIModel> findByOwnerIdAndIsPublic(@Param("ownerId") Long ownerId, @Param("isPublic") boolean isPublic);
+
+    /**
+     * 무료 공개 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.isPublic = true AND (m.price IS NULL OR m.price = 0)")
+    List<AIModel> findFreePublicModels();
+
+    /**
+     * 유료 공개 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.isPublic = true AND m.price > 0")
+    List<AIModel> findPaidPublicModels();
+
+    /**
+     * 가격 범위별 공개 모델 조회
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.isPublic = true AND m.price BETWEEN :minPrice AND :maxPrice")
+    List<AIModel> findPublicModelsByPriceRange(@Param("minPrice") BigDecimal minPrice, 
+                                              @Param("maxPrice") BigDecimal maxPrice);
+
+    /**
+     * 모델명으로 검색 (부분 일치)
+     */
+    List<AIModel> findByModelNameContainingIgnoreCase(String modelName);
+
+    /**
+     * 공개 모델 중 모델명으로 검색
+     */
+    @Query("SELECT m FROM AIModel m WHERE m.isPublic = true AND LOWER(m.modelName) LIKE LOWER(CONCAT('%', :modelName, '%'))")
+    List<AIModel> findByIsPublicTrueAndModelNameContainingIgnoreCase(@Param("modelName") String modelName);
+
+    /**
+     * ID와 소유자로 모델 조회 (권한 체크용)
+     */
+    Optional<AIModel> findByIdAndOwnerId(Long id, Long ownerId);
+
+    /**
+     * 모델 존재 여부 확인
+     */
+    boolean existsByIdAndOwnerId(Long id, Long ownerId);
+
+    /**
+     * 특정 소유자의 모델 수 카운트
+     */
+    long countByOwnerId(Long ownerId);
+
+    /**
+     * 공개 모델 수 카운트
+     */
+    @Query("SELECT COUNT(m) FROM AIModel m WHERE m.isPublic = true")
+    long countByIsPublicTrue();
+}
