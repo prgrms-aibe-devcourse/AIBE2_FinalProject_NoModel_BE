@@ -93,7 +93,7 @@ public interface ReportJpaRepository extends JpaRepository<Report, Long> {
     /**
      * 특정 관리자가 처리한 신고 목록 조회
      */
-    @Query("SELECT r FROM Report r WHERE r.updatedBy = :adminId AND r.reportStatus IN ('RESOLVED', 'REJECTED')")
+    @Query("SELECT r FROM Report r WHERE r.modifiedBy = :adminId AND r.reportStatus IN ('RESOLVED', 'REJECTED')")
     List<Report> findReportsProcessedByAdmin(@Param("adminId") String adminId);
 
     /**
