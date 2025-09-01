@@ -22,16 +22,10 @@ public interface ModelStatisticsJpaRepository extends JpaRepository<ModelStatist
     boolean existsByModelId(Long modelId);
 
     /**
-     * 모델별 다운로드 수 상위 N개 조회
+     * 모델별 사용 수 상위 N개 조회
      */
-    @Query("SELECT ms FROM ModelStatistics ms ORDER BY ms.downloadCount DESC")
-    List<ModelStatistics> findTopByOrderByDownloadCountDesc();
-
-    /**
-     * 모델별 좋아요 수 상위 N개 조회
-     */
-    @Query("SELECT ms FROM ModelStatistics ms ORDER BY ms.likeCount DESC")
-    List<ModelStatistics> findTopByOrderByLikeCountDesc();
+    @Query("SELECT ms FROM ModelStatistics ms ORDER BY ms.usageCount DESC")
+    List<ModelStatistics> findTopByOrderByUsageCountDesc();
 
     /**
      * 모델별 조회 수 상위 N개 조회
@@ -45,14 +39,9 @@ public interface ModelStatisticsJpaRepository extends JpaRepository<ModelStatist
     List<ModelStatistics> findByUpdatedAtAfter(LocalDateTime updatedAt);
 
     /**
-     * 최소 다운로드 수 이상인 통계 조회
+     * 최소 사용 수 이상인 통계 조회
      */
-    List<ModelStatistics> findByDownloadCountGreaterThanEqual(Long minDownloadCount);
-
-    /**
-     * 최소 좋아요 수 이상인 통계 조회
-     */
-    List<ModelStatistics> findByLikeCountGreaterThanEqual(Long minLikeCount);
+    List<ModelStatistics> findByUsageCountGreaterThanEqual(Long minUsageCount);
 
     /**
      * 최소 조회 수 이상인 통계 조회
@@ -62,9 +51,9 @@ public interface ModelStatisticsJpaRepository extends JpaRepository<ModelStatist
     /**
      * 인기 모델 통계 조회 (복합 기준)
      */
-    @Query("SELECT ms FROM ModelStatistics ms WHERE ms.downloadCount >= :minDownload AND ms.likeCount >= :minLike ORDER BY ms.downloadCount DESC, ms.likeCount DESC")
-    List<ModelStatistics> findPopularModels(@Param("minDownload") Long minDownload, 
-                                           @Param("minLike") Long minLike);
+    @Query("SELECT ms FROM ModelStatistics ms WHERE ms.usageCount >= :minUsage AND ms.viewCount >= :minView ORDER BY ms.usageCount DESC, ms.viewCount DESC")
+    List<ModelStatistics> findPopularModels(@Param("minUsage") Long minUsage, 
+                                           @Param("minView") Long minView);
 
     /**
      * 활성 모델 통계 조회 (최근 일정 기간 내 업데이트)
@@ -73,16 +62,10 @@ public interface ModelStatisticsJpaRepository extends JpaRepository<ModelStatist
     List<ModelStatistics> findActiveStatistics(@Param("since") LocalDateTime since);
 
     /**
-     * 전체 통계 합계 조회
+     * 전체 사용 수 합계 조회
      */
-    @Query("SELECT SUM(ms.downloadCount) FROM ModelStatistics ms")
-    Long getTotalDownloadCount();
-
-    /**
-     * 전체 좋아요 합계 조회
-     */
-    @Query("SELECT SUM(ms.likeCount) FROM ModelStatistics ms")
-    Long getTotalLikeCount();
+    @Query("SELECT SUM(ms.usageCount) FROM ModelStatistics ms")
+    Long getTotalUsageCount();
 
     /**
      * 전체 조회 수 합계 조회
