@@ -110,15 +110,4 @@ JOIN ai_model_tb m ON ms.model_id = m.model_id
 ORDER BY ms.usage_count DESC
 LIMIT 10;
 
--- 테스트 계정 정보
-SELECT 
-    '테스트 계정 정보' as category,
-    username as 사용자명,
-    email as 이메일,
-    role as 역할,
-    status as 상태
-FROM member_tb 
-WHERE username IN ('시스템관리자', '테스트유저', '프리미엄유저', '비즈니스유저', '정지된유저')
-ORDER BY member_id;
-
 SELECT '🎉 NoModel 더미 데이터 생성이 성공적으로 완료되었습니다!' as final_message;
