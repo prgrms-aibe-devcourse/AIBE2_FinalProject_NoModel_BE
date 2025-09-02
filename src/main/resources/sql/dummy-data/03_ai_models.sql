@@ -36,126 +36,145 @@ INSERT INTO ai_model_tb (
     created_at, updated_at
 )
 SELECT 
-    -- 모델명 생성
-    CONCAT(
-        CASE MOD(ROW_NUMBER() OVER (), 20)
-            WHEN 0 THEN 'Custom Art Style'
-            WHEN 1 THEN 'Personal Portrait'
-            WHEN 2 THEN 'Fantasy World'
-            WHEN 3 THEN 'Modern Design'
-            WHEN 4 THEN 'Creative Vision'
-            WHEN 5 THEN 'Artistic Expression'
-            WHEN 6 THEN 'Digital Masterpiece'
-            WHEN 7 THEN 'Unique Style'
-            WHEN 8 THEN 'Creative Model'
-            WHEN 9 THEN 'Personal Project'
-            WHEN 10 THEN 'Custom Generator'
-            WHEN 11 THEN 'Art Collection'
-            WHEN 12 THEN 'Style Experiment'
-            WHEN 13 THEN 'Creative Work'
-            WHEN 14 THEN 'Personal Art'
-            WHEN 15 THEN 'Custom Creation'
-            WHEN 16 THEN 'Artistic Vision'
-            WHEN 17 THEN 'Digital Art'
-            WHEN 18 THEN 'Creative Studio'
-            ELSE 'Personal Model'
-        END,
-        ' v', FLOOR(1 + (RAND() * 5)), '.', FLOOR(RAND() * 10)
-    ) as model_name,
-    
-    'USER' as own_type,
-    
-    -- 소유자 ID (6~605번, 관리자와 테스트 계정 제외)
-    ((ROW_NUMBER() OVER () - 1) % 600) + 6 as owner_id,
-    
-    -- 가격 설정 (비공개는 0, 공개 중 일부만 유료)
-    CASE 
-        WHEN MOD(ROW_NUMBER() OVER (), 10) < 7 THEN 0.00   -- 비공개(70%)는 가격 없음
-        WHEN RAND() < 0.6 THEN 0.00                        -- 공개 중 60% 무료
-        ELSE ROUND(5 + (RAND() * 45), 2)                   -- 공개 중 40% 유료 (5~50)
-    END as price,
-    
-    -- 공개 여부 (70% 비공개)
-    CASE WHEN MOD(ROW_NUMBER() OVER (), 10) < 7 THEN 0 ELSE 1 END as is_public,
-    
-    -- 시드값 (-1 또는 랜덤)
-    CASE WHEN RAND() > 0.3 THEN -1 ELSE FLOOR(RAND() * 100000) END as seed,
-    
-    -- 프롬프트
-    CASE MOD(ROW_NUMBER() OVER (), 8)
-        WHEN 0 THEN 'my custom style, personal vision'
-        WHEN 1 THEN 'unique artistic approach, creative'
-        WHEN 2 THEN 'brand specific style, consistent'
-        WHEN 3 THEN 'artistic experiment, innovative'
-        WHEN 4 THEN 'professional quality, polished'
-        WHEN 5 THEN 'personal project, meaningful'
-        WHEN 6 THEN 'vibrant colors, expressive'
-        ELSE 'high quality, detailed artwork'
-    END as prompt,
-    
-    -- 네거티브 프롬프트
-    CASE MOD(ROW_NUMBER() OVER (), 4)
-        WHEN 0 THEN 'bad quality, amateur work'
-        WHEN 1 THEN 'low quality, blurry image'
-        WHEN 2 THEN 'worst quality, distorted'
-        ELSE 'poor execution, unprofessional'
-    END as negative_prompt,
-    
-    -- 이미지 크기
-    CASE MOD(ROW_NUMBER() OVER (), 5)
-        WHEN 0 THEN 512
-        WHEN 1 THEN 768
-        WHEN 2 THEN 1024
-        WHEN 3 THEN 640
-        ELSE 896
-    END as width,
-    
-    CASE MOD(ROW_NUMBER() OVER (), 5)
-        WHEN 0 THEN 512
-        WHEN 1 THEN 768
-        WHEN 2 THEN 1024
-        WHEN 3 THEN 640
-        ELSE 896
-    END as height,
-    
-    -- 스텝수 (10~50)
-    FLOOR(RAND() * 40) + 10 as steps,
-    
-    -- 샘플러 (ENUM 값 중 랜덤 선택)
-    CASE MOD(ROW_NUMBER() OVER (), 19)
-        WHEN 0 THEN 'DDIM'
-        WHEN 1 THEN 'DPM2'
-        WHEN 2 THEN 'DPM2_A'
-        WHEN 3 THEN 'DPM2_A_KARRAS'
-        WHEN 4 THEN 'DPM2_KARRAS'
-        WHEN 5 THEN 'DPM_ADAPTIVE'
-        WHEN 6 THEN 'DPM_FAST'
-        WHEN 7 THEN 'DPM_PLUS_PLUS_2M'
-        WHEN 8 THEN 'DPM_PLUS_PLUS_2M_KARRAS'
-        WHEN 9 THEN 'DPM_PLUS_PLUS_2S_A'
-        WHEN 10 THEN 'DPM_PLUS_PLUS_2S_A_KARRAS'
-        WHEN 11 THEN 'DPM_PLUS_PLUS_SDE'
-        WHEN 12 THEN 'DPM_PLUS_PLUS_SDE_KARRAS'
-        WHEN 13 THEN 'EULER'
-        WHEN 14 THEN 'EULER_A'
-        WHEN 15 THEN 'HEUN'
-        WHEN 16 THEN 'LMS'
-        WHEN 17 THEN 'LMS_KARRAS'
-        ELSE 'PLMS'
-    END as sampler_index,
-    
-    -- 반복 횟수 (1~3)
-    FLOOR(RAND() * 3) + 1 as n_iter,
-    
-    -- 배치 크기 (1~3)
-    FLOOR(RAND() * 3) + 1 as batch_size,
-    
-    -- 생성일 (최근 1년 이내 랜덤)
-    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 365) DAY) as created_at,
-    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
-
+    t.model_name,
+    t.own_type,
+    t.owner_id,
+    t.price,
+    t.is_public,
+    t.seed,
+    t.prompt,
+    t.negative_prompt,
+    t.width,
+    t.height,
+    t.steps,
+    t.sampler_index,
+    t.n_iter,
+    t.batch_size,
+    t.created_at,
+    -- updated_at은 created_at 이후로 보정
+    GREATEST(t.created_at, DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY)) as updated_at
 FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 480
-) numbers;
+    WITH RECURSIVE seq(n) AS (
+        SELECT 1 
+        UNION ALL 
+        SELECT n + 1 FROM seq WHERE n < 480
+    )
+    SELECT 
+        -- 모델명 생성
+        CONCAT(
+            CASE MOD(n, 20)
+                WHEN 0 THEN 'Custom Art Style'
+                WHEN 1 THEN 'Personal Portrait'
+                WHEN 2 THEN 'Fantasy World'
+                WHEN 3 THEN 'Modern Design'
+                WHEN 4 THEN 'Creative Vision'
+                WHEN 5 THEN 'Artistic Expression'
+                WHEN 6 THEN 'Digital Masterpiece'
+                WHEN 7 THEN 'Unique Style'
+                WHEN 8 THEN 'Creative Model'
+                WHEN 9 THEN 'Personal Project'
+                WHEN 10 THEN 'Custom Generator'
+                WHEN 11 THEN 'Art Collection'
+                WHEN 12 THEN 'Style Experiment'
+                WHEN 13 THEN 'Creative Work'
+                WHEN 14 THEN 'Personal Art'
+                WHEN 15 THEN 'Custom Creation'
+                WHEN 16 THEN 'Artistic Vision'
+                WHEN 17 THEN 'Digital Art'
+                WHEN 18 THEN 'Creative Studio'
+                ELSE 'Personal Model'
+            END,
+            ' v', FLOOR(1 + (RAND() * 5)), '.', FLOOR(RAND() * 10)
+        ) as model_name,
+        
+        'USER' as own_type,
+        
+        -- 소유자 ID (6~605번, 관리자와 테스트 계정 제외)
+        ((n - 1) % 600) + 6 as owner_id,
+        
+        -- 가격 설정 (비공개는 0, 공개 중 일부만 유료)
+        CASE 
+            WHEN MOD(n, 10) < 7 THEN 0.00   -- 비공개(70%)는 가격 없음
+            WHEN RAND() < 0.6 THEN 0.00     -- 공개 중 60% 무료
+            ELSE ROUND(5 + (RAND() * 45), 2)    -- 공개 중 40% 유료 (5~50)
+        END as price,
+        
+        -- 공개 여부 (70% 비공개)
+        CASE WHEN MOD(n, 10) < 7 THEN 0 ELSE 1 END as is_public,
+        
+        -- 시드값 (-1 또는 랜덤)
+        CASE WHEN RAND() > 0.3 THEN -1 ELSE FLOOR(RAND() * 100000) END as seed,
+        
+        -- 프롬프트
+        CASE MOD(n, 8)
+            WHEN 0 THEN 'my custom style, personal vision'
+            WHEN 1 THEN 'unique artistic approach, creative'
+            WHEN 2 THEN 'brand specific style, consistent'
+            WHEN 3 THEN 'artistic experiment, innovative'
+            WHEN 4 THEN 'professional quality, polished'
+            WHEN 5 THEN 'personal project, meaningful'
+            WHEN 6 THEN 'vibrant colors, expressive'
+            ELSE 'high quality, detailed artwork'
+        END as prompt,
+        
+        -- 네거티브 프롬프트
+        CASE MOD(n, 4)
+            WHEN 0 THEN 'bad quality, amateur work'
+            WHEN 1 THEN 'low quality, blurry image'
+            WHEN 2 THEN 'worst quality, distorted'
+            ELSE 'poor execution, unprofessional'
+        END as negative_prompt,
+        
+        -- 이미지 크기
+        CASE MOD(n, 5)
+            WHEN 0 THEN 512
+            WHEN 1 THEN 768
+            WHEN 2 THEN 1024
+            WHEN 3 THEN 640
+            ELSE 896
+        END as width,
+        
+        CASE MOD(n, 5)
+            WHEN 0 THEN 512
+            WHEN 1 THEN 768
+            WHEN 2 THEN 1024
+            WHEN 3 THEN 640
+            ELSE 896
+        END as height,
+        
+        -- 스텝수 (10~50)
+        FLOOR(RAND() * 40) + 10 as steps,
+        
+        -- 샘플러 (ENUM 값 중 랜덤 선택)
+        CASE MOD(n, 19)
+            WHEN 0 THEN 'DDIM'
+            WHEN 1 THEN 'DPM2'
+            WHEN 2 THEN 'DPM2_A'
+            WHEN 3 THEN 'DPM2_A_KARRAS'
+            WHEN 4 THEN 'DPM2_KARRAS'
+            WHEN 5 THEN 'DPM_ADAPTIVE'
+            WHEN 6 THEN 'DPM_FAST'
+            WHEN 7 THEN 'DPM_PLUS_PLUS_2M'
+            WHEN 8 THEN 'DPM_PLUS_PLUS_2M_KARRAS'
+            WHEN 9 THEN 'DPM_PLUS_PLUS_2S_A'
+            WHEN 10 THEN 'DPM_PLUS_PLUS_2S_A_KARRAS'
+            WHEN 11 THEN 'DPM_PLUS_PLUS_SDE'
+            WHEN 12 THEN 'DPM_PLUS_PLUS_SDE_KARRAS'
+            WHEN 13 THEN 'EULER'
+            WHEN 14 THEN 'EULER_A'
+            WHEN 15 THEN 'HEUN'
+            WHEN 16 THEN 'LMS'
+            WHEN 17 THEN 'LMS_KARRAS'
+            ELSE 'PLMS'
+        END as sampler_index,
+        
+        -- 반복 횟수 (1~3)
+        FLOOR(RAND() * 3) + 1 as n_iter,
+        
+        -- 배치 크기 (1~3)
+        FLOOR(RAND() * 3) + 1 as batch_size,
+        
+        -- created_at을 하위 SELECT에서 고정 (최근 1년 이내 랜덤)
+        DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 365) DAY) as created_at
+    FROM seq
+) t;
