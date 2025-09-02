@@ -70,9 +70,9 @@ SELECT
     
     -- 가격 설정 (비공개는 0, 공개 중 일부만 유료)
     CASE 
-        WHEN MOD(ROW_NUMBER() OVER (), 10) >= 7 THEN 0.00  -- 비공개 모델은 가격 없음 (30%)
-        WHEN MOD(ROW_NUMBER() OVER (), 5) < 3 THEN 0.00    -- 공개 모델 중 60% 무료
-        ELSE ROUND(5 + (RAND() * 45), 2)                  -- 공개 모델 중 40% 유료 (5~50)
+        WHEN MOD(ROW_NUMBER() OVER (), 10) < 7 THEN 0.00   -- 비공개(70%)는 가격 없음
+        WHEN RAND() < 0.6 THEN 0.00                        -- 공개 중 60% 무료
+        ELSE ROUND(5 + (RAND() * 45), 2)                   -- 공개 중 40% 유료 (5~50)
     END as price,
     
     -- 공개 여부 (70% 비공개)
