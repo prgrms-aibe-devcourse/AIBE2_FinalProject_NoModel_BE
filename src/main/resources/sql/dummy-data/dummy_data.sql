@@ -35,17 +35,21 @@ SOURCE 04_model_statistics.sql;
 SELECT '5단계: 구독 상품 데이터 생성 중... (10개)' as status, NOW() as timestamp;
 SOURCE 05_subscriptions.sql;
 
--- 6단계: 회원 구독 데이터 생성
-SELECT '6단계: 회원 구독 데이터 생성 중... (200개)' as status, NOW() as timestamp;
-SOURCE 06_member_subscriptions.sql;
+-- 6단계: 구독 상품만 생성 (회원 구독은 7단계에서)
+SELECT '6단계: 구독 상품 생성 완료 (10개)' as status, NOW() as timestamp;
 
 -- 7단계: 나머지 테이블 데이터 생성
 SELECT '7단계: 나머지 테이블 데이터 생성 중...' as status, NOW() as timestamp;
+SELECT '- 회원 구독 (150개)' as sub_status;
+SELECT '- 포인트 정책 (20개)' as sub_status;
+SELECT '- 포인트 잔액 (605개)' as sub_status;
+SELECT '- 포인트 거래 (1000개)' as sub_status;
+SELECT '- 쿠폰 (30개)' as sub_status;
 SELECT '- 할인 정책 (20개)' as sub_status;
 SELECT '- 모델 리뷰 (100개)' as sub_status;  
-SELECT '- 쿠폰 (30개)' as sub_status;
 SELECT '- 파일 (50개)' as sub_status;
 SELECT '- 신고 (25개)' as sub_status;
+SELECT '- 이벤트 발행 (100개)' as sub_status;
 SOURCE 07_remaining_tables.sql;
 
 -- 설정 복원
@@ -64,10 +68,15 @@ SELECT
     (SELECT COUNT(*) FROM model_statistics_tb) as 통계수,
     (SELECT COUNT(*) FROM subscription) as 구독상품수,
     (SELECT COUNT(*) FROM member_subscription) as 회원구독수,
+    (SELECT COUNT(*) FROM point_policy) as 포인트정책수,
+    (SELECT COUNT(*) FROM member_point_balance) as 포인트잔액수,
+    (SELECT COUNT(*) FROM point_transaction) as 포인트거래수,
     (SELECT COUNT(*) FROM model_review) as 리뷰수,
     (SELECT COUNT(*) FROM coupon) as 쿠폰수,
+    (SELECT COUNT(*) FROM discount_policy) as 할인정책수,
     (SELECT COUNT(*) FROM file_tb) as 파일수,
-    (SELECT COUNT(*) FROM report_tb) as 신고수;
+    (SELECT COUNT(*) FROM report_tb) as 신고수,
+    (SELECT COUNT(*) FROM event_publication) as 이벤트수;
 
 -- 모델 소유자별 분포
 SELECT 
