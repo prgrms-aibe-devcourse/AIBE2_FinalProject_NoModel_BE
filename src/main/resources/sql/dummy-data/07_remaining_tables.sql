@@ -1,36 +1,9 @@
 -- ================================================================================
 -- 나머지 테이블 더미 데이터 (최종 버전)
 -- ================================================================================
+-- 주의: member_subscription 데이터는 06_member_subscriptions.sql에서 생성됩니다.
 
--- 1. 회원 구독 데이터 (150개)
-INSERT INTO member_subscription (member_id, subscription_id, started_at, expires_at, status, auto_renewal, paid_amount, payment_method_id)
-SELECT 
-    (FLOOR(2 + (RAND() * 604))) as member_id,
-    (FLOOR(1 + (RAND() * 10))) as subscription_id,
-    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 330) DAY) as started_at,
-    DATE_ADD(DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 330) DAY), INTERVAL 30 DAY) as expires_at,
-    CASE WHEN RAND() < 0.8 THEN 'ACTIVE' ELSE 'EXPIRED' END as status,
-    CASE WHEN RAND() < 0.7 THEN 1 ELSE 0 END as auto_renewal,
-    CASE (FLOOR(1 + (RAND() * 10)))
-        WHEN 1 THEN 9.99
-        WHEN 2 THEN 19.99
-        WHEN 3 THEN 49.99
-        WHEN 4 THEN 199.99
-        WHEN 5 THEN 95.99
-        WHEN 6 THEN 191.99
-        WHEN 7 THEN 479.99
-        WHEN 8 THEN 9.99
-        WHEN 9 THEN 29.99
-        ELSE 15.99
-    END as paid_amount,
-    FLOOR(1 + (RAND() * 5)) as payment_method_id
-FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 150
-) numbers;
-
--- 2. 포인트 정책 데이터 (20개)
+-- 1. 포인트 정책 데이터 (20개)
 INSERT INTO point_policy (name, point_amount, policy_type, is_active, priority, refer_type, valid_from, valid_to) VALUES
 ('회원가입 축하', 1000, 'SIGNUP', 1, 1, 'MEMBER', '2023-01-01', '2024-12-31'),
 ('모델 구매', 100, 'PURCHASE', 1, 2, 'MODEL', '2023-01-01', '2024-12-31'),
@@ -162,8 +135,13 @@ INSERT INTO discount_policy (name, discount_type, discount_value, is_active, max
 
 -- 7. 모델 리뷰 데이터 (100개)
 INSERT INTO model_review (model_id, reviewer_id, value, content, status, created_at)
+WITH RECURSIVE seq(n) AS (
+    SELECT 1 
+    UNION ALL 
+    SELECT n + 1 FROM seq WHERE n < 100
+)
 SELECT 
-    (SELECT model_id FROM ai_model_tb WHERE is_public = 1 ORDER BY RAND() LIMIT 1) as model_id,
+    (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
     (FLOOR(2 + (RAND() * 604))) as reviewer_id,
     (FLOOR(1 + (RAND() * 5))) as value,
     CASE FLOOR(1 + (RAND() * 10))
@@ -180,11 +158,7 @@ SELECT
     END as content,
     CASE WHEN RAND() < 0.9 THEN 'ACTIVE' ELSE 'BLOCKED' END as status,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at
-FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 100
-) numbers;
+FROM seq;
 
 -- 8. 파일 데이터 (50개)
 INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, created_at, updated_at)
@@ -289,9 +263,14 @@ FROM (
 
 -- 10. 이벤트 발행 데이터 (100개)
 INSERT INTO event_publication (id, event_type, listener_id, serialized_event, publication_date, completion_date)
+WITH RECURSIVE seq(n) AS (
+    SELECT 1 
+    UNION ALL 
+    SELECT n + 1 FROM seq WHERE n < 100
+)
 SELECT 
     UNHEX(REPLACE(UUID(), '-', '')) as id,
-    CASE ROW_NUMBER() OVER () % 8
+    CASE n % 8
         WHEN 0 THEN 'MEMBER_REGISTERED'
         WHEN 1 THEN 'MODEL_UPLOADED'
         WHEN 2 THEN 'MODEL_PURCHASED'
@@ -308,8 +287,4 @@ SELECT
         THEN DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 29) DAY)
         ELSE NULL 
     END as completion_date
-FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 100
-) numbers;
+FROM seq;
