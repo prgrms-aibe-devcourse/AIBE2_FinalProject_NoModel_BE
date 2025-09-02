@@ -33,6 +33,12 @@ public enum ErrorCode {
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
+
+    //리뷰 관련 에러
+    REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),
+    DUPLICATE_REVIEW("RV002", HttpStatus.CONFLICT, "Review already exists"),
+    REVIEW_NOT_ALLOWED("RV003", HttpStatus.FORBIDDEN, "Not allowed to modify or delete this review"),
+
     ;
 
     private final String errorCode;
