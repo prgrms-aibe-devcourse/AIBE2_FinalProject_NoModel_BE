@@ -13,6 +13,11 @@ INSERT INTO member_tb (username, email, password, role, status, created_at, upda
 
 -- 일반 회원 500명
 INSERT INTO member_tb (username, email, password, role, status, created_at, updated_at)
+WITH RECURSIVE seq(n) AS (
+    SELECT 1 
+    UNION ALL 
+    SELECT n + 1 FROM seq WHERE n < 500
+)
 SELECT 
     CONCAT(
         CASE MOD(n, 10)
@@ -39,14 +44,15 @@ SELECT
     END as status,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 730) DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
-FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 500
-) numbers;
+FROM seq;
 
 -- 이벤트 회원 100명
 INSERT INTO member_tb (username, email, password, role, status, created_at, updated_at)
+WITH RECURSIVE seq(n) AS (
+    SELECT 1 
+    UNION ALL 
+    SELECT n + 1 FROM seq WHERE n < 100
+)
 SELECT 
     CONCAT('이벤트유저_', n) as username,
     CONCAT('event_', n, '@nomodel.com') as email,
@@ -55,8 +61,4 @@ SELECT
     'ACTIVE' as status,
     DATE_SUB(NOW(), INTERVAL 180 DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as updated_at
-FROM (
-    SELECT ROW_NUMBER() OVER () as n
-    FROM information_schema.columns
-    LIMIT 100
-) numbers;
+FROM seq;
