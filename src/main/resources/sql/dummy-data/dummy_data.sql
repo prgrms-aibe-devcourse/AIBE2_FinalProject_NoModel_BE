@@ -37,10 +37,10 @@ SOURCE 05_subscriptions.sql;
 
 -- 6단계: 구독 상품만 생성 (회원 구독은 7단계에서)
 SELECT '6단계: 구독 상품 생성 완료 (10개)' as status, NOW() as timestamp;
+SOURCE 06_member_subscriptions.sql;
 
 -- 7단계: 나머지 테이블 데이터 생성
 SELECT '7단계: 나머지 테이블 데이터 생성 중...' as status, NOW() as timestamp;
-SELECT '- 회원 구독 (150개)' as sub_status;
 SELECT '- 포인트 정책 (20개)' as sub_status;
 SELECT '- 포인트 잔액 (605개)' as sub_status;
 SELECT '- 포인트 거래 (1000개)' as sub_status;
