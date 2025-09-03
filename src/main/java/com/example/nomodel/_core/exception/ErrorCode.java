@@ -33,6 +33,19 @@ public enum ErrorCode {
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
+    
+    // Firebase 관련 에러
+    FIREBASE_KEY_FILE_NOT_FOUND("FKFNF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file not found"),
+    FIREBASE_INITIALIZATION_FAILED("FIF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase initialization failed"),
+    FIREBASE_KEY_FILE_READ_ERROR("FKFRE001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file read error"),
+    
+    // File Storage 관련 에러
+    FILE_UPLOAD_FAILED("FUF001", HttpStatus.INTERNAL_SERVER_ERROR, "File upload failed"),
+    FILE_DELETE_FAILED("FDF001", HttpStatus.INTERNAL_SERVER_ERROR, "File delete failed"),
+    INVALID_FILE_TYPE("IFT001", HttpStatus.BAD_REQUEST, "Invalid file type"),
+    FILE_SIZE_EXCEEDED("FSE001", HttpStatus.BAD_REQUEST, "File size exceeded"),
+    FILE_NOT_FOUND("FNF001", HttpStatus.NOT_FOUND, "File not found"),
+    FIREBASE_STORAGE_BUCKET_NOT_CONFIGURED("FSBNC001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase storage bucket not configured"),
     ;
 
     private final String errorCode;
