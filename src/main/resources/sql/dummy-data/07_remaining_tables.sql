@@ -183,19 +183,14 @@ SELECT
         END
     ) as file_name,
     CASE WHEN ROW_NUMBER() OVER () % 2 = 0 THEN 'PREVIEW' ELSE 'THUMBNAIL' END as file_type,
-    CONCAT('/uploads/', YEAR(NOW()), '/', MONTH(NOW()), '/', DAY(NOW()), '/',
-           SUBSTRING(MD5(RAND()), 1, 8), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 12),
-           CASE ROW_NUMBER() OVER () % 4
-               WHEN 0 THEN '.jpg'
-               WHEN 1 THEN '.png'
-               WHEN 2 THEN '.webp'
-               ELSE '.gif'
-           END
-    ) as file_url,
+    -- Firebase Storage URLs을 사용 (실제 업로드된 이미지)
+    CASE ROW_NUMBER() OVER () % 5
+        WHEN 0 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/testImage_be8eb30c-ce18-438f-b485-593a6ef2dcfe?generation=1756904909282705&alt=media'
+        WHEN 1 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/sample_model_image_001.jpg?generation=1756904909282705&alt=media'
+        WHEN 2 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/generated_art_002.png?generation=1756904909282705&alt=media'
+        WHEN 3 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/custom_thumbnail_003.webp?generation=1756904909282705&alt=media'
+        ELSE 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/ai_artwork_default.jpg?generation=1756904909282705&alt=media'
+    END as file_url,
     CASE ROW_NUMBER() OVER () % 4
         WHEN 0 THEN 'image/jpeg'
         WHEN 1 THEN 'image/png'
