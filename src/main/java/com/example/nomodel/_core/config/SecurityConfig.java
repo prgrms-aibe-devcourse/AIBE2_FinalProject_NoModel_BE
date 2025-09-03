@@ -48,6 +48,7 @@ public class SecurityConfig {
             "/actuator/**",      // 이미 올바름
             "/h2-console/**",
             "/favicon.ico",
+            "/test/**",          // 테스트 API 허용 (실제: /api/test/**)
     };
 
     private static final String[] ADMIN_LIST = {
