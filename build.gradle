@@ -53,6 +53,9 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     
+    // Firebase
+    implementation 'com.google.firebase:firebase-admin:9.4.1'
+    
     // Spring Modulith
     implementation 'org.springframework.modulith:spring-modulith-starter-core'
     implementation 'org.springframework.modulith:spring-modulith-starter-jpa'
