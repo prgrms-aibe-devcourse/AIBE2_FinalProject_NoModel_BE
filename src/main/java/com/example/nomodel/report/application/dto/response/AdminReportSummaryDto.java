@@ -1,4 +1,4 @@
-package com.example.nomodel.report.application.dto;
+package com.example.nomodel.report.application.dto.response;
 
 public class AdminReportSummaryDto {
   private final Long total;
