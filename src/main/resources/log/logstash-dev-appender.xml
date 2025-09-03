@@ -28,8 +28,6 @@
             <!-- Detailed logger names for debugging -->
             <shortenedLoggerNameLength>50</shortenedLoggerNameLength>
             
-            <!-- Include stack traces in full detail -->
-            <includeKeyValue>true</includeKeyValue>
             
             <!-- Pretty print JSON for manual inspection if needed -->
             <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
@@ -43,8 +41,6 @@
         <!-- Small ring buffer for immediate visibility of logs -->
         <ringBufferSize>64</ringBufferSize>
         
-        <!-- Immediate flush for real-time debugging -->
-        <immediateFlush>true</immediateFlush>
         
         <!-- Write timeout for responsive development -->
         <writeTimeout>5 second</writeTimeout>
