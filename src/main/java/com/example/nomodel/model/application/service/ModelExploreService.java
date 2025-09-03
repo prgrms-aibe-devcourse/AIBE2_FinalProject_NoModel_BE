@@ -1,7 +1,6 @@
 package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.file.domain.model.File;
-import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.file.domain.repository.FileJpaRepository;
 import com.example.nomodel.model.application.dto.ModelGalleryResponse;
 import com.example.nomodel.model.application.dto.ModelCardResponse;
@@ -13,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -28,12 +29,7 @@ public class ModelExploreService {
      */
     public ModelGalleryResponse getAdminModels() {
         List<AIModel> adminModels = aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN);
-        
-        List<ModelCardResponse> modelCards = adminModels.stream()
-                .map(this::convertToCardResponse)
-                .toList();
-
-        return ModelGalleryResponse.of(modelCards);
+        return convertToGalleryResponse(adminModels);
     }
 
     /**
@@ -41,12 +37,7 @@ public class ModelExploreService {
      */
     public ModelGalleryResponse getUserOwnedModels(Long userId) {
         List<AIModel> userModels = aiModelRepository.findByOwnerId(userId);
-        
-        List<ModelCardResponse> modelCards = userModels.stream()
-                .map(this::convertToCardResponse)
-                .toList();
-
-        return ModelGalleryResponse.of(modelCards);
+        return convertToGalleryResponse(userModels);
     }
 
     /**
@@ -63,45 +54,73 @@ public class ModelExploreService {
         List<AIModel> allModels = Stream.of(adminModels, userModels)
                 .flatMap(List::stream)
                 .toList();
-        
-        List<ModelCardResponse> modelCards = allModels.stream()
-                .map(this::convertToCardResponse)
-                .toList();
 
+        return convertToGalleryResponse(allModels);
+    }
+
+    /**
+     * 모델 목록을 갤러리 응답으로 변환 (썸네일 일괄 조회로 성능 최적화)
+     */
+    private ModelGalleryResponse convertToGalleryResponse(List<AIModel> models) {
+        if (models.isEmpty()) {
+            return ModelGalleryResponse.of(List.of());
+        }
+        
+        // 모델 ID 목록 추출
+        List<Long> modelIds = models.stream()
+                .map(AIModel::getId)
+                .toList();
+        
+        // 썸네일 파일 일괄 조회
+        Map<Long, String> thumbnailMap = getThumbnailUrlMap(modelIds);
+        
+        // ModelCardResponse 변환
+        List<ModelCardResponse> modelCards = models.stream()
+                .map(model -> ModelCardResponse.of(
+                        model.getId(),
+                        model.getModelName(),
+                        thumbnailMap.get(model.getId()),
+                        model.getOwnType(),
+                        model.isPubliclyAvailable(),
+                        model.isHighResolutionModel(),
+                        model.getCreatedAt(),
+                        model.getUpdatedAt()
+                ))
+                .toList();
+        
         return ModelGalleryResponse.of(modelCards);
     }
-
+    
     /**
-     * AIModel을 ModelCardResponse로 변환
+     * 여러 모델의 썸네일 URL을 일괄 조회 (N+1 쿼리 방지)
      */
-    private ModelCardResponse convertToCardResponse(AIModel model) {
-        String thumbnailUrl = getThumbnailUrl(model.getId());
+    private Map<Long, String> getThumbnailUrlMap(List<Long> modelIds) {
+        // 1. 모든 썸네일 파일 조회
+        List<File> thumbnailFiles = fileRepository.findThumbnailFilesByModelIds(modelIds);
+        Map<Long, String> thumbnailMap = thumbnailFiles.stream()
+                .collect(Collectors.toMap(
+                        File::getRelationId,
+                        File::getFileUrl,
+                        (existing, replacement) -> existing // 중복시 첫 번째 유지
+                ));
         
-        return ModelCardResponse.of(
-                model.getId(),
-                model.getModelName(),
-                thumbnailUrl,
-                model.getOwnType(),
-                model.isPubliclyAvailable(),
-                model.isHighResolutionModel(),
-                model.getCreatedAt(),
-                model.getUpdatedAt()
-        );
-    }
-
-    /**
-     * 모델의 썸네일 이미지 URL 조회
-     */
-    private String getThumbnailUrl(Long modelId) {
-        // 먼저 썸네일 파일을 찾고, 없으면 일반 이미지 파일 중 첫 번째를 사용
-        return fileRepository.findFirstThumbnailByRelation(RelationType.MODEL, modelId)
-                .map(File::getFileUrl)
-                .orElseGet(() -> 
-                    fileRepository.findImageFilesByRelation(RelationType.MODEL, modelId)
-                            .stream()
-                            .findFirst()
-                            .map(File::getFileUrl)
-                            .orElse(null)
-                );
+        // 2. 썸네일이 없는 모델들의 ID 찾기
+        List<Long> missingThumbnailModelIds = modelIds.stream()
+                .filter(modelId -> !thumbnailMap.containsKey(modelId))
+                .toList();
+        
+        // 3. 썸네일이 없는 모델들의 이미지 파일 조회
+        if (!missingThumbnailModelIds.isEmpty()) {
+            List<File> imageFiles = fileRepository.findImageFilesByModelIds(missingThumbnailModelIds);
+            Map<Long, String> imageMap = imageFiles.stream()
+                    .collect(Collectors.toMap(
+                            File::getRelationId,
+                            File::getFileUrl,
+                            (existing, replacement) -> existing // 중복시 첫 번째 유지
+                    ));
+            thumbnailMap.putAll(imageMap);
+        }
+        
+        return thumbnailMap;
     }
 }
