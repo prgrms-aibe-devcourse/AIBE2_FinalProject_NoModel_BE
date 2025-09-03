@@ -81,3 +81,7 @@ uploads/
 downloads/
 cache/
 tmp/
+
+### Firebase ###
+src/main/resources/key/FirebaseKey.json
+**/FirebaseKey.json
