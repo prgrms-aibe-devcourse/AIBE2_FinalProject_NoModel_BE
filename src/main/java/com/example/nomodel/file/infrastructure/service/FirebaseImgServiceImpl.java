@@ -3,25 +3,16 @@ package com.example.nomodel.file.infrastructure.service;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.file.domain.service.ImgService;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.firebase.FirebaseApp;
+import com.google.cloud.storage.*;
 import com.google.firebase.cloud.StorageClient;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class FirebaseImgServiceImpl implements ImgService {
-
-    private final FirebaseApp firebaseApp;
 
     @Value("${firebase.storage.bucket}")
     private String firebaseStorageBucket;
@@ -37,21 +28,13 @@ public class FirebaseImgServiceImpl implements ImgService {
         validateStorageBucket();
 
         try {
-            Storage storage = StorageClient.getInstance(firebaseApp).bucket().getStorage();
-            
+            Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+
             // 파일명에 UUID를 추가하여 중복 방지
             String uniqueFileName = generateUniqueFileName(fileName);
-            
-            BlobId blobId = BlobId.of(firebaseStorageBucket, uniqueFileName);
-            BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
-                    .setContentType(file.getContentType())
-                    .build();
+            Blob blob = bucket.create(uniqueFileName, file.getInputStream(), file.getContentType());
 
-            Blob blob = storage.create(blobInfo, file.getBytes());
-            
-            // 공개 URL 생성
-            return String.format("https://storage.googleapis.com/%s/%s", 
-                                firebaseStorageBucket, uniqueFileName);
+            return blob.getMediaLink();
                                 
         } catch (Exception e) {
             throw new ApplicationException(ErrorCode.FILE_UPLOAD_FAILED);
@@ -63,11 +46,10 @@ public class FirebaseImgServiceImpl implements ImgService {
         validateStorageBucket();
 
         try {
-            Storage storage = StorageClient.getInstance(firebaseApp).bucket().getStorage();
-            BlobId blobId = BlobId.of(firebaseStorageBucket, fileName);
+            Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+            Blob blob = bucket.get(fileName);
             
-            boolean deleted = storage.delete(blobId);
-            if (!deleted) {
+            if (blob == null || !blob.delete()) {
                 throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
             }
         } catch (Exception e) {
@@ -81,8 +63,22 @@ public class FirebaseImgServiceImpl implements ImgService {
     @Override
     public String getImageUrl(String fileName) {
         validateStorageBucket();
-        return String.format("https://storage.googleapis.com/%s/%s", 
-                            firebaseStorageBucket, fileName);
+        
+        try {
+            Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+            Blob blob = bucket.get(fileName);
+            
+            if (blob == null) {
+                throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
+            }
+            
+            return blob.getMediaLink();
+        } catch (Exception e) {
+            if (e instanceof ApplicationException) {
+                throw e;
+            }
+            throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
+        }
     }
 
     private void validateFile(MultipartFile file) {
