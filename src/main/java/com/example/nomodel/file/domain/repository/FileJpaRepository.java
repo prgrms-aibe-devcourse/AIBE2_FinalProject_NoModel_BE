@@ -102,4 +102,16 @@ public interface FileJpaRepository extends JpaRepository<File, Long> {
      * ContentType별 파일 조회
      */
     List<File> findByContentType(String contentType);
+
+    /**
+     * 여러 모델의 썸네일 파일을 일괄 조회 (N+1 쿼리 방지)
+     */
+    @Query("SELECT f FROM File f WHERE f.relationType = 'MODEL' AND f.relationId IN :modelIds AND f.fileType = 'THUMBNAIL' ORDER BY f.relationId, f.createdAt ASC")
+    List<File> findThumbnailFilesByModelIds(@Param("modelIds") List<Long> modelIds);
+
+    /**
+     * 여러 모델의 이미지 파일을 일괄 조회 (N+1 쿼리 방지)
+     */
+    @Query("SELECT f FROM File f WHERE f.relationType = 'MODEL' AND f.relationId IN :modelIds AND f.contentType LIKE 'image/%' ORDER BY f.relationId, f.createdAt ASC")
+    List<File> findImageFilesByModelIds(@Param("modelIds") List<Long> modelIds);
 }
