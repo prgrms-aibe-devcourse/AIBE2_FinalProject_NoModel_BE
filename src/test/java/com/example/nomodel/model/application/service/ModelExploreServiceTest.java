@@ -1,5 +1,8 @@
 package com.example.nomodel.model.application.service;
 
+import com.example.nomodel.file.domain.model.File;
+import com.example.nomodel.file.domain.model.FileType;
+import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.file.domain.repository.FileJpaRepository;
 import com.example.nomodel.model.application.dto.ModelGalleryResponse;
 import com.example.nomodel.model.domain.model.AIModel;
@@ -22,6 +25,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ModelExploreService 단위 테스트")
@@ -70,9 +76,9 @@ class ModelExploreServiceTest {
         // Given
         given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
                 .willReturn(List.of(adminModel));
-        given(fileRepository.findFirstThumbnailByRelation(any(), any()))
-                .willReturn(Optional.empty());
-        given(fileRepository.findImageFilesByRelation(any(), any()))
+        given(fileRepository.findThumbnailFilesByModelIds(any()))
+                .willReturn(List.of());
+        given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
 
         // When
@@ -95,9 +101,9 @@ class ModelExploreServiceTest {
         Long userId = 1L;
         given(aiModelRepository.findByOwnerId(userId))
                 .willReturn(List.of(userModel));
-        given(fileRepository.findFirstThumbnailByRelation(any(), any()))
-                .willReturn(Optional.empty());
-        given(fileRepository.findImageFilesByRelation(any(), any()))
+        given(fileRepository.findThumbnailFilesByModelIds(any()))
+                .willReturn(List.of());
+        given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
 
         // When
@@ -122,9 +128,9 @@ class ModelExploreServiceTest {
                 .willReturn(List.of(adminModel));
         given(aiModelRepository.findByOwnerId(userId))
                 .willReturn(List.of(userModel));
-        given(fileRepository.findFirstThumbnailByRelation(any(), any()))
-                .willReturn(Optional.empty());
-        given(fileRepository.findImageFilesByRelation(any(), any()))
+        given(fileRepository.findThumbnailFilesByModelIds(any()))
+                .willReturn(List.of());
+        given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
 
         // When
@@ -154,5 +160,53 @@ class ModelExploreServiceTest {
         assertThat(response.totalCount()).isEqualTo(0);
         assertThat(response.adminModelCount()).isEqualTo(0);
         assertThat(response.userModelCount()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("N+1 쿼리 방지를 위해 일괄 조회 메서드를 사용한다")
+    void convertToGalleryResponse_BatchQuery_UsesCorrectMethods() {
+        // Given
+        given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
+                .willReturn(List.of(adminModel));
+        given(fileRepository.findThumbnailFilesByModelIds(any()))
+                .willReturn(List.of());
+        given(fileRepository.findImageFilesByModelIds(any()))
+                .willReturn(List.of());
+
+        // When
+        ModelGalleryResponse response = modelExploreService.getAdminModels();
+
+        // Then
+        assertThat(response.totalCount()).isEqualTo(1);
+        assertThat(response.models()).hasSize(1);
+
+        // 일괄 조회 메서드가 호출되었는지 확인 (N+1 쿼리 방지)
+        verify(fileRepository, times(1)).findThumbnailFilesByModelIds(any());
+        verify(fileRepository, atMost(1)).findImageFilesByModelIds(any());
+        
+        // 개별 조회 메서드는 호출되지 않았는지 확인
+        verify(fileRepository, never()).findFirstThumbnailByRelation(any(), any());
+        verify(fileRepository, never()).findImageFilesByRelation(any(), any());
+    }
+
+    @Test
+    @DisplayName("빈 모델 목록에서는 파일 조회를 하지 않는다")
+    void convertToGalleryResponse_EmptyModels_SkipsFileQuery() {
+        // Given
+        given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
+                .willReturn(List.of());
+
+        // When
+        ModelGalleryResponse response = modelExploreService.getAdminModels();
+
+        // Then
+        assertThat(response.totalCount()).isEqualTo(0);
+        assertThat(response.models()).isEmpty();
+
+        // 파일 조회 메서드들이 호출되지 않았는지 확인
+        verify(fileRepository, never()).findThumbnailFilesByModelIds(any());
+        verify(fileRepository, never()).findImageFilesByModelIds(any());
+        verify(fileRepository, never()).findFirstThumbnailByRelation(any(), any());
+        verify(fileRepository, never()).findImageFilesByRelation(any(), any());
     }
 }
