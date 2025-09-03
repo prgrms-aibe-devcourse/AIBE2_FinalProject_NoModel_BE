@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "File Test API", description = "파일 업로드 테스트 API")
 @RestController
-@RequestMapping("/api/test/files")
+@RequestMapping("/test/files")
 @RequiredArgsConstructor
 public class FileTestController {
 
