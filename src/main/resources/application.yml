@@ -23,4 +23,4 @@ firebase:
   config:
     key-path: ${FIREBASE_KEY:classpath:key/FirebaseKey.json}
   storage:
-    bucket: ${FIREBASE_STORAGE:}
+    bucket: ${FIREBASE_STORAGE_BUCKET:}
