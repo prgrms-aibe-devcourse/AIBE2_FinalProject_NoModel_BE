@@ -1,5 +1,6 @@
 package com.example.nomodel.report.domain.repository;
 
+import com.example.nomodel.report.application.dto.AdminReportSummaryDto;
 import com.example.nomodel.report.domain.model.Report;
 import com.example.nomodel.report.domain.model.ReportStatus;
 import com.example.nomodel.report.domain.model.TargetType;
@@ -9,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface ReportJpaRepository extends JpaRepository<Report, Long> {
 
@@ -101,4 +101,17 @@ public interface ReportJpaRepository extends JpaRepository<Report, Long> {
      */
     @Query("SELECT r FROM Report r WHERE r.reportStatus = 'PENDING' AND r.createdAt < :threshold ORDER BY r.createdAt ASC")
     List<Report> findOldPendingReports(@Param("threshold") LocalDateTime threshold);
+    
+    @Query("""
+        select new com.example.nomodel.report.application.dto.AdminReportSummaryDto(
+            count(r),
+            sum(case when r.reportStatus = 'ACCEPTED' then 1 else 0 end),
+            sum(case when r.reportStatus = 'PENDING' then 1 else 0 end),
+            sum(case when r.reportStatus = 'UNDER_REVIEW' then 1 else 0 end),
+            sum(case when r.reportStatus = 'RESOLVED' then 1 else 0 end),
+            sum(case when r.reportStatus = 'REJECTED' then 1 else 0 end)
+        )
+        from Report r
+        """)
+    AdminReportSummaryDto summarizeByStatus();
 }
