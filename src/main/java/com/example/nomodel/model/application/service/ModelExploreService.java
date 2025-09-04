@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -93,34 +94,55 @@ public class ModelExploreService {
     
     /**
      * 여러 모델의 썸네일 URL을 일괄 조회 (N+1 쿼리 방지)
+     * 우선순위: 1. 대표 이미지(isPrimary) 2. 썸네일(THUMBNAIL) 3. 일반 이미지
      */
     private Map<Long, String> getThumbnailUrlMap(List<Long> modelIds) {
-        // 1. 모든 썸네일 파일 조회
-        List<File> thumbnailFiles = fileRepository.findThumbnailFilesByModelIds(modelIds);
-        Map<Long, String> thumbnailMap = thumbnailFiles.stream()
+        Map<Long, String> resultMap = new HashMap<>();
+        
+        // 1. 대표 이미지 우선 조회
+        List<File> primaryFiles = fileRepository.findPrimaryImagesByModelIds(modelIds);
+        Map<Long, String> primaryMap = primaryFiles.stream()
                 .collect(Collectors.toMap(
                         File::getRelationId,
                         File::getFileUrl,
                         (existing, replacement) -> existing // 중복시 첫 번째 유지
                 ));
+        resultMap.putAll(primaryMap);
         
-        // 2. 썸네일이 없는 모델들의 ID 찾기
-        List<Long> missingThumbnailModelIds = modelIds.stream()
-                .filter(modelId -> !thumbnailMap.containsKey(modelId))
+        // 2. 대표 이미지가 없는 모델들의 ID 찾기
+        List<Long> noPrimaryModelIds = modelIds.stream()
+                .filter(modelId -> !resultMap.containsKey(modelId))
                 .toList();
         
-        // 3. 썸네일이 없는 모델들의 이미지 파일 조회
-        if (!missingThumbnailModelIds.isEmpty()) {
-            List<File> imageFiles = fileRepository.findImageFilesByModelIds(missingThumbnailModelIds);
-            Map<Long, String> imageMap = imageFiles.stream()
+        if (!noPrimaryModelIds.isEmpty()) {
+            // 3. 썸네일 파일 조회
+            List<File> thumbnailFiles = fileRepository.findThumbnailFilesByModelIds(noPrimaryModelIds);
+            Map<Long, String> thumbnailMap = thumbnailFiles.stream()
                     .collect(Collectors.toMap(
                             File::getRelationId,
                             File::getFileUrl,
                             (existing, replacement) -> existing // 중복시 첫 번째 유지
                     ));
-            thumbnailMap.putAll(imageMap);
+            resultMap.putAll(thumbnailMap);
+            
+            // 4. 썸네일도 없는 모델들의 ID 찾기
+            List<Long> noThumbnailModelIds = noPrimaryModelIds.stream()
+                    .filter(modelId -> !resultMap.containsKey(modelId))
+                    .toList();
+            
+            // 5. 일반 이미지 파일 조회
+            if (!noThumbnailModelIds.isEmpty()) {
+                List<File> imageFiles = fileRepository.findImageFilesByModelIds(noThumbnailModelIds);
+                Map<Long, String> imageMap = imageFiles.stream()
+                        .collect(Collectors.toMap(
+                                File::getRelationId,
+                                File::getFileUrl,
+                                (existing, replacement) -> existing // 중복시 첫 번째 유지
+                        ));
+                resultMap.putAll(imageMap);
+            }
         }
         
-        return thumbnailMap;
+        return resultMap;
     }
 }
