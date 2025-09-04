@@ -1,6 +1,7 @@
 package com.example.nomodel.model.domain.model;
 
 import com.example.nomodel._core.common.BaseTimeEntity;
+import com.example.nomodel.model.infrastructure.AIModelEntityListener;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,6 +11,7 @@ import java.math.BigDecimal;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "ai_model_tb")
+@EntityListeners(AIModelEntityListener.class)
 public class AIModel extends BaseTimeEntity {
 
     @Id
