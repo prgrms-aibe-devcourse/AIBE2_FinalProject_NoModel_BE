@@ -1,6 +1,7 @@
 package com.example.nomodel.model.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
+import com.example.nomodel.model.application.dto.PageResponse;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,7 +43,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.search(keyword, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "접근 가능한 AI 모델 검색", description = "사용자가 접근 가능한 모델 검색 (본인 모델 + 공개 모델)")
@@ -54,9 +55,8 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.searchAccessibleModels(keyword, userId, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
-
 
     @Operation(summary = "고급 검색", description = "키워드와 태그를 조합한 검색")
     @GetMapping("/advanced")
@@ -67,7 +67,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.advancedSearch(keyword, tag, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "복합 필터 검색", description = "키워드, 태그, 가격 범위를 조합한 검색")
@@ -82,7 +82,7 @@ public class AIModelSearchController {
 
         Page<AIModelDocument> result = searchService.searchWithFilters(keyword, tag, 
                                                                       minPrice, maxPrice, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "태그별 검색", description = "특정 태그로 모델 검색")
@@ -93,7 +93,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.searchByTag(tag, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "소유자별 검색", description = "특정 소유자의 모델 검색")
@@ -104,7 +104,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.searchByOwner(ownerId, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "인기 모델 검색", description = "사용량과 평점 기준 인기 모델 검색")
@@ -114,7 +114,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getPopularModels(page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "최신 모델 검색", description = "최신 등록 순으로 모델 검색")
@@ -124,7 +124,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getRecentModels(page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "관리자 추천 모델", description = "관리자가 등록한 추천 모델 검색")
@@ -134,7 +134,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getRecommendedModels(page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "고평점 모델 검색", description = "지정한 평점 이상의 모델 검색")
@@ -145,7 +145,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getHighRatedModels(minRating, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "무료 모델 검색", description = "무료로 사용 가능한 모델 검색")
@@ -155,9 +155,8 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getFreeModels(page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
-
 
     @Operation(summary = "가격 범위 검색", description = "지정한 가격 범위 내의 모델 검색")
     @GetMapping("/price-range")
@@ -168,9 +167,8 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.searchByPriceRange(minPrice, maxPrice, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
-
 
     @Operation(summary = "모델명 자동완성", description = "모델명 자동완성을 위한 제안 목록")
     @GetMapping("/suggestions")
@@ -189,7 +187,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.getSimilarModels(modelId, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "모델 상세 정보", description = "문서 ID로 모델 상세 정보 조회")
@@ -213,7 +211,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
         Page<AIModelDocument> result = searchService.searchWithHighlight(keyword, page, size);
-        return ResponseEntity.ok(ApiUtils.success(result));
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
     @Operation(summary = "모델 사용량 증가", description = "모델 사용 시 사용량 카운트 증가")

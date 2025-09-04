@@ -49,6 +49,7 @@ public class SecurityConfig {
             "/h2-console/**",
             "/favicon.ico",
             "/test/**",          // 테스트 API 허용
+            "/models/sync/**",   // 동기화 API 허용 (개발/테스트용)
     };
 
     private static final String[] ADMIN_LIST = {
