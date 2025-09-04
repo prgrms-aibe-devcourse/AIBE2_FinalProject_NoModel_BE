@@ -51,7 +51,7 @@ public class AdminReportController {
           @RequestBody ProcessReportDto request
   ) {
     AdminReportDto result = adminReportService.processReport(reportId, request);
-    return ResponseEntity.ok(result);
+    return ResponseEntity.ok(ApiUtils.success(result));
   }
   
   private static <E extends Enum<E>> E parseEnumOrNull(Class<E> type, String raw) {
