@@ -15,9 +15,6 @@ public class PointTransaction {
     private Long memberId;
 
     @Enumerated(EnumType.STRING)
-    private TransactionDirection direction;
-
-    @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
 
     private BigDecimal pointAmount;
@@ -27,6 +24,9 @@ public class PointTransaction {
     @Enumerated(EnumType.STRING)
     private RefererType refererType;
     private Long refererId;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionDirection direction;
 
     private LocalDateTime createdAt;
 

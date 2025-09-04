@@ -20,6 +20,14 @@ public class MemberPointBalance {
 
     protected MemberPointBalance() {}
 
+    public MemberPointBalance(Long memberId, BigDecimal availablePoints) {
+        this.memberId = memberId;
+        this.totalPoints = availablePoints;
+        this.availablePoints = availablePoints;
+        this.pendingPoints = BigDecimal.ZERO;
+        this.reservedPoints = BigDecimal.ZERO;
+    }
+
     public MemberPointBalance(Long memberId) {
         this.memberId = memberId;
         this.totalPoints = BigDecimal.ZERO;
@@ -27,6 +35,7 @@ public class MemberPointBalance {
         this.pendingPoints = BigDecimal.ZERO;
         this.reservedPoints = BigDecimal.ZERO;
     }
+
 
     // getter
     public Long getMemberId() { return memberId; }
