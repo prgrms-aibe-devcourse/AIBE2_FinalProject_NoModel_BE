@@ -48,4 +48,26 @@ public class ReviewService {
                 .map(ReviewResponse::from)
                 .collect(Collectors.toList());
     }
+
+    //리뷰 수정 (본인만 가능)
+    public ReviewResponse updateReview(Long reviewerId, Long reviewId, ReviewRequest request) {
+        // 1. 리뷰 존재 여부 확인
+        ModelReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 2. 권한 확인 (본인만 가능)
+        if (!review.getReviewerId().equals(reviewerId)) {
+            throw new ApplicationException(ErrorCode.REVIEW_NOT_ALLOWED);
+        }
+
+        // 3. 리뷰 내용 업데이트
+        review.update(
+                new Rating(request.getRating()),
+                request.getContent()
+        );
+
+        // 4. 저장 후 DTO 변환
+        return ReviewResponse.from(reviewRepository.save(review));
+    }
+
 }
