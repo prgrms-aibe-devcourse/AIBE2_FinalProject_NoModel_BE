@@ -6,7 +6,9 @@ import com.example.nomodel.review.application.dto.request.ReviewRequest;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import com.example.nomodel.review.domain.model.ModelReview;
 import com.example.nomodel.review.domain.model.Rating;
+import com.example.nomodel.review.domain.model.ReviewStatus;
 import com.example.nomodel.review.domain.repository.ReviewRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -69,5 +71,20 @@ public class ReviewService {
         // 4. 저장 후 DTO 변환
         return ReviewResponse.from(reviewRepository.save(review));
     }
+
+    //리뷰 삭제
+    @Transactional
+    public void deleteReview(Long reviewerId, Long reviewId) {
+        ModelReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        if (!review.getReviewerId().equals(reviewerId)) {
+            throw new ApplicationException(ErrorCode.REVIEW_NOT_ALLOWED);
+        }
+
+        review.deactivate(ReviewStatus.DELETED);
+        reviewRepository.save(review); // soft delete 반영
+    }
+
 
 }
