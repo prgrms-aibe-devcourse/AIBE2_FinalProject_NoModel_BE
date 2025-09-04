@@ -32,7 +32,6 @@ public class AIModelSearchService {
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
      */
     public Page<AIModelDocument> search(String keyword, int page, int size) {
-        log.info("AI 모델 통합 검색: keyword={}, page={}, size={}", keyword, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         
@@ -49,8 +48,6 @@ public class AIModelSearchService {
      * 사용자 접근 가능한 모델 검색 (본인 모델 + 공개 모델)
      */
     public Page<AIModelDocument> searchAccessibleModels(String keyword, Long userId, int page, int size) {
-        log.info("접근 가능한 AI 모델 검색: keyword={}, userId={}, page={}, size={}", 
-                keyword, userId, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         
@@ -66,8 +63,6 @@ public class AIModelSearchService {
      * 고급 검색 - 태그와 키워드 조합
      */
     public Page<AIModelDocument> advancedSearch(String keyword, String tag, int page, int size) {
-        log.info("AI 모델 고급 검색: keyword={}, tag={}, page={}, size={}", 
-                keyword, tag, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithMultipleFilters(keyword, tag, BigDecimal.ZERO, new BigDecimal("999999"), pageable);
@@ -78,8 +73,6 @@ public class AIModelSearchService {
      */
     public Page<AIModelDocument> searchWithFilters(String keyword, String tag, 
                                                   BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        log.info("AI 모델 복합 필터 검색: keyword={}, tag={}, priceRange={}-{}", 
-                keyword, tag, minPrice, maxPrice);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithMultipleFilters(keyword, tag, minPrice, maxPrice, pageable);
@@ -89,7 +82,6 @@ public class AIModelSearchService {
      * 태그로 검색
      */
     public Page<AIModelDocument> searchByTag(String tag, int page, int size) {
-        log.info("태그별 AI 모델 검색: tag={}, page={}, size={}", tag, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.searchByTag(tag, pageable);
@@ -99,7 +91,6 @@ public class AIModelSearchService {
      * 소유자별 검색
      */
     public Page<AIModelDocument> searchByOwner(Long ownerId, int page, int size) {
-        log.info("소유자별 AI 모델 검색: ownerId={}, page={}, size={}", ownerId, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.findByOwnerId(ownerId, pageable);
@@ -109,7 +100,6 @@ public class AIModelSearchService {
      * 인기 모델 검색 (사용량 + 평점 기준)
      */
     public Page<AIModelDocument> getPopularModels(int page, int size) {
-        log.info("인기 AI 모델 검색: page={}, size={}", page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findPopularModels(pageable);
@@ -119,7 +109,6 @@ public class AIModelSearchService {
      * 최신 모델 검색
      */
     public Page<AIModelDocument> getRecentModels(int page, int size) {
-        log.info("최신 AI 모델 검색: page={}, size={}", page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findRecentModels(pageable);
@@ -129,7 +118,6 @@ public class AIModelSearchService {
      * 관리자 추천 모델 검색
      */
     public Page<AIModelDocument> getRecommendedModels(int page, int size) {
-        log.info("관리자 추천 AI 모델 검색: page={}, size={}", page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findRecommendedModels(pageable);
@@ -139,7 +127,6 @@ public class AIModelSearchService {
      * 평점 높은 모델 검색
      */
     public Page<AIModelDocument> getHighRatedModels(Double minRating, int page, int size) {
-        log.info("고평점 AI 모델 검색: minRating={}, page={}, size={}", minRating, page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findHighRatedModels(minRating, pageable);
@@ -149,7 +136,6 @@ public class AIModelSearchService {
      * 무료 모델 검색
      */
     public Page<AIModelDocument> getFreeModels(int page, int size) {
-        log.info("무료 AI 모델 검색: page={}, size={}", page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("rating").descending());
         return searchRepository.findFreeModels(pageable);
@@ -159,8 +145,6 @@ public class AIModelSearchService {
      * 가격 범위로 검색
      */
     public Page<AIModelDocument> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        log.info("가격 범위 AI 모델 검색: priceRange={}-{}, page={}, size={}", 
-                minPrice, maxPrice, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("price").ascending());
         return searchRepository.searchByPriceRange(minPrice, maxPrice, pageable);
@@ -171,7 +155,6 @@ public class AIModelSearchService {
      * 자동완성 제안 (completion suggester 기반)
      */
     public List<AIModelDocument> getModelNameSuggestions(String prefix) {
-        log.info("AI 모델명 자동완성: prefix={}", prefix);
         return searchRepository.findModelNameSuggestions(prefix);
     }
 
@@ -179,7 +162,6 @@ public class AIModelSearchService {
      * 부분 모델명 검색 (edge n-gram 기반)
      */
     public Page<AIModelDocument> searchByPartialName(String partial, int page, int size) {
-        log.info("AI 모델 부분 검색: partial={}, page={}, size={}", partial, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchByPartialName(partial, pageable);
@@ -189,7 +171,6 @@ public class AIModelSearchService {
      * 유사 모델 검색
      */
     public Page<AIModelDocument> getSimilarModels(String modelId, int page, int size) {
-        log.info("유사 AI 모델 검색: modelId={}, page={}, size={}", modelId, page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findSimilarModels(modelId, pageable);
@@ -199,7 +180,6 @@ public class AIModelSearchService {
      * 모델 ID로 검색
      */
     public Optional<AIModelDocument> findById(String documentId) {
-        log.info("AI 모델 문서 ID로 검색: documentId={}", documentId);
         return searchRepository.findById(documentId);
     }
 
@@ -207,7 +187,6 @@ public class AIModelSearchService {
      * 하이라이트 기능을 포함한 검색
      */
     public Page<AIModelDocument> searchWithHighlight(String keyword, int page, int size) {
-        log.info("하이라이트 AI 모델 검색: keyword={}, page={}, size={}", keyword, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithHighlight(keyword, pageable);
