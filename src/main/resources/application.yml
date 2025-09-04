@@ -11,16 +11,4 @@ spring:
       - optional:file:.env[.properties]
       - optional:classpath:config/application-docker.yml
       - optional:classpath:config/application-monitoring.yml
-
-# JWT 설정
-jwt:
-  secret: ${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-security}
-  access-token-lifetime: ${JWT_ACCESS_TOKEN_LIFETIME:1800000}  # 30분 (30 * 60 * 1000)
-  refresh-token-lifetime: ${JWT_REFRESH_TOKEN_LIFETIME:259200000}  # 3일 (3 * 24 * 60 * 60 * 1000)
-
-# Firebase 설정
-firebase:
-  config:
-    key-path: ${FIREBASE_KEY:classpath:key/FirebaseKey.json}
-  storage:
-    bucket: ${FIREBASE_STORAGE_BUCKET:}
+      - optional:classpath:config/external-services.yml
