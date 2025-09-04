@@ -1,9 +1,10 @@
 package com.example.nomodel._core.config;
 
-import com.example.nomodel._core.exception.ApplicationException;
-import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.security.jwt.JWTTokenFilter;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
+import com.example.nomodel._core.security.oauth2.CustomOAuth2UserService;
+import com.example.nomodel._core.security.oauth2.OAuth2SuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +14,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -22,10 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +30,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JWTTokenProvider jwtTokenProvider;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     private static final String[] WHITE_LIST = {
             "/",
@@ -48,6 +47,8 @@ public class SecurityConfig {
             "/actuator/**",      // 이미 올바름
             "/h2-console/**",
             "/favicon.ico",
+            "/oauth2/**",
+            "/login/**"
     };
 
     private static final String[] ADMIN_LIST = {
@@ -57,11 +58,6 @@ public class SecurityConfig {
     private static final String[] BAN_LIST = {
             "/vendor/**"
     };
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -95,7 +91,12 @@ public class SecurityConfig {
                     exception.accessDeniedHandler(accessDeniedHandler());
                 })
                 // JWT 필터 활성화
-                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                        .successHandler(oAuth2SuccessHandler)
+                )
+        ;
 
         return httpSecurity.build();
     }
