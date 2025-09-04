@@ -11,15 +11,8 @@
           "lowercase"
         ]
       },
-      "edge_ngram_analyzer": {
-        "tokenizer": "standard",
-        "filter": [
-          "lowercase",
-          "edge_ngram_filter"
-        ]
-      },
       "nori_search_analyzer": {
-        "type": "custom", 
+        "type": "custom",
         "tokenizer": "nori_tokenizer",
         "filter": [
           "nori_posfilter"
@@ -34,11 +27,6 @@
       }
     },
     "filter": {
-      "edge_ngram_filter": {
-        "type": "edge_ngram",
-        "min_gram": 2,
-        "max_gram": 20
-      },
       "nori_posfilter": {
         "type": "nori_part_of_speech",
         "stoptags": [

@@ -7,9 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.CompletionField;
 import org.springframework.data.elasticsearch.annotations.Setting;
 import org.springframework.data.elasticsearch.annotations.Mapping;
 
@@ -33,98 +30,76 @@ public class AIModelDocument {
     /**
      * 원본 AIModel의 데이터베이스 ID
      */
-    @Field(type = FieldType.Long)
     private Long modelId;
 
     /**
      * 모델명 (한국어 분석기 적용)
      */
-    @Field(type = FieldType.Text, analyzer = "nori_analyzer", searchAnalyzer = "nori_search_analyzer")
     private String modelName;
 
     /**
      * 자동완성을 위한 모델명 (completion suggester)
      */
-    @CompletionField(maxInputLength = 100)
     private String suggest;
-
-    /**
-     * 부분 검색을 위한 모델명 (edge n-gram)
-     */
-    @Field(type = FieldType.Text, analyzer = "edge_ngram_analyzer", searchAnalyzer = "nori_search_analyzer")
-    private String modelNameEdgeNgram;
 
     /**
      * 모델 프롬프트 (검색용)
      */
-    @Field(type = FieldType.Text, analyzer = "nori_analyzer", searchAnalyzer = "nori_search_analyzer")
     private String prompt;
 
     /**
      * 모델 태그들 (검색용)
      */
-    @Field(type = FieldType.Keyword)
     private String[] tags;
 
     /**
      * 소유 타입 (USER, ADMIN)
      */
-    @Field(type = FieldType.Keyword)
     private String ownType;
 
     /**
      * 소유자 ID
      */
-    @Field(type = FieldType.Long)
     private Long ownerId;
 
     /**
      * 소유자 이름 (검색용)
      */
-    @Field(type = FieldType.Keyword)
     private String ownerName;
 
     /**
      * 가격
      */
-    @Field(type = FieldType.Double)
     private BigDecimal price;
 
     /**
      * 공개 여부
      */
-    @Field(type = FieldType.Boolean)
     private Boolean isPublic;
-
 
     /**
      * 사용량/인기도
      */
-    @Field(type = FieldType.Long)
     private Long usageCount;
 
     /**
      * 평점
      */
-    @Field(type = FieldType.Double)
     private Double rating;
 
     /**
      * 리뷰 수
      */
-    @Field(type = FieldType.Long)
     private Long reviewCount;
 
     /**
      * 생성일
      */
-    @Field(type = FieldType.Date)
     private LocalDateTime createdAt;
 
     /**
      * 수정일
      */
-    @Field(type = FieldType.Date)
     private LocalDateTime updatedAt;
 
     @Builder
@@ -136,7 +111,6 @@ public class AIModelDocument {
         this.modelId = modelId;
         this.modelName = modelName;
         this.suggest = modelName; // 자동완성용 (모델명과 동일)
-        this.modelNameEdgeNgram = modelName; // 부분 검색용 (모델명과 동일)
         this.prompt = prompt;
         this.tags = tags;
         this.ownType = ownType;

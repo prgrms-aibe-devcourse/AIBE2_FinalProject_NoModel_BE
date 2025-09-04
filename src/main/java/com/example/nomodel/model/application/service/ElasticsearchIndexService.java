@@ -41,7 +41,7 @@ public class ElasticsearchIndexService {
     }
 
     /**
-     * ai-models 인덱스를 설정에 따라 재생성
+     * ai-models 인덱스를 설정에 따라 재생성 (settings + mappings 분리)
      */
     public void recreateAIModelsIndex(boolean useKoreanAnalyzer) {
         try {
@@ -53,10 +53,15 @@ public class ElasticsearchIndexService {
                 indexOps.delete();
             }
 
-            // 새로운 인덱스 생성 (설정 파일 사용)
+            // 1. settings로 인덱스 생성
             log.info("새로운 ai-models 인덱스 생성 중... (한글 분석기: {})", useKoreanAnalyzer);
-            Document settings = loadIndexSettings(useKoreanAnalyzer);
+            Document settings = loadSettings();
             indexOps.create(settings);
+            
+            // 2. mappings 적용
+            log.info("인덱스 매핑 적용 중...");
+            Document mappings = loadMappings();
+            indexOps.putMapping(mappings);
             
             log.info("ai-models 인덱스가 성공적으로 재생성되었습니다.");
             
@@ -69,20 +74,9 @@ public class ElasticsearchIndexService {
     /**
      * 인덱스 설정 파일 로드
      */
-    private Document loadIndexSettings() {
-        return loadIndexSettings(false);
-    }
-
-    /**
-     * 인덱스 설정 파일 로드 (한글 분석기 옵션)
-     */
-    private Document loadIndexSettings(boolean useKoreanAnalyzer) {
+    private Document loadSettings() {
         try {
-            String settingsFile = useKoreanAnalyzer 
-                ? "elasticsearch/ai-models-index-settings-korean.json"
-                : "elasticsearch/ai-models-index-settings.json";
-                
-            ClassPathResource resource = new ClassPathResource(settingsFile);
+            ClassPathResource resource = new ClassPathResource("elasticsearch/ai-models-settings.json");
             try (InputStream inputStream = resource.getInputStream()) {
                 JsonNode jsonNode = objectMapper.readTree(inputStream);
                 Map<String, Object> settingsMap = objectMapper.convertValue(jsonNode, Map.class);
@@ -91,6 +85,23 @@ public class ElasticsearchIndexService {
         } catch (Exception e) {
             log.error("인덱스 설정 파일 로드 실패", e);
             throw new RuntimeException("인덱스 설정 로드 실패", e);
+        }
+    }
+
+    /**
+     * 인덱스 매핑 파일 로드
+     */
+    private Document loadMappings() {
+        try {
+            ClassPathResource resource = new ClassPathResource("elasticsearch/ai-models-mappings.json");
+            try (InputStream inputStream = resource.getInputStream()) {
+                JsonNode jsonNode = objectMapper.readTree(inputStream);
+                Map<String, Object> mappingsMap = objectMapper.convertValue(jsonNode, Map.class);
+                return Document.from(mappingsMap);
+            }
+        } catch (Exception e) {
+            log.error("인덱스 매핑 파일 로드 실패", e);
+            throw new RuntimeException("인덱스 매핑 로드 실패", e);
         }
     }
 
