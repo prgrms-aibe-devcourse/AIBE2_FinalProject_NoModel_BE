@@ -31,27 +31,14 @@
         "nori_tokenizer": {
           "type": "nori_tokenizer",
           "decompound_mode": "mixed",
-          "discard_punctuation": true,
-          "user_dictionary_rules": [
-            "GPT",
-            "ChatGPT", 
-            "DALL-E",
-            "Stable Diffusion",
-            "Midjourney",
-            "Claude",
-            "Gemini"
-          ]
+          "discard_punctuation": true
         }
       },
       "filter": {
         "edge_ngram_filter": {
           "type": "edge_ngram",
           "min_gram": 2,
-          "max_gram": 20,
-          "token_chars": [
-            "letter",
-            "digit"
-          ]
+          "max_gram": 20
         },
         "nori_posfilter": {
           "type": "nori_part_of_speech",

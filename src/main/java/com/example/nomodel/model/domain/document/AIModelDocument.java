@@ -10,6 +10,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.CompletionField;
+import org.springframework.data.elasticsearch.annotations.Setting;
+import org.springframework.data.elasticsearch.annotations.Mapping;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,6 +23,8 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Document(indexName = "ai-models")
+@Setting(settingPath = "/elasticsearch/ai-models-settings.json")
+@Mapping(mappingPath = "/elasticsearch/ai-models-mappings.json")
 public class AIModelDocument {
 
     @Id
@@ -33,9 +37,9 @@ public class AIModelDocument {
     private Long modelId;
 
     /**
-     * 모델명 (표준 분석기 적용)
+     * 모델명 (한국어 분석기 적용)
      */
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "nori_analyzer", searchAnalyzer = "nori_search_analyzer")
     private String modelName;
 
     /**
@@ -47,13 +51,13 @@ public class AIModelDocument {
     /**
      * 부분 검색을 위한 모델명 (edge n-gram)
      */
-    @Field(type = FieldType.Text, analyzer = "edge_ngram_analyzer", searchAnalyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "edge_ngram_analyzer", searchAnalyzer = "nori_search_analyzer")
     private String modelNameEdgeNgram;
 
     /**
      * 모델 프롬프트 (검색용)
      */
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "nori_analyzer", searchAnalyzer = "nori_search_analyzer")
     private String prompt;
 
     /**
