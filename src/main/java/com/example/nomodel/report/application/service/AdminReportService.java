@@ -62,7 +62,7 @@ public class AdminReportService {
     report.setReportStatus(req.getReportStatus());
     report.setUpdatedAt(LocalDateTime.now());
     
-    if (req.getReportStatus() == ReportStatus.ACCEPTED) {
+    if (req.getReportStatus() == ReportStatus.RESOLVED) {
       switch (report.getTargetType()) {
         case REVIEW -> suspendUserByReport(report, req);
         case MODEL -> suspendModelByReport(report, req);
@@ -79,7 +79,7 @@ public class AdminReportService {
     }
     // adminNote 필수 상태
     if (req.getAdminNote() == null || req.getAdminNote().isBlank()) {
-      if (req.getReportStatus() == ReportStatus.ACCEPTED
+      if (req.getReportStatus() == ReportStatus.RESOLVED
               || req.getReportStatus() == ReportStatus.UNDER_REVIEW
               || req.getReportStatus() == ReportStatus.REJECTED
               || req.getReportStatus() == ReportStatus.RESOLVED) {
