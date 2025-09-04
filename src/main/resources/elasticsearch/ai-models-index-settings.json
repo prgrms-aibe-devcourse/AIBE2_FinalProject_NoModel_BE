@@ -16,11 +16,7 @@
         "edge_ngram_filter": {
           "type": "edge_ngram",
           "min_gram": 2,
-          "max_gram": 20,
-          "token_chars": [
-            "letter",
-            "digit"
-          ]
+          "max_gram": 20
         }
       }
     }

@@ -1,0 +1,77 @@
+{
+  "properties": {
+    "modelId": {
+      "type": "long"
+    },
+    "modelName": {
+      "type": "text",
+      "analyzer": "nori_analyzer",
+      "search_analyzer": "nori_search_analyzer",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        },
+        "ngram": {
+          "type": "text",
+          "analyzer": "edge_ngram_analyzer",
+          "search_analyzer": "nori_search_analyzer"
+        }
+      }
+    },
+    "suggest": {
+      "type": "completion",
+      "max_input_length": 100,
+      "preserve_separators": true,
+      "preserve_position_increments": true,
+      "contexts": [
+        {
+          "name": "isPublic",
+          "type": "category"
+        }
+      ]
+    },
+    "modelNameEdgeNgram": {
+      "type": "text",
+      "analyzer": "edge_ngram_analyzer",
+      "search_analyzer": "nori_search_analyzer"
+    },
+    "prompt": {
+      "type": "text",
+      "analyzer": "nori_analyzer",
+      "search_analyzer": "nori_search_analyzer"
+    },
+    "tags": {
+      "type": "keyword"
+    },
+    "ownType": {
+      "type": "keyword"
+    },
+    "ownerId": {
+      "type": "long"
+    },
+    "ownerName": {
+      "type": "keyword"
+    },
+    "price": {
+      "type": "double"
+    },
+    "isPublic": {
+      "type": "boolean"
+    },
+    "usageCount": {
+      "type": "long"
+    },
+    "rating": {
+      "type": "double"
+    },
+    "reviewCount": {
+      "type": "long"
+    },
+    "createdAt": {
+      "type": "date"
+    },
+    "updatedAt": {
+      "type": "date"
+    }
+  }
+}
