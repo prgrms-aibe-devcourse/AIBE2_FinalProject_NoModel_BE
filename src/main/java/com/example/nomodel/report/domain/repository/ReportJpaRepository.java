@@ -111,7 +111,6 @@ public interface ReportJpaRepository extends JpaRepository<Report, Long> {
     @Query("""
         select new com.example.nomodel.report.application.dto.response.AdminReportSummaryDto(
             count(r),
-            sum(case when r.reportStatus = 'ACCEPTED' then 1 else 0 end),
             sum(case when r.reportStatus = 'PENDING' then 1 else 0 end),
             sum(case when r.reportStatus = 'UNDER_REVIEW' then 1 else 0 end),
             sum(case when r.reportStatus = 'RESOLVED' then 1 else 0 end),
