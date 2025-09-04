@@ -95,13 +95,13 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     /**
      * 자동완성을 위한 모델명 검색 (completion suggester)
      */
-    @Query("{\"suggest\": {\"modelName_suggest\": {\"prefix\": \"?0\", \"completion\": {\"field\": \"suggest\", \"size\": 10, \"contexts\": {\"isPublic\": [\"true\"]}}}}}")
+    @Query("{\"suggest\": {\"modelName_suggest\": {\"prefix\": \"?0\", \"completion\": {\"field\": \"suggest\", \"size\": 10}}}}")
     List<AIModelDocument> findModelNameSuggestions(String prefix);
 
     /**
-     * 부분 검색을 위한 edge n-gram 검색
+     * 부분 검색을 위한 모델명 검색 (한글 분석기 활용)
      */
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"modelNameEdgeNgram\": \"?0\"}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}}")
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"modelName\": {\"query\": \"?0\", \"fuzziness\": \"AUTO\"}}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}}")
     Page<AIModelDocument> searchByPartialName(String partial, Pageable pageable);
 
     /**

@@ -1,6 +1,9 @@
 package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
+import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -25,6 +29,8 @@ public class ElasticsearchIndexService {
 
     private final ElasticsearchTemplate elasticsearchTemplate;
     private final ObjectMapper objectMapper;
+    private final AIModelJpaRepository aiModelJpaRepository;
+    private final AIModelSearchRepository aiModelSearchRepository;
 
     /**
      * ai-models 인덱스를 최신 설정으로 재생성
@@ -106,6 +112,58 @@ public class ElasticsearchIndexService {
     }
 
     /**
+     * MySQL에서 Elasticsearch로 모든 AI 모델 데이터 동기화
+     */
+    public long syncAllModelsToElasticsearch() {
+        try {
+            log.info("MySQL → Elasticsearch 전체 AI 모델 동기화 시작");
+            
+            // 1. MySQL에서 모든 AI 모델 조회
+            List<AIModel> allModels = aiModelJpaRepository.findAll();
+            log.info("MySQL에서 {} 개의 AI 모델 조회됨", allModels.size());
+            
+            // 2. Elasticsearch 인덱스 초기화
+            aiModelSearchRepository.deleteAll();
+            log.info("기존 Elasticsearch 데이터 삭제 완료");
+            
+            // 3. 각 모델을 Elasticsearch에 색인
+            long indexedCount = 0;
+            for (AIModel model : allModels) {
+                try {
+                    String ownerName = getOwnerName(model);
+                    AIModelDocument document = AIModelDocument.from(model, ownerName);
+                    aiModelSearchRepository.save(document);
+                    indexedCount++;
+                    
+                    if (indexedCount % 50 == 0) {
+                        log.info("진행 상황: {}/{} 모델 색인 완료", indexedCount, allModels.size());
+                    }
+                } catch (Exception e) {
+                    log.error("모델 색인 실패: modelId={}, error={}", model.getId(), e.getMessage());
+                }
+            }
+            
+            log.info("MySQL → Elasticsearch 동기화 완료: {} 개 모델 색인됨", indexedCount);
+            return indexedCount;
+            
+        } catch (Exception e) {
+            log.error("AI 모델 동기화 중 오류 발생", e);
+            throw new RuntimeException("동기화 실패", e);
+        }
+    }
+    
+    /**
+     * 소유자 이름 조회 (임시 구현 - Member 서비스 연동 필요)
+     */
+    private String getOwnerName(AIModel model) {
+        // TODO: MemberService에서 실제 소유자 이름을 조회해야 함
+        if (model.getOwnType() != null) {
+            return model.getOwnType().name() + "_USER_" + model.getOwnerId();
+        }
+        return "UNKNOWN_USER_" + model.getOwnerId();
+    }
+
+    /**
      * 인덱스 상태 확인
      */
     public boolean isIndexHealthy() {
@@ -115,6 +173,25 @@ public class ElasticsearchIndexService {
         } catch (Exception e) {
             log.warn("인덱스 상태 확인 중 오류 발생", e);
             return false;
+        }
+    }
+    
+    /**
+     * 인덱스 통계 정보 조회
+     */
+    public Map<String, Object> getIndexStats() {
+        try {
+            long totalDocuments = aiModelSearchRepository.count();
+            boolean indexExists = isIndexHealthy();
+            
+            return Map.of(
+                "indexExists", indexExists,
+                "totalDocuments", totalDocuments,
+                "indexName", "ai-models"
+            );
+        } catch (Exception e) {
+            log.error("인덱스 통계 조회 실패", e);
+            return Map.of("error", e.getMessage());
         }
     }
 }
