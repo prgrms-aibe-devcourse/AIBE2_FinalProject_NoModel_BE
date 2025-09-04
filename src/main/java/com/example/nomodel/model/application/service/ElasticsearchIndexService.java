@@ -33,23 +33,9 @@ public class ElasticsearchIndexService {
     private final AIModelSearchRepository aiModelSearchRepository;
 
     /**
-     * ai-models 인덱스를 최신 설정으로 재생성
+     * ai-models 인덱스를 재생성 (settings + mappings 분리)
      */
     public void recreateAIModelsIndex() {
-        recreateAIModelsIndex(false);
-    }
-
-    /**
-     * ai-models 인덱스를 한글 분석기 포함하여 재생성
-     */
-    public void recreateAIModelsIndexWithKorean() {
-        recreateAIModelsIndex(true);
-    }
-
-    /**
-     * ai-models 인덱스를 설정에 따라 재생성 (settings + mappings 분리)
-     */
-    public void recreateAIModelsIndex(boolean useKoreanAnalyzer) {
         try {
             IndexOperations indexOps = elasticsearchTemplate.indexOps(AIModelDocument.class);
             
@@ -60,7 +46,7 @@ public class ElasticsearchIndexService {
             }
 
             // 1. settings로 인덱스 생성
-            log.info("새로운 ai-models 인덱스 생성 중... (한글 분석기: {})", useKoreanAnalyzer);
+            log.info("새로운 ai-models 인덱스 생성 중...");
             Document settings = loadSettings();
             indexOps.create(settings);
             
