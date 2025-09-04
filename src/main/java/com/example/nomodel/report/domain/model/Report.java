@@ -62,14 +62,6 @@ public class Report extends BaseEntity {
         this.reportStatus = ReportStatus.UNDER_REVIEW;
     }
 
-    public void accept(String adminNote) {
-        if (this.reportStatus != ReportStatus.UNDER_REVIEW) {
-            throw new ApplicationException(ErrorCode.REPORT_INVALID_STATUS_TRANSITION);
-        }
-        this.reportStatus = ReportStatus.ACCEPTED;
-        this.adminNote = adminNote;
-    }
-
     public void reject(String adminNote) {
         if (this.reportStatus != ReportStatus.UNDER_REVIEW) {
             throw new ApplicationException(ErrorCode.REPORT_INVALID_STATUS_TRANSITION);
@@ -79,9 +71,6 @@ public class Report extends BaseEntity {
     }
 
     public void resolve(String adminNote) {
-        if (this.reportStatus != ReportStatus.ACCEPTED) {
-            throw new ApplicationException(ErrorCode.REPORT_INVALID_STATUS_TRANSITION);
-        }
         this.reportStatus = ReportStatus.RESOLVED;
         this.adminNote = adminNote;
     }
