@@ -23,26 +23,6 @@ public interface FileJpaRepository extends JpaRepository<File, Long> {
      */
     List<File> findByRelationTypeAndRelationIdAndFileType(RelationType relationType, Long relationId, FileType fileType);
 
-    /**
-     * 특정 관계의 썸네일 파일 조회
-     */
-    @Query("SELECT f FROM File f WHERE f.relationType = :relationType AND f.relationId = :relationId AND f.fileType = 'THUMBNAIL'")
-    List<File> findThumbnailsByRelation(@Param("relationType") RelationType relationType, 
-                                       @Param("relationId") Long relationId);
-
-    /**
-     * 특정 관계의 프리뷰 파일 조회
-     */
-    @Query("SELECT f FROM File f WHERE f.relationType = :relationType AND f.relationId = :relationId AND f.fileType = 'PREVIEW'")
-    List<File> findPreviewsByRelation(@Param("relationType") RelationType relationType, 
-                                     @Param("relationId") Long relationId);
-
-    /**
-     * 특정 관계의 첫 번째 썸네일 파일 조회
-     */
-    @Query("SELECT f FROM File f WHERE f.relationType = :relationType AND f.relationId = :relationId AND f.fileType = 'THUMBNAIL' ORDER BY f.createdAt ASC")
-    Optional<File> findFirstThumbnailByRelation(@Param("relationType") RelationType relationType, 
-                                               @Param("relationId") Long relationId);
 
     /**
      * 파일 타입별 조회
@@ -104,11 +84,6 @@ public interface FileJpaRepository extends JpaRepository<File, Long> {
      */
     List<File> findByContentType(String contentType);
 
-    /**
-     * 여러 모델의 썸네일 파일을 일괄 조회 (N+1 쿼리 방지)
-     */
-    @Query("SELECT f FROM File f WHERE f.relationType = 'MODEL' AND f.relationId IN :modelIds AND f.fileType = 'THUMBNAIL' ORDER BY f.relationId, f.createdAt ASC")
-    List<File> findThumbnailFilesByModelIds(@Param("modelIds") List<Long> modelIds);
 
     /**
      * 여러 모델의 이미지 파일을 일괄 조회 (N+1 쿼리 방지)
