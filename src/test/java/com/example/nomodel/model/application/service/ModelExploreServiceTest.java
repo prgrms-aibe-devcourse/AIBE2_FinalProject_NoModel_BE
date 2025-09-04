@@ -76,7 +76,7 @@ class ModelExploreServiceTest {
         // Given
         given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
                 .willReturn(List.of(adminModel));
-        given(fileRepository.findThumbnailFilesByModelIds(any()))
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
                 .willReturn(List.of());
         given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
@@ -101,7 +101,7 @@ class ModelExploreServiceTest {
         Long userId = 1L;
         given(aiModelRepository.findByOwnerId(userId))
                 .willReturn(List.of(userModel));
-        given(fileRepository.findThumbnailFilesByModelIds(any()))
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
                 .willReturn(List.of());
         given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
@@ -128,7 +128,7 @@ class ModelExploreServiceTest {
                 .willReturn(List.of(adminModel));
         given(aiModelRepository.findByOwnerId(userId))
                 .willReturn(List.of(userModel));
-        given(fileRepository.findThumbnailFilesByModelIds(any()))
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
                 .willReturn(List.of());
         given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
@@ -168,7 +168,7 @@ class ModelExploreServiceTest {
         // Given
         given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
                 .willReturn(List.of(adminModel));
-        given(fileRepository.findThumbnailFilesByModelIds(any()))
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
                 .willReturn(List.of());
         given(fileRepository.findImageFilesByModelIds(any()))
                 .willReturn(List.of());
@@ -181,11 +181,11 @@ class ModelExploreServiceTest {
         assertThat(response.models()).hasSize(1);
 
         // 일괄 조회 메서드가 호출되었는지 확인 (N+1 쿼리 방지)
-        verify(fileRepository, times(1)).findThumbnailFilesByModelIds(any());
-        verify(fileRepository, atMost(1)).findImageFilesByModelIds(any());
+        verify(fileRepository, times(1)).findPrimaryImagesByModelIds(any());
+        verify(fileRepository, never()).findImageFilesByModelIds(any()); // 대표 이미지가 없을 때만 호출됨
         
         // 개별 조회 메서드는 호출되지 않았는지 확인
-        verify(fileRepository, never()).findFirstThumbnailByRelation(any(), any());
+        verify(fileRepository, never()).findPrimaryByRelation(any(), any());
         verify(fileRepository, never()).findImageFilesByRelation(any(), any());
     }
 
@@ -204,9 +204,67 @@ class ModelExploreServiceTest {
         assertThat(response.models()).isEmpty();
 
         // 파일 조회 메서드들이 호출되지 않았는지 확인
-        verify(fileRepository, never()).findThumbnailFilesByModelIds(any());
+        verify(fileRepository, never()).findPrimaryImagesByModelIds(any());
         verify(fileRepository, never()).findImageFilesByModelIds(any());
-        verify(fileRepository, never()).findFirstThumbnailByRelation(any(), any());
+        verify(fileRepository, never()).findPrimaryByRelation(any(), any());
         verify(fileRepository, never()).findImageFilesByRelation(any(), any());
+    }
+
+    @Test
+    @DisplayName("대표 이미지가 없을 때 일반 이미지로 폴백한다")
+    void getThumbnailUrlMap_FallbackToRegularImages_WhenNoPrimaryImages() {
+        // Given
+        given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
+                .willReturn(List.of(adminModel));
+        
+        // 대표 이미지는 없음 
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
+                .willReturn(List.of());
+        
+        // 일반 이미지는 있음
+        File regularImageFile = mock(File.class);
+        given(regularImageFile.getRelationId()).willReturn(adminModel.getId());
+        given(regularImageFile.getFileUrl()).willReturn("http://example.com/regular-image.jpg");
+        given(fileRepository.findImageFilesByModelIds(any()))
+                .willReturn(List.of(regularImageFile));
+
+        // When
+        ModelGalleryResponse response = modelExploreService.getAdminModels();
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.models()).hasSize(1);
+        assertThat(response.models().get(0).thumbnailUrl()).isEqualTo("http://example.com/regular-image.jpg");
+
+        // 대표 이미지 조회 후 일반 이미지로 폴백했는지 확인
+        verify(fileRepository, times(1)).findPrimaryImagesByModelIds(any());
+        verify(fileRepository, times(1)).findImageFilesByModelIds(any());
+    }
+
+    @Test
+    @DisplayName("대표 이미지가 있을 때는 일반 이미지를 조회하지 않는다")
+    void getThumbnailUrlMap_UsesPrimaryImages_SkipsRegularImages() {
+        // Given
+        given(aiModelRepository.findByOwnTypeAndIsPublicTrue(OwnType.ADMIN))
+                .willReturn(List.of(adminModel));
+        
+        // 대표 이미지 있음
+        File primaryImageFile = mock(File.class);
+        given(primaryImageFile.getRelationId()).willReturn(adminModel.getId());
+        given(primaryImageFile.getFileUrl()).willReturn("http://example.com/primary-image.jpg");
+        given(fileRepository.findPrimaryImagesByModelIds(any()))
+                .willReturn(List.of(primaryImageFile));
+
+        // When
+        ModelGalleryResponse response = modelExploreService.getAdminModels();
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.models()).hasSize(1);
+        assertThat(response.models().get(0).thumbnailUrl()).isEqualTo("http://example.com/primary-image.jpg");
+
+        // 대표 이미지만 조회하고 일반 이미지는 조회하지 않았는지 확인
+        verify(fileRepository, times(1)).findPrimaryImagesByModelIds(any());
+        verify(fileRepository, never()).findImageFilesByModelIds(any());
     }
 }
