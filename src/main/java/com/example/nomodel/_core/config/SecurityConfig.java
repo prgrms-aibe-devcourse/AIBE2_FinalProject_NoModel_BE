@@ -37,18 +37,18 @@ public class SecurityConfig {
     private static final String[] WHITE_LIST = {
             "/",
             "/error",
-            "/auth/**",          // context-path 제거 (실제: /api/auth/**)
-            "/qr/**",            // context-path 제거 (실제: /api/qr/**)
-            "/face/**",          // context-path 제거 (실제: /api/face/**)
-            "/admin/kakao/token/**", // context-path 제거 (실제: /api/admin/kakao/token/**)
-            "/swagger-ui/**",    // context-path 제거 (실제: /api/swagger-ui/**)
-            "/v3/api-docs/**",   // context-path 제거 (실제: /api/v3/api-docs/**)
-            "/swagger-ui.html",  // context-path 제거
-            "/health/**",        // context-path 제거 (실제: /api/health/**)
-            "/actuator/**",      // 이미 올바름
+            "/auth/**",
+            "/qr/**",
+            "/face/**",
+            "/admin/kakao/token/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/health/**",
+            "/actuator/**",
             "/h2-console/**",
             "/favicon.ico",
-            "/test/**",          // 테스트 API 허용 (실제: /api/test/**)
+            "/test/**",          // 테스트 API 허용
     };
 
     private static final String[] ADMIN_LIST = {

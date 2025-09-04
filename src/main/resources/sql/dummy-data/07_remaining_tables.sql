@@ -161,7 +161,7 @@ SELECT
 FROM seq;
 
 -- 8. 파일 데이터 (50개)
-INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, created_at, updated_at)
+INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, is_primary, created_at, updated_at)
 SELECT 
     CONCAT(
         CASE ROW_NUMBER() OVER () % 8
@@ -204,6 +204,11 @@ SELECT
         ELSE 'AD'
     END as relation_type,
     FLOOR(1 + (RAND() * 1000)) as relation_id,
+    -- 각 relation_id의 첫 번째 파일을 대표 이미지로 설정 (약 20% 확률)
+    CASE WHEN ROW_NUMBER() OVER (PARTITION BY FLOOR(1 + (RAND() * 1000)) ORDER BY RAND()) = 1 
+         AND RAND() < 0.2 THEN TRUE 
+         ELSE FALSE 
+    END as is_primary,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
 FROM (
