@@ -83,6 +83,55 @@ public class AIModelSyncController {
         }
     }
 
+    @Operation(summary = "AI 모델 인덱스 재생성 (한글 분석기)", 
+               description = "Elasticsearch 인덱스를 한글 분석기(Nori) 설정으로 재생성하고 데이터를 동기화")
+    @PostMapping("/recreate-index-korean")
+    public ResponseEntity<?> recreateIndexWithKoreanAndSync() {
+        try {
+            log.info("AI 모델 인덱스 재생성 (한글 분석기) 및 동기화 시작");
+            
+            // 1. 인덱스 재생성 (한글 분석기 설정 적용)
+            indexService.recreateAIModelsIndexWithKorean();
+            log.info("인덱스 재생성 (한글 분석기) 완료");
+            
+            // 2. 데이터 동기화
+            List<AIModel> allModels = aiModelRepository.findAll();
+            log.info("동기화할 AI 모델 수: {}", allModels.size());
+            
+            int successCount = 0;
+            int failureCount = 0;
+            
+            for (AIModel model : allModels) {
+                try {
+                    String ownerName = getOwnerName(model.getOwnerId());
+                    searchService.indexModel(model, ownerName);
+                    successCount++;
+                    
+                    if (successCount % 100 == 0) {
+                        log.info("진행 상황: {}/{} 완료", successCount, allModels.size());
+                    }
+                    
+                } catch (Exception e) {
+                    log.error("AI 모델 인덱싱 실패: modelId={}, error={}", 
+                             model.getId(), e.getMessage(), e);
+                    failureCount++;
+                }
+            }
+            
+            log.info("AI 모델 인덱스 재생성 (한글 분석기) 및 동기화 완료 - 성공: {}, 실패: {}", 
+                     successCount, failureCount);
+            
+            return ResponseEntity.ok(ApiUtils.success(
+                String.format("한글 분석기 인덱스 재생성 및 동기화 완료 - 성공: %d, 실패: %d", successCount, failureCount)
+            ));
+            
+        } catch (Exception e) {
+            log.error("AI 모델 인덱스 재생성 (한글 분석기) 및 동기화 중 오류 발생", e);
+            return ResponseEntity.internalServerError()
+                   .body(ApiUtils.error("한글 분석기 재생성 및 동기화 실패: " + e.getMessage()));
+        }
+    }
+
     @Operation(summary = "AI 모델 Elasticsearch 동기화", 
                description = "MySQL의 모든 AI 모델 데이터를 Elasticsearch에 동기화")
     @PostMapping("/elasticsearch")

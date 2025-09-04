@@ -2,6 +2,15 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.1
     container_name: nomodel-elasticsearch
+    # Nori 플러그인 자동 설치
+    command: >
+      bash -c "
+        if [ ! -d /usr/share/elasticsearch/plugins/analysis-nori ]; then
+          echo 'Installing Nori Korean analyzer plugin...'
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install analysis-nori --batch
+        fi
+        /usr/local/bin/docker-entrypoint.sh eswrapper
+      "
     environment:
       - node.name=elasticsearch
       - cluster.name=nomodel-cluster

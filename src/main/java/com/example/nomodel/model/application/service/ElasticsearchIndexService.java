@@ -30,6 +30,20 @@ public class ElasticsearchIndexService {
      * ai-models 인덱스를 최신 설정으로 재생성
      */
     public void recreateAIModelsIndex() {
+        recreateAIModelsIndex(false);
+    }
+
+    /**
+     * ai-models 인덱스를 한글 분석기 포함하여 재생성
+     */
+    public void recreateAIModelsIndexWithKorean() {
+        recreateAIModelsIndex(true);
+    }
+
+    /**
+     * ai-models 인덱스를 설정에 따라 재생성
+     */
+    public void recreateAIModelsIndex(boolean useKoreanAnalyzer) {
         try {
             IndexOperations indexOps = elasticsearchTemplate.indexOps(AIModelDocument.class);
             
@@ -40,8 +54,8 @@ public class ElasticsearchIndexService {
             }
 
             // 새로운 인덱스 생성 (설정 파일 사용)
-            log.info("새로운 ai-models 인덱스 생성 중...");
-            Document settings = loadIndexSettings();
+            log.info("새로운 ai-models 인덱스 생성 중... (한글 분석기: {})", useKoreanAnalyzer);
+            Document settings = loadIndexSettings(useKoreanAnalyzer);
             indexOps.create(settings);
             
             log.info("ai-models 인덱스가 성공적으로 재생성되었습니다.");
@@ -56,8 +70,19 @@ public class ElasticsearchIndexService {
      * 인덱스 설정 파일 로드
      */
     private Document loadIndexSettings() {
+        return loadIndexSettings(false);
+    }
+
+    /**
+     * 인덱스 설정 파일 로드 (한글 분석기 옵션)
+     */
+    private Document loadIndexSettings(boolean useKoreanAnalyzer) {
         try {
-            ClassPathResource resource = new ClassPathResource("elasticsearch/ai-models-index-settings.json");
+            String settingsFile = useKoreanAnalyzer 
+                ? "elasticsearch/ai-models-index-settings-korean.json"
+                : "elasticsearch/ai-models-index-settings.json";
+                
+            ClassPathResource resource = new ClassPathResource(settingsFile);
             try (InputStream inputStream = resource.getInputStream()) {
                 JsonNode jsonNode = objectMapper.readTree(inputStream);
                 Map<String, Object> settingsMap = objectMapper.convertValue(jsonNode, Map.class);
