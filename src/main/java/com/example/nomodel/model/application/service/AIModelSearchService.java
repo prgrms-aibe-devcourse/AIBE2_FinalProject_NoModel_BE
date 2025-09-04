@@ -161,11 +161,21 @@ public class AIModelSearchService {
 
 
     /**
-     * 자동완성 제안
+     * 자동완성 제안 (completion suggester 기반)
      */
     public List<AIModelDocument> getModelNameSuggestions(String prefix) {
         log.info("AI 모델명 자동완성: prefix={}", prefix);
         return searchRepository.findModelNameSuggestions(prefix);
+    }
+
+    /**
+     * 부분 모델명 검색 (edge n-gram 기반)
+     */
+    public Page<AIModelDocument> searchByPartialName(String partial, int page, int size) {
+        log.info("AI 모델 부분 검색: partial={}, page={}, size={}", partial, page, size);
+        
+        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
+        return searchRepository.searchByPartialName(partial, pageable);
     }
 
     /**
