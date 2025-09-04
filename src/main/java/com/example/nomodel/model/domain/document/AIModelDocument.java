@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.CompletionField;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +37,18 @@ public class AIModelDocument {
      */
     @Field(type = FieldType.Text, analyzer = "standard")
     private String modelName;
+
+    /**
+     * 자동완성을 위한 모델명 (completion suggester)
+     */
+    @CompletionField(maxInputLength = 100)
+    private String suggest;
+
+    /**
+     * 부분 검색을 위한 모델명 (edge n-gram)
+     */
+    @Field(type = FieldType.Text, analyzer = "edge_ngram_analyzer", searchAnalyzer = "standard")
+    private String modelNameEdgeNgram;
 
     /**
      * 모델 프롬프트 (검색용)
@@ -118,6 +131,8 @@ public class AIModelDocument {
                            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.modelId = modelId;
         this.modelName = modelName;
+        this.suggest = modelName; // 자동완성용 (모델명과 동일)
+        this.modelNameEdgeNgram = modelName; // 부분 검색용 (모델명과 동일)
         this.prompt = prompt;
         this.tags = tags;
         this.ownType = ownType;
