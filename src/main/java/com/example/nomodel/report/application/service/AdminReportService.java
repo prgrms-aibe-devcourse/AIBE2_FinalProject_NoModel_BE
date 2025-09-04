@@ -77,15 +77,6 @@ public class AdminReportService {
     if (req.getReportStatus() == null) {
       throw new ApplicationException(ErrorCode.INVALID_REQUEST);
     }
-    // adminNote 필수 상태
-    if (req.getAdminNote() == null || req.getAdminNote().isBlank()) {
-      if (req.getReportStatus() == ReportStatus.RESOLVED
-              || req.getReportStatus() == ReportStatus.UNDER_REVIEW
-              || req.getReportStatus() == ReportStatus.REJECTED
-              || req.getReportStatus() == ReportStatus.RESOLVED) {
-        throw new ApplicationException(ErrorCode.INVALID_REQUEST);
-      }
-    }
   }
   
   private void suspendUserByReport(Report report, ProcessReportDto req) {
