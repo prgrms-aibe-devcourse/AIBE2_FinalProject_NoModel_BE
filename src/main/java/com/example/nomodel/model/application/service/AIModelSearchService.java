@@ -35,6 +35,13 @@ public class AIModelSearchService {
         log.info("AI 모델 통합 검색: keyword={}, page={}, size={}", keyword, page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
+        
+        // 빈 키워드일 때는 전체 공개 모델 반환
+        if (keyword == null || keyword.trim().isEmpty()) {
+            pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            return searchRepository.findByIsPublic(true, pageable);
+        }
+        
         return searchRepository.searchByModelNameAndPrompt(keyword, pageable);
     }
 

@@ -52,10 +52,12 @@
       "type": "long"
     },
     "createdAt": {
-      "type": "date"
+      "type": "date",
+      "format": "uuuu-MM-dd'T'HH:mm:ss.SSSSSS||epoch_millis"
     },
     "updatedAt": {
-      "type": "date"
+      "type": "date",
+      "format": "uuuu-MM-dd'T'HH:mm:ss.SSSSSS||epoch_millis"
     }
   }
 }
