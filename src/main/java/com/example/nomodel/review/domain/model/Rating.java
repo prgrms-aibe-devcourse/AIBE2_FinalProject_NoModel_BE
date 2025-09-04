@@ -1,10 +1,13 @@
 package com.example.nomodel.review.domain.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Rating {
 
+    //VALUE는 H2, MySQL 모두에서 예약어(reserved keyword)라서 컬럼명으로 쓰면 SQL 문법 오류
+    @Column(name = "rating_value")
     private Integer value;
 
     protected Rating() {}

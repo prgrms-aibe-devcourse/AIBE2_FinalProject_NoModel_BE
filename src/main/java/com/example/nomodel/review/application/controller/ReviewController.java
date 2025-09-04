@@ -38,4 +38,17 @@ public class ReviewController {
     public ResponseEntity<List<ReviewResponse>> getReviewsByModel(@PathVariable Long modelId) {
         return ResponseEntity.ok(reviewService.getReviewsByModel(modelId));
     }
+
+    //리뷰 수정 Controller 엔드포인트
+    @Operation(summary = "리뷰 수정", description = "특정 리뷰를 수정합니다.")
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<ReviewResponse> updateReview(
+            @PathVariable Long modelId,
+            @PathVariable Long reviewId,
+            @AuthenticationPrincipal(expression = "memberId") Long reviewerId,
+            @RequestBody ReviewRequest request
+    ) {
+        return ResponseEntity.ok(reviewService.updateReview(reviewerId, reviewId, request));
+    }
+
 }
