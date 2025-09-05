@@ -24,7 +24,7 @@ public class AIModelDetailController {
     private final AIModelDetailService modelDetailService;
 
     @Operation(summary = "AI 모델 상세 조회", 
-               description = "모델 ID로 상세 정보 조회 (파일, 리뷰, 통계 정보 포함)")
+               description = "모델 ID로 상세 정보 조회 (자동으로 조회수 증가)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "404", description = "모델을 찾을 수 없음"),
@@ -32,27 +32,11 @@ public class AIModelDetailController {
     })
     @GetMapping("/{modelId}")
     public ResponseEntity<?> getModelDetail(
-            @Parameter(description = "모델 ID") @PathVariable Long modelId,
-            @Parameter(description = "조회수 증가 여부") @RequestParam(defaultValue = "true") boolean incrementView) {
-        
-        // 조회수 증가 (선택적)
-        if (incrementView) {
-            modelDetailService.increaseViewCount(modelId);
-        }
-        
-        // 상세 정보 조회
-        AIModelDetailResponse response = modelDetailService.getModelDetail(modelId);
-        
-        return ResponseEntity.ok(ApiUtils.success(response));
-    }
-
-    @Operation(summary = "조회수만 증가", description = "상세 정보 조회 없이 조회수만 증가")
-    @PostMapping("/{modelId}/view")
-    public ResponseEntity<?> increaseViewCount(
             @Parameter(description = "모델 ID") @PathVariable Long modelId) {
         
-        modelDetailService.increaseViewCount(modelId);
+        // 상세 정보 조회 + 조회수 증가 통합
+        AIModelDetailResponse response = modelDetailService.getModelDetailWithViewIncrement(modelId);
         
-        return ResponseEntity.ok(ApiUtils.success("View count increased"));
+        return ResponseEntity.ok(ApiUtils.success(response));
     }
 }
