@@ -225,11 +225,10 @@ SELECT
         WHEN ROW_NUMBER() OVER () % 2 = 0 THEN (SELECT model_id FROM ai_model_tb WHERE is_public = 1 ORDER BY RAND() LIMIT 1)
         ELSE (SELECT id FROM model_review ORDER BY RAND() LIMIT 1)
     END as target_id,
-    CASE ROW_NUMBER() OVER () % 5
+    CASE ROW_NUMBER() OVER () % 4
         WHEN 0 THEN 'PENDING'
         WHEN 1 THEN 'UNDER_REVIEW'
         WHEN 2 THEN 'RESOLVED'
-        WHEN 3 THEN 'ACCEPTED'
         ELSE 'REJECTED'
     END as report_status,
     CASE ROW_NUMBER() OVER () % 6

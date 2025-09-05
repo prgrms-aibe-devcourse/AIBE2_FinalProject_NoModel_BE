@@ -3,22 +3,27 @@ package com.example.nomodel.point.application.service;
 import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
-import com.example.nomodel.point.domain.model.MemberPointBalance;
-import com.example.nomodel.point.domain.model.PointTransaction;
+import com.example.nomodel.point.domain.model.*;
+import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
+import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import com.example.nomodel.point.domain.service.PointDomainService;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class PointService {
 
     private final PointDomainService domainService;
-
-    public PointService(PointDomainService domainService) {
-        this.domainService = domainService;
-    }
+    private final MemberPointBalanceRepository pointBalanceRepository;
+    private final PointTransactionRepository transactionRepository;
 
     public PointBalanceResponse getBalance(Long memberId) {
         MemberPointBalance balance = domainService.getBalance(memberId);
@@ -69,4 +74,30 @@ public class PointService {
                 tx.getCreatedAt()
         );
     }
-}
+
+
+    @Transactional(propagation = Propagation.REQUIRED)
+        public void rewardForReview(Long memberId, Long reviewId) {
+            MemberPointBalance balance = pointBalanceRepository.findById(memberId)
+                    .orElse(new MemberPointBalance(memberId, BigDecimal.ZERO));
+
+            BigDecimal before = balance.getAvailablePoints();
+            BigDecimal rewardAmount = BigDecimal.valueOf(300);
+
+            balance.addPoints(rewardAmount);
+            pointBalanceRepository.save(balance);
+
+            PointTransaction tx = new PointTransaction(
+                    memberId,
+                    TransactionDirection.CREDIT,
+                    TransactionType.REWARD,
+                    rewardAmount,
+                    before,
+                    balance.getAvailablePoints(),
+                    RefererType.REVIEW,
+                    reviewId
+            );
+            transactionRepository.save(tx);
+        }
+    }
+

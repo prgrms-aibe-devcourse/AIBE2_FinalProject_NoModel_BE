@@ -30,15 +30,19 @@ public enum ErrorCode {
     INVALID_TOKEN_TYPE("ITT001", HttpStatus.BAD_REQUEST, "Invalid token type"),
     REFRESH_TOKEN_NOT_FOUND("RTNF001", HttpStatus.NOT_FOUND, "Refresh token not found"),
     
+    // oauth2 관련 에러
+    UNSUPPORTED_PROVIDER("UP_001", HttpStatus.BAD_REQUEST, "Unsupported provider"),
+    EMAIL_REQUIRED("ER_001", HttpStatus.INTERNAL_SERVER_ERROR, "email is required"),
+
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
-    
+
     // Firebase 관련 에러
     FIREBASE_KEY_FILE_NOT_FOUND("FKFNF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file not found"),
     FIREBASE_INITIALIZATION_FAILED("FIF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase initialization failed"),
     FIREBASE_KEY_FILE_READ_ERROR("FKFRE001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file read error"),
-    
+
     // File Storage 관련 에러
     FILE_UPLOAD_FAILED("FUF001", HttpStatus.INTERNAL_SERVER_ERROR, "File upload failed"),
     FILE_DELETE_FAILED("FDF001", HttpStatus.INTERNAL_SERVER_ERROR, "File delete failed"),
@@ -46,6 +50,18 @@ public enum ErrorCode {
     FILE_SIZE_EXCEEDED("FSE001", HttpStatus.BAD_REQUEST, "File size exceeded"),
     FILE_NOT_FOUND("FNF001", HttpStatus.NOT_FOUND, "File not found"),
     FIREBASE_STORAGE_BUCKET_NOT_CONFIGURED("FSBNC001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase storage bucket not configured"),
+    REPORT_NOT_FOUND("RNF001", HttpStatus.NOT_FOUND, "Report not found"),
+
+    //리뷰 관련 에러
+    REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),
+    DUPLICATE_REVIEW("RV002", HttpStatus.CONFLICT, "Review already exists"),
+    REVIEW_NOT_ALLOWED("RV003", HttpStatus.FORBIDDEN, "Not allowed to modify or delete this review"),
+    INVALID_RATING_VALUE("RV004", HttpStatus.BAD_REQUEST, "Rating must be between 1 and 5"),
+
+    // 포인트 관련 에러
+    POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
+    POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
+    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance.")
     ;
 
     private final String errorCode;
