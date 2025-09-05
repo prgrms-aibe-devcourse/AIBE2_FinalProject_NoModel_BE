@@ -54,15 +54,12 @@ public class ReviewService {
 
     }
 
-    //리뷰 조회(모델 ID로 리뷰들을 조회, 비어있으면 예외발생, 있으면 Dto 변환하여 반환)
+    //리뷰 조회(모델 ID로 리뷰들을 조회, 빈 리스트 또는 Dto 리스트 반환)
     public List<ReviewResponse> getReviewsByModel(Long modelId) {
         // ACTIVE 리뷰만 조회
         List<ModelReview> reviews = reviewRepository.findByModelIdAndStatus(modelId, ReviewStatus.ACTIVE);
 
-        if (reviews.isEmpty()) {
-            throw new ApplicationException(ErrorCode.REVIEW_NOT_FOUND);
-        }
-
+        // 리뷰가 없어도 정상적인 상황이므로 빈 리스트 반환
         return reviews.stream()
                 .map(ReviewResponse::from)
                 .collect(Collectors.toList());
