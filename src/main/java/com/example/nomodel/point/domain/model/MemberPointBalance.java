@@ -1,5 +1,7 @@
 package com.example.nomodel.point.domain.model;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -24,10 +26,10 @@ public class MemberPointBalance {
         this.memberId = memberId;
 
         if (availablePoints == null) {
-            throw new IllegalArgumentException("availablePoints must not be null");
+            throw new ApplicationException(ErrorCode.POINT_INVALID_INIT);
         }
         if (availablePoints.signum() < 0) {
-            throw new IllegalArgumentException("availablePoints must be >= 0");
+            throw new ApplicationException(ErrorCode.POINT_INVALID_INIT);
         }
 
         this.totalPoints = availablePoints;
@@ -50,7 +52,7 @@ public class MemberPointBalance {
     // 포인트 추가/차감 로직
     public void addPoints(BigDecimal amount) {
         if (amount == null || amount.signum() < 0) {
-            throw new IllegalArgumentException("추가할 포인트는 null이거나 음수일 수 없습니다.");
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
         }
         this.totalPoints = this.totalPoints.add(amount);
         this.availablePoints = this.availablePoints.add(amount);
@@ -58,10 +60,10 @@ public class MemberPointBalance {
 
     public void subtractPoints(BigDecimal amount) {
         if (amount == null || amount.signum() < 0) {
-            throw new IllegalArgumentException("차감할 포인트는 null이거나 음수일 수 없습니다.");
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
         }
         if (this.availablePoints.compareTo(amount) < 0) {
-            throw new IllegalArgumentException("보유 포인트가 부족합니다.");
+            throw new ApplicationException(ErrorCode.POINT_INSUFFICIENT_BALANCE);
         }
         this.totalPoints = this.totalPoints.subtract(amount);
         this.availablePoints = this.availablePoints.subtract(amount);

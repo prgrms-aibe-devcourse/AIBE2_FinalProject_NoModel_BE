@@ -38,7 +38,12 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),
     DUPLICATE_REVIEW("RV002", HttpStatus.CONFLICT, "Review already exists"),
     REVIEW_NOT_ALLOWED("RV003", HttpStatus.FORBIDDEN, "Not allowed to modify or delete this review"),
+    INVALID_RATING_VALUE("RV004", HttpStatus.BAD_REQUEST, "Rating must be between 1 and 5"),
 
+    // 포인트 관련 에러
+    POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
+    POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
+    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance.")
     ;
 
     private final String errorCode;
