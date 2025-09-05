@@ -22,6 +22,14 @@ public class MemberPointBalance {
 
     public MemberPointBalance(Long memberId, BigDecimal availablePoints) {
         this.memberId = memberId;
+
+        if (availablePoints == null) {
+            throw new IllegalArgumentException("availablePoints must not be null");
+        }
+        if (availablePoints.signum() < 0) {
+            throw new IllegalArgumentException("availablePoints must be >= 0");
+        }
+
         this.totalPoints = availablePoints;
         this.availablePoints = availablePoints;
         this.pendingPoints = BigDecimal.ZERO;
@@ -29,13 +37,8 @@ public class MemberPointBalance {
     }
 
     public MemberPointBalance(Long memberId) {
-        this.memberId = memberId;
-        this.totalPoints = BigDecimal.ZERO;
-        this.availablePoints = BigDecimal.ZERO;
-        this.pendingPoints = BigDecimal.ZERO;
-        this.reservedPoints = BigDecimal.ZERO;
+        this(memberId, BigDecimal.ZERO);
     }
-
 
     // getter
     public Long getMemberId() { return memberId; }
@@ -46,11 +49,17 @@ public class MemberPointBalance {
 
     // 포인트 추가/차감 로직
     public void addPoints(BigDecimal amount) {
+        if (amount == null || amount.signum() < 0) {
+            throw new IllegalArgumentException("추가할 포인트는 null이거나 음수일 수 없습니다.");
+        }
         this.totalPoints = this.totalPoints.add(amount);
         this.availablePoints = this.availablePoints.add(amount);
     }
 
     public void subtractPoints(BigDecimal amount) {
+        if (amount == null || amount.signum() < 0) {
+            throw new IllegalArgumentException("차감할 포인트는 null이거나 음수일 수 없습니다.");
+        }
         if (this.availablePoints.compareTo(amount) < 0) {
             throw new IllegalArgumentException("보유 포인트가 부족합니다.");
         }
@@ -58,3 +67,4 @@ public class MemberPointBalance {
         this.availablePoints = this.availablePoints.subtract(amount);
     }
 }
+
