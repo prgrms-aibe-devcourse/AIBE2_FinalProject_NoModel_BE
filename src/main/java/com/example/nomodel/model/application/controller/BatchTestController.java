@@ -4,7 +4,6 @@ import com.example.nomodel._core.utils.ApiUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -22,7 +21,6 @@ import java.time.LocalDateTime;
  * 배치 테스트용 컨트롤러 (테스트 환경에만 존재)
  * 수동으로 배치 작업을 실행하여 테스트
  */
-@Slf4j
 @RestController
 @RequestMapping("/batch/test")
 @RequiredArgsConstructor
@@ -40,8 +38,6 @@ public class BatchTestController {
     @PostMapping("/run-aimodel-index")
     public ResponseEntity<?> runAIModelIndexBatch() {
         try {
-            log.info("AIModel 인덱싱 배치 수동 실행 시작");
-            
             JobParameters jobParameters = new JobParametersBuilder()
                     .addLocalDateTime("timestamp", LocalDateTime.now())
                     .addString("trigger", "manual-test")
@@ -52,7 +48,6 @@ public class BatchTestController {
             return ResponseEntity.ok(ApiUtils.success("AIModel 인덱싱 배치 실행 완료"));
             
         } catch (Exception e) {
-            log.error("AIModel 인덱싱 배치 수동 실행 실패", e);
             return ResponseEntity.internalServerError()
                     .body(ApiUtils.error("배치 실행 실패: " + e.getMessage()));
         }
