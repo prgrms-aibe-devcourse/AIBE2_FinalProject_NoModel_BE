@@ -27,7 +27,6 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ApiUtils.ApiResult<ReviewResponse>> createReview(
             @PathVariable Long modelId,
-            //여기 고침(9/2 :18:46) @AuthenticationPrincipal(expression = "id") ->
             @AuthenticationPrincipal(expression = "memberId") Long reviewerId, // 로그인 사용자 ID
             @RequestBody ReviewRequest request
     ) {
@@ -54,16 +53,18 @@ public class ReviewController {
     }
 
     //리뷰 삭제 Controller 엔드포인트
+    // 리뷰 삭제 Controller 엔드포인트
     @Operation(summary = "리뷰 삭제", description = "특정 리뷰를 삭제합니다.")
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<ApiUtils.ApiResult<Void>> deleteReview(
+    public ResponseEntity<ApiUtils.ApiResult<ReviewResponse>> deleteReview(
             @PathVariable Long modelId,
             @PathVariable Long reviewId,
             @AuthenticationPrincipal(expression = "memberId") Long reviewerId
     ) {
-        reviewService.deleteReview(reviewerId, reviewId);
-        return ResponseEntity.ok(ApiUtils.success(null));
+        ReviewResponse deleted = reviewService.deleteReview(reviewerId, reviewId);
+        return ResponseEntity.ok(ApiUtils.success(deleted));
     }
+
 
 
 
