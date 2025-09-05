@@ -19,7 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 
 /**
- * AIModel 인덱싱 스케줄러 테스트 (증분 처리)
+ * AIModel 인덱싱 스케줄러 테스트 (증분 처리 - updatedAt 기준)
  */
 class AIModelIndexSchedulerTest {
 

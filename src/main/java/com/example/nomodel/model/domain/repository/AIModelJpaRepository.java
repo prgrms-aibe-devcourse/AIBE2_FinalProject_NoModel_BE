@@ -93,18 +93,18 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
     long countByIsPublicTrue();
 
     /**
-     * 특정 시간 이후 생성되거나 수정된 모델 조회 (배치 증분 처리용)
-     * 새로 생성된 모델과 수정된 모델 모두 포함
+     * 특정 시간 이후 수정된 모델 조회 (배치 증분 처리용)
+     * BaseTimeEntity 특성상 생성 시 updatedAt도 설정되므로 새 모델도 포함됨
      */
-    @Query("SELECT m FROM AIModel m WHERE m.createdAt >= :fromDateTime OR m.updatedAt >= :fromDateTime ORDER BY GREATEST(m.createdAt, m.updatedAt) ASC")
-    List<AIModel> findModelsCreatedOrUpdatedAfter(@Param("fromDateTime") LocalDateTime fromDateTime);
+    @Query("SELECT m FROM AIModel m WHERE m.updatedAt >= :fromDateTime ORDER BY m.updatedAt ASC")
+    List<AIModel> findModelsUpdatedAfter(@Param("fromDateTime") LocalDateTime fromDateTime);
 
     /**
-     * 특정 시간 이후 생성되거나 수정된 모델 페이징 조회 (배치 증분 처리용)
-     * 새로 생성된 모델과 수정된 모델 모두 포함
+     * 특정 시간 이후 수정된 모델 페이징 조회 (배치 증분 처리용)
+     * BaseTimeEntity 특성상 생성 시 updatedAt도 설정되므로 새 모델도 포함됨
      */
-    @Query("SELECT m FROM AIModel m WHERE m.createdAt >= :fromDateTime OR m.updatedAt >= :fromDateTime ORDER BY GREATEST(m.createdAt, m.updatedAt) ASC")
-    org.springframework.data.domain.Page<AIModel> findModelsCreatedOrUpdatedAfterPaged(
+    @Query("SELECT m FROM AIModel m WHERE m.updatedAt >= :fromDateTime ORDER BY m.updatedAt ASC")
+    org.springframework.data.domain.Page<AIModel> findModelsUpdatedAfterPaged(
             @Param("fromDateTime") LocalDateTime fromDateTime, 
             org.springframework.data.domain.Pageable pageable);
 }
