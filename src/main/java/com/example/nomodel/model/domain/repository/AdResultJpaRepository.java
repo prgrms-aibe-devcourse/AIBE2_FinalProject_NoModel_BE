@@ -2,11 +2,13 @@ package com.example.nomodel.model.domain.repository;
 
 
 import com.example.nomodel.model.domain.model.AdResult;
+import com.example.nomodel.statistics.application.dto.response.MonthlyCount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
   
@@ -14,7 +16,7 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
   @Query("select count(ar) from AdResult ar")
   long countAllProjects();
   
-  // 기간 내 가입 프로젝트 수 (예: 이번 달)
+  // 기간 내 가입 프로젝 수 (예: 이번 달)
   @Query("""
            select count(ar)
              from AdResult ar
@@ -23,4 +25,20 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
            """)
   long countProjectsJoinedBetween(@Param("from") LocalDateTime from,
                                @Param("to")   LocalDateTime to);
+  
+  // 월별 생성량 (전체)
+  @Query("""
+           select new com.example.nomodel.statistics.application.dto.response.MonthlyCount(
+                      month(a.createdAt), count(a))
+             from AdResult a
+            where (:from is null or a.createdAt >= :from)
+              and (:to   is null or a.createdAt <  :to)
+         group by year(a.createdAt), month(a.createdAt)
+         order by year(a.createdAt), month(a.createdAt)
+           """)
+  List<MonthlyCount> countProjectsByMonth(
+          @Param("from") LocalDateTime from,
+          @Param("to")   LocalDateTime to
+  );
+  
 }
