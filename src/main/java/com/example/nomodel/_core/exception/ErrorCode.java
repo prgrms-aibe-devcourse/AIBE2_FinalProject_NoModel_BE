@@ -53,6 +53,8 @@ public enum ErrorCode {
     FILE_NOT_FOUND("FNF001", HttpStatus.NOT_FOUND, "File not found"),
     FIREBASE_STORAGE_BUCKET_NOT_CONFIGURED("FSBNC001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase storage bucket not configured"),
     REPORT_NOT_FOUND("RNF001", HttpStatus.NOT_FOUND, "Report not found"),
+    DUPLICATE_REPORT("RP002", HttpStatus.CONFLICT, "Report already exists"),
+    REPORT_ACCESS_DENIED("RP003", HttpStatus.FORBIDDEN, "Not allowed to access this report"),
 
     //리뷰 관련 에러
     REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),
