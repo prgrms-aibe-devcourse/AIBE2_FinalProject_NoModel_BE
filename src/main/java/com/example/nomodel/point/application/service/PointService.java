@@ -7,7 +7,9 @@ import com.example.nomodel.point.domain.model.*;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import com.example.nomodel.point.domain.service.PointDomainService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -74,7 +76,7 @@ public class PointService {
     }
 
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
         public void rewardForReview(Long memberId, Long reviewId) {
             MemberPointBalance balance = pointBalanceRepository.findById(memberId)
                     .orElse(new MemberPointBalance(memberId, BigDecimal.ZERO));
