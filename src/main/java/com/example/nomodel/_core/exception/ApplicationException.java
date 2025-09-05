@@ -11,6 +11,7 @@ public class ApplicationException extends RuntimeException {
     private final LocalDateTime timestamp;
 
     public ApplicationException(ErrorCode errorCode){
+        super(errorCode.getMessage());
         this.errorCode = errorCode;
         this.timestamp = LocalDateTime.now();
     }
