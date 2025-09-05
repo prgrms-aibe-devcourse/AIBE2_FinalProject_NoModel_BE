@@ -45,6 +45,27 @@ public class AIModelSearchController {
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
+    @Operation(summary = "관리자 모델 목록 조회", description = "공개된 관리자 모델 목록 (ADMIN 타입)")
+    @GetMapping("/admin")
+    public ResponseEntity<?> getAdminModels(
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
+
+        Page<AIModelDocument> result = searchService.getAdminModels(page, size);
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
+    }
+
+    @Operation(summary = "내 모델 목록 조회", description = "사용자가 생성한 모든 모델 목록")
+    @GetMapping("/my-models")
+    public ResponseEntity<?> getUserModels(
+            @Parameter(description = "사용자 ID") @RequestParam Long userId,
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
+
+        Page<AIModelDocument> result = searchService.getUserModels(userId, page, size);
+        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
+    }
+
     @Operation(summary = "접근 가능한 AI 모델 검색", description = "사용자가 접근 가능한 모델 검색 (본인 모델 + 공개 모델)")
     @GetMapping("/accessible")
     public ResponseEntity<?> searchAccessibleModels(
