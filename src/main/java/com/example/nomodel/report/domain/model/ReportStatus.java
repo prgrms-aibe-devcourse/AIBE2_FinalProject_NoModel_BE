@@ -9,6 +9,7 @@ public enum ReportStatus {
 
     PENDING("접수", "PENDING"),
     UNDER_REVIEW("검토중", "UNDER_REVIEW"),
+    ACCEPTED("승인", "ACCEPTED"),
     REJECTED("반려", "REJECTED"),
     RESOLVED("해결완료", "RESOLVED");
 
@@ -23,6 +24,10 @@ public enum ReportStatus {
         return this == UNDER_REVIEW;
     }
 
+    public boolean isAccepted() {
+        return this == ACCEPTED;
+    }
+
     public boolean isRejected() {
         return this == REJECTED;
     }
@@ -32,6 +37,6 @@ public enum ReportStatus {
     }
 
     public boolean isCompleted() {
-        return this == REJECTED || this == RESOLVED;
+        return this == ACCEPTED || this == REJECTED || this == RESOLVED;
     }
 }

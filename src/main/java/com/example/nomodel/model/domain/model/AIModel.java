@@ -7,7 +7,6 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Getter
-@Setter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "ai_model_tb")

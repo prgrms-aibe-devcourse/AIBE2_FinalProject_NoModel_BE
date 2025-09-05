@@ -1,18 +1,15 @@
 package com.example.nomodel.report.domain.repository;
 
-import com.example.nomodel.report.application.dto.response.AdminReportDto;
-import com.example.nomodel.report.application.dto.response.AdminReportSummaryDto;
 import com.example.nomodel.report.domain.model.Report;
 import com.example.nomodel.report.domain.model.ReportStatus;
 import com.example.nomodel.report.domain.model.TargetType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface ReportJpaRepository extends JpaRepository<Report, Long> {
 
@@ -104,51 +101,4 @@ public interface ReportJpaRepository extends JpaRepository<Report, Long> {
      */
     @Query("SELECT r FROM Report r WHERE r.reportStatus = 'PENDING' AND r.createdAt < :threshold ORDER BY r.createdAt ASC")
     List<Report> findOldPendingReports(@Param("threshold") LocalDateTime threshold);
-    
-    /**
-     * 신고 요약 조회
-     * */
-    @Query("""
-        select new com.example.nomodel.report.application.dto.response.AdminReportSummaryDto(
-            count(r),
-            sum(case when r.reportStatus = 'PENDING' then 1 else 0 end),
-            sum(case when r.reportStatus = 'UNDER_REVIEW' then 1 else 0 end),
-            sum(case when r.reportStatus = 'RESOLVED' then 1 else 0 end),
-            sum(case when r.reportStatus = 'REJECTED' then 1 else 0 end)
-        )
-        from Report r
-        """)
-    AdminReportSummaryDto summarizeByStatus();
-    
-    /**
-     * 신고 목록 조회
-     * */
-    @Query(value = """
-        select new com.example.nomodel.report.application.dto.response.AdminReportDto(
-            r.reportId,
-            r.createdAt,
-            r.updatedAt,
-            r.reportStatus,
-            r.targetType,
-            r.targetId,
-            r.createdBy,
-            r.adminNote,
-            r.reasonDetail
-        )
-        from Report r
-        where (:targetType is null or r.targetType = :targetType)
-          and (:reportStatus is null or r.reportStatus = :reportStatus)
-        """,
-            countQuery = """
-        select count(r)
-        from Report r
-        where (:targetType is null or r.targetType = :targetType)
-          and (:reportStatus is null or r.reportStatus = :reportStatus)
-        """
-    )
-    Page<AdminReportDto> findAdminReportPage(
-            @Param("targetType") TargetType targetType,   // null 허용
-            @Param("reportStatus") ReportStatus reportStatus,   // null 허용
-            Pageable pageable                                   // page/size/sort
-    );
 }
