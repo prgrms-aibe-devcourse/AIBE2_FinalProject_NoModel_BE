@@ -123,12 +123,8 @@ public class MemberAuthService {
      */
     @Transactional(readOnly = true)
     public AuthTokenDTO refreshToken(HttpServletRequest request) {
-        // 1. 쿠키에서 리프레시 토큰 추출 (Authorization 헤더는 fallback)
-        String refreshToken = jwtTokenProvider.resolveRefreshTokenFromCookies(request);
-        if (refreshToken == null) {
-            // fallback: Authorization 헤더에서 시도
-            refreshToken = jwtTokenProvider.resolveToken(request);
-        }
+        // 1. Authorization 헤더에서 리프레시 토큰 추출
+        String refreshToken = jwtTokenProvider.resolveToken(request);
         if (refreshToken == null) {
             throw new ApplicationException(ErrorCode.TOKEN_NOT_FOUND);
         }
@@ -162,12 +158,8 @@ public class MemberAuthService {
      */
     @Transactional
     public void logout(HttpServletRequest request) {
-        // 1. 쿠키에서 리프레시 토큰 추출 (Authorization 헤더는 fallback)
-        String refreshToken = jwtTokenProvider.resolveRefreshTokenFromCookies(request);
-        if (refreshToken == null) {
-            // fallback: Authorization 헤더에서 시도
-            refreshToken = jwtTokenProvider.resolveToken(request);
-        }
+        // 1. Authorization 헤더에서 리프레시 토큰 추출
+        String refreshToken = jwtTokenProvider.resolveToken(request);
         if (refreshToken == null) {
             throw new ApplicationException(ErrorCode.TOKEN_NOT_FOUND);
         }

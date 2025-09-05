@@ -1,10 +1,9 @@
 package com.example.nomodel._core.config;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.security.jwt.JWTTokenFilter;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
-import com.example.nomodel._core.security.oauth2.CustomOAuth2UserService;
-import com.example.nomodel._core.security.oauth2.OAuth2SuccessHandler;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +13,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -21,8 +22,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,8 +33,6 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JWTTokenProvider jwtTokenProvider;
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     private static final String[] WHITE_LIST = {
             "/",
@@ -47,8 +48,6 @@ public class SecurityConfig {
             "/actuator/**",      // 이미 올바름
             "/h2-console/**",
             "/favicon.ico",
-            "/oauth2/**",
-            "/login/**"
     };
 
     private static final String[] ADMIN_LIST = {
@@ -58,6 +57,11 @@ public class SecurityConfig {
     private static final String[] BAN_LIST = {
             "/vendor/**"
     };
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
@@ -78,7 +82,7 @@ public class SecurityConfig {
                         // 나머지 WHITE_LIST 허용
                         .requestMatchers(WHITE_LIST).permitAll()
                         // 관리자 권한 필요
-                        .requestMatchers(ADMIN_LIST).hasRole("ADMIN")
+                        .requestMatchers(ADMIN_LIST).hasAuthority("ADMIN")
                         // 금지된 경로
                         .requestMatchers(BAN_LIST).denyAll()
                         // 나머지는 인증 필요
@@ -91,12 +95,7 @@ public class SecurityConfig {
                     exception.accessDeniedHandler(accessDeniedHandler());
                 })
                 // JWT 필터 활성화
-                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler)
-                )
-        ;
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
@@ -104,7 +103,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // React 개발 서버 주소
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // React 개발 서버 주소
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
