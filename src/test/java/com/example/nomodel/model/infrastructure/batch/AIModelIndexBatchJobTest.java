@@ -75,8 +75,11 @@ class AIModelIndexBatchJobTest {
     
     @Test
     void Reader_Writer_구성_테스트() {
+        // Given
+        LocalDateTime fromDateTime = LocalDateTime.now().minusMinutes(5);
+        
         // When
-        var reader = batchJobConfig.aiModelReader();
+        var reader = batchJobConfig.aiModelReader(fromDateTime);
         var writer = batchJobConfig.aiModelWriter();
         
         // Then
