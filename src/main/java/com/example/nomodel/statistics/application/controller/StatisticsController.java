@@ -1,6 +1,7 @@
 package com.example.nomodel.statistics.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
+import com.example.nomodel.statistics.application.dto.response.DailyActivityDto;
 import com.example.nomodel.statistics.application.dto.response.StatisticsMonthlyDto;
 import com.example.nomodel.statistics.application.dto.response.StatisticsSummaryDto;
 import com.example.nomodel.statistics.application.service.StatisticsService;
@@ -26,6 +27,12 @@ public class StatisticsController {
   @GetMapping("/admin/dashboard/monthly-stats")
   public ResponseEntity<?> getStatisticsMonthly() {
     List<StatisticsMonthlyDto> result = statisticsService.getStatisticsMonthly();
+    return ResponseEntity.ok(ApiUtils.success(result));
+  }
+
+  @GetMapping("/admin/dashboard/daily-activity")
+  public ResponseEntity<?> getDailyActivity() {
+    List<DailyActivityDto> result = statisticsService.getDailyActivity();
     return ResponseEntity.ok(ApiUtils.success(result));
   }
 }

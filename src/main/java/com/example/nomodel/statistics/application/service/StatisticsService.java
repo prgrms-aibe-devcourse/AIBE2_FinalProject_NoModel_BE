@@ -5,19 +5,18 @@ import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
 import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import com.example.nomodel.review.domain.repository.ReviewRepository;
-import com.example.nomodel.statistics.application.dto.response.MonthlyCount;
-import com.example.nomodel.statistics.application.dto.response.StatisticsMonthlyDto;
-import com.example.nomodel.statistics.application.dto.response.StatisticsSummaryDto;
+import com.example.nomodel.statistics.application.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static java.util.Calendar.*;
 
 @Service
 @RequiredArgsConstructor
@@ -91,5 +90,57 @@ public class StatisticsService {
     }
     return result;
   }
-  
+
+  public List<DailyActivityDto> getDailyActivity() {
+
+    // 1) 최근 7일 범위(KST): [6일 전 00:00, 내일 00:00)
+    ZoneId KST = ZoneId.of("Asia/Seoul");
+    LocalDate today = LocalDate.now(KST);
+    LocalDate start = today.minusDays(6);
+
+    LocalDateTime from = start.atStartOfDay();
+    LocalDateTime to   = today.plusDays(1).atStartOfDay();
+
+    // 2) JPQL 집계
+    List<DailyCount> signups  = memberJpaRepository.countDailySignups(from, to);
+    List<DailyCount> projects = adResultJpaRepository.countDailyProjects(from, to);
+
+    // 3) yyyy-MM-dd 키로 맵핑
+    Map<LocalDate, Long> uMap = new HashMap<>();
+    for (DailyCount d : signups) {
+      uMap.put(LocalDate.of(d.getYear(), d.getMonth(), d.getDay()), d.getCount());
+    }
+    Map<LocalDate, Long> pMap = new HashMap<>();
+    for (DailyCount d : projects) {
+      pMap.put(LocalDate.of(d.getYear(), d.getMonth(), d.getDay()), d.getCount());
+    }
+
+    // 4) 최근 7일을 순회하며 0 보간 + 요일 한글 생성
+    List<DailyActivityDto> result = new ArrayList<>(7);
+    LocalDate cur = start;
+    for (int i=0; i<7; i++) {
+      long users = uMap.getOrDefault(cur, 0L);
+      long projs = pMap.getOrDefault(cur, 0L);
+      String dayKo = toKoreanDow(cur.getDayOfWeek());
+      result.add(new DailyActivityDto(dayKo, users, projs));
+      cur = cur.plusDays(1);
+    }
+
+    // 5) "월~일" 고정 순서로 정렬 (원한다면 유지)
+//    List<String> ORDER = List.of("월","화","수","목","금","토","일");
+//    result.sort(Comparator.comparingInt(i -> ORDER.indexOf(i.getDay())));
+    return result;
+  }
+
+  private static String toKoreanDow(DayOfWeek d) {
+    return switch (d) {
+      case MONDAY -> "월";
+      case TUESDAY -> "화";
+      case WEDNESDAY -> "수";
+      case THURSDAY -> "목";
+      case FRIDAY -> "금";
+      case SATURDAY -> "토";
+      case SUNDAY -> "일";
+    };
+  }
 }
