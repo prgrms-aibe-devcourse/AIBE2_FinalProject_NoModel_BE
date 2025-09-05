@@ -8,6 +8,7 @@ public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR("ISE001", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     INVALID_REQUEST("IRE001", HttpStatus.BAD_REQUEST, "Invalid request"),
+    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
     EMAIL_ALREADY_EXISTS("EAE001", HttpStatus.CONFLICT, "Email already exists"),
@@ -37,6 +38,7 @@ public enum ErrorCode {
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
+    REPORT_NOT_FOUND("RNF001", HttpStatus.NOT_FOUND, "Report not found"),
     ;
 
     private final String errorCode;

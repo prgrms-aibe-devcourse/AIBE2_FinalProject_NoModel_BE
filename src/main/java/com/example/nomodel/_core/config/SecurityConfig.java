@@ -78,7 +78,7 @@ public class SecurityConfig {
                         // 나머지 WHITE_LIST 허용
                         .requestMatchers(WHITE_LIST).permitAll()
                         // 관리자 권한 필요
-                        .requestMatchers(ADMIN_LIST).hasAuthority("ADMIN")
+                        .requestMatchers(ADMIN_LIST).hasRole("ADMIN")
                         // 금지된 경로
                         .requestMatchers(BAN_LIST).denyAll()
                         // 나머지는 인증 필요
@@ -104,7 +104,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // React 개발 서버 주소
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // React 개발 서버 주소
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
