@@ -30,9 +30,14 @@ public enum ErrorCode {
     INVALID_TOKEN_TYPE("ITT001", HttpStatus.BAD_REQUEST, "Invalid token type"),
     REFRESH_TOKEN_NOT_FOUND("RTNF001", HttpStatus.NOT_FOUND, "Refresh token not found"),
     
+    // oauth2 관련 에러
+    UNSUPPORTED_PROVIDER("UP_001", HttpStatus.BAD_REQUEST, "Unsupported provider"),
+    EMAIL_REQUIRED("ER_001", HttpStatus.INTERNAL_SERVER_ERROR, "email is required"),
+
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
+    REPORT_NOT_FOUND("RNF001", HttpStatus.NOT_FOUND, "Report not found"),
 
     //리뷰 관련 에러
     REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),
