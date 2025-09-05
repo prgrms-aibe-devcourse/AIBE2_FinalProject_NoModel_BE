@@ -11,6 +11,7 @@ public enum ErrorCode {
     INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
+    MODEL_NOT_FOUND("MONF001", HttpStatus.NOT_FOUND, "Model not found"),
     EMAIL_ALREADY_EXISTS("EAE001", HttpStatus.CONFLICT, "Email already exists"),
     MEMBER_NOT_ACTIVE("MNA001", HttpStatus.FORBIDDEN, "Member is not active"),
     
