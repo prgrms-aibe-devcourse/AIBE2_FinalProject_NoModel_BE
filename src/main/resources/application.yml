@@ -12,9 +12,14 @@ spring:
       - optional:classpath:config/application-docker.yml
       - optional:classpath:config/application-monitoring.yml
       - optional:classpath:config/external-services.yml
+  batch:
+    jdbc:
+      initialize-schema: always  # 배치 테이블 자동 생성
+    job:
+      enabled: false  # 애플리케이션 시작 시 자동 실행 비활성화
 
 # 애플리케이션 설정
 app:
   batch:
     aimodel-index:
-      enabled: true  # AIModel 인덱싱 배치 활성화 (운영환경에서는 false로 설정 가능)
+      enabled: true  # AIModel 인덱싱 스케줄러 활성화 (증분 처리)

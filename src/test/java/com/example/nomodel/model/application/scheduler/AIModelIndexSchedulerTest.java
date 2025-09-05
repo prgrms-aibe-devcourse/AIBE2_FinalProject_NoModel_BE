@@ -1,5 +1,6 @@
 package com.example.nomodel.model.application.scheduler;
 
+import com.example.nomodel.model.domain.batch.AIModelIndexScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mock;
@@ -18,7 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 
 /**
- * AIModel 인덱싱 스케줄러 테스트
+ * AIModel 인덱싱 스케줄러 테스트 (증분 처리)
  */
 class AIModelIndexSchedulerTest {
 
@@ -36,25 +37,9 @@ class AIModelIndexSchedulerTest {
         scheduler = new AIModelIndexScheduler(jobLauncher, aiModelIndexJob);
     }
 
-    @Test
-    void 배치_스케줄러_실행_테스트() throws Exception {
-        // Given
-        JobExecution mockJobExecution = mock(JobExecution.class);
-        given(jobLauncher.run(eq(aiModelIndexJob), any(JobParameters.class)))
-                .willReturn(mockJobExecution);
-
-        // When
-        scheduler.runAIModelIndexBatch();
-
-        // Then
-        verify(jobLauncher, times(1)).run(eq(aiModelIndexJob), any(JobParameters.class));
-        // JobParameters에 timestamp가 포함되는지 검증
-        verify(jobLauncher).run(eq(aiModelIndexJob), 
-            argThat(params -> params.getLocalDateTime("timestamp") != null));
-    }
 
     @Test
-    void 증분_동기화_스케줄러_실행_테스트() throws Exception {
+    void 증분_인덱싱_스케줄러_실행_테스트() throws Exception {
         // Given
         JobExecution mockJobExecution = mock(JobExecution.class);
         given(jobLauncher.run(eq(aiModelIndexJob), any(JobParameters.class)))
@@ -65,11 +50,12 @@ class AIModelIndexSchedulerTest {
 
         // Then
         verify(jobLauncher, times(1)).run(eq(aiModelIndexJob), any(JobParameters.class));
-        // 증분 동기화 파라미터들이 올바르게 설정되는지 검증
+        // 증분 처리 파라미터들이 올바르게 설정되는지 검증
         verify(jobLauncher).run(eq(aiModelIndexJob), 
             argThat(params -> 
                 "incremental".equals(params.getString("syncType")) &&
-                params.getLocalDateTime("fromDateTime") != null
+                params.getLocalDateTime("fromDateTime") != null &&
+                params.getLocalDateTime("timestamp") != null
             ));
     }
 
@@ -80,7 +66,7 @@ class AIModelIndexSchedulerTest {
                 .willThrow(new RuntimeException("배치 실행 실패"));
 
         // When & Then (예외 발생해도 스케줄러는 멈추지 않음)
-        scheduler.runAIModelIndexBatch();
+        scheduler.runIncrementalSync();
         
         verify(jobLauncher, times(1)).run(eq(aiModelIndexJob), any(JobParameters.class));
     }

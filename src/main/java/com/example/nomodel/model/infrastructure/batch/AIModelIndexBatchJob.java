@@ -22,6 +22,8 @@ import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
 import org.springframework.batch.item.data.builder.RepositoryItemWriterBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
@@ -32,7 +34,7 @@ import java.util.Map;
 
 /**
  * AIModel Elasticsearch 인덱싱 배치 작업
- * 주기적으로 MySQL의 AIModel 데이터를 Elasticsearch에 동기화
+ * 증분 처리를 통해 수정된 데이터만 Elasticsearch에 동기화
  */
 @Slf4j
 @Configuration
@@ -56,29 +58,40 @@ public class AIModelIndexBatchJob {
     }
 
     /**
-     * AIModel 인덱싱 Step 정의
+     * AIModel 인덱싱 Step 정의 (증분 처리)
+     * Step은 싱글톤으로 두고, 구성 요소만 StepScope로 설정
      */
     @Bean
     public Step aiModelIndexStep() {
         return new StepBuilder("aiModelIndexStep", jobRepository)
                 .<AIModel, AIModelDocument>chunk(50, transactionManager)
-                .reader(aiModelReader())
+                .reader(aiModelReader(null)) // StepScope 프록시 주입
                 .processor(aiModelProcessor())
                 .writer(aiModelWriter())
                 .build();
     }
 
     /**
-     * MySQL에서 AIModel을 읽는 Reader
-     * 최근 업데이트된 모델부터 처리
+     * MySQL에서 증분 처리로 AIModel을 읽는 Reader
+     * JobParameter로 전달된 fromDateTime 이후 생성되거나 수정된 모델 처리
      */
     @Bean
-    public RepositoryItemReader<AIModel> aiModelReader() {
+    @StepScope
+    public RepositoryItemReader<AIModel> aiModelReader(
+            @Value("#{jobParameters['fromDateTime']}") LocalDateTime fromDateTime) {
+        
+        // fromDateTime이 없으면 최근 5분 기본값 사용 (스케줄러와 일치)
+        LocalDateTime actualFromDateTime = fromDateTime != null ? 
+                fromDateTime : LocalDateTime.now().minusMinutes(5);
+        
+        log.info("배치 Reader 초기화 - 증분 처리 시작 시간: {} (생성 또는 수정된 모델)", actualFromDateTime);
+        
         return new RepositoryItemReaderBuilder<AIModel>()
-                .name("aiModelReader")
+                .name("aiModelIncrementalReader")
                 .repository(aiModelRepository)
-                .methodName("findAll")
-                .sorts(Map.of("updatedAt", Sort.Direction.DESC))
+                .methodName("findModelsCreatedOrUpdatedAfterPaged")
+                .arguments(actualFromDateTime)
+                .sorts(Map.of("updatedAt", Sort.Direction.ASC)) // 정렬은 JPQL에서 처리
                 .pageSize(50)
                 .build();
     }

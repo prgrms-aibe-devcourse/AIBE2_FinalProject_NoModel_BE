@@ -2,6 +2,7 @@ package com.example.nomodel.model.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -13,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -36,16 +38,24 @@ public class BatchTestController {
     @Operation(summary = "AIModel 배치 작업 수동 실행", 
                description = "AIModel 인덱싱 배치를 수동으로 실행합니다 (테스트용)")
     @PostMapping("/run-aimodel-index")
-    public ResponseEntity<?> runAIModelIndexBatch() {
+    public ResponseEntity<?> runAIModelIndexBatch(
+            @Parameter(description = "증분 처리 시작 시간 (분 단위, 기본값: 5분 전)")
+            @RequestParam(defaultValue = "5") int fromMinutes) {
         try {
+            LocalDateTime fromDateTime = LocalDateTime.now().minusMinutes(fromMinutes);
+            
             JobParameters jobParameters = new JobParametersBuilder()
                     .addLocalDateTime("timestamp", LocalDateTime.now())
+                    .addLocalDateTime("fromDateTime", fromDateTime)
                     .addString("trigger", "manual-test")
+                    .addString("syncType", "manual")
                     .toJobParameters();
             
             jobLauncher.run(aiModelIndexJob, jobParameters);
             
-            return ResponseEntity.ok(ApiUtils.success("AIModel 인덱싱 배치 실행 완료"));
+            return ResponseEntity.ok(ApiUtils.success(
+                String.format("AIModel 증분 인덱싱 배치 실행 완료 - fromDateTime: %s", fromDateTime)
+            ));
             
         } catch (Exception e) {
             return ResponseEntity.internalServerError()

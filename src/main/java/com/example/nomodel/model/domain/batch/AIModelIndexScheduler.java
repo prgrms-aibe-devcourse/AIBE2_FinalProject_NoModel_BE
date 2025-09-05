@@ -32,40 +32,26 @@ public class AIModelIndexScheduler {
     }
 
     /**
-     * 매시간 정각에 AIModel 인덱싱 배치 실행
-     * cron: 0 0 * * * * (초 분 시 일 월 요일)
+     * 매 5분마다 AIModel 증분 인덱싱 배치 실행
+     * 최근 5분 이내 생성되거나 수정된 모델 처리 (새 모델 + 수정 모델 모두 포함)
+     * 실시간 검색을 위해 짧은 간격으로 동기화
      */
-    @Scheduled(cron = "0 0 * * * *")
-    public void runAIModelIndexBatch() {
-        try {
-            JobParameters jobParameters = new JobParametersBuilder()
-                    .addLocalDateTime("timestamp", LocalDateTime.now())
-                    .toJobParameters();
-            
-            jobLauncher.run(aiModelIndexJob, jobParameters);
-            
-        } catch (Exception e) {
-            log.error("AIModel 인덱싱 배치 실행 실패", e);
-        }
-    }
-
-    /**
-     * 매 30분마다 증분 동기화 (가벼운 작업)
-     * 최근 30분 이내에 수정된 모델만 처리
-     */
-    @Scheduled(fixedRate = 1800000) // 30분 = 30 * 60 * 1000ms
+    @Scheduled(fixedRate = 300000) // 5분 = 5 * 60 * 1000ms
     public void runIncrementalSync() {
         try {
+            LocalDateTime fromDateTime = LocalDateTime.now().minusMinutes(5);
+            
             JobParameters jobParameters = new JobParametersBuilder()
                     .addLocalDateTime("timestamp", LocalDateTime.now())
+                    .addLocalDateTime("fromDateTime", fromDateTime)
                     .addString("syncType", "incremental")
-                    .addLocalDateTime("fromDateTime", LocalDateTime.now().minusMinutes(30))
                     .toJobParameters();
             
+            log.info("AIModel 5분 증분 인덱싱 배치 시작 - fromDateTime: {} (생성+수정 모델)", fromDateTime);
             jobLauncher.run(aiModelIndexJob, jobParameters);
             
         } catch (Exception e) {
-            log.error("AIModel 증분 동기화 실행 실패", e);
+            log.error("AIModel 증분 인덱싱 배치 실행 실패", e);
         }
     }
 }
