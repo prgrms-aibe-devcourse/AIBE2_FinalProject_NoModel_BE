@@ -49,12 +49,4 @@ public class ModelReview {
     public void deactivate(ReviewStatus status) {
         this.status = status;
     }
-
-    //update메서드를 추가
-    public void update(Rating rating, String content) {
-        this.rating = rating;
-        this.content = content;
-        // 필요하면 updatedAt 같은 필드도 같이 변경
-    }
-
 }
