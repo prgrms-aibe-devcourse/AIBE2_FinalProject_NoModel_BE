@@ -89,7 +89,7 @@ public class ServicePerformanceAspect {
             
             // 비즈니스 로직 실패는 항상 로깅 (중요한 비즈니스 컨텍스트)
             Map<String, Object> context = createBusinessContext(joinPoint, executionTime, false);
-            context.put("errorMessage", e.getMessage());
+            context.put("errorMessage", e.getMessage() != null ? e.getMessage() : "No error message available");
             context.put("errorType", e.getClass().getSimpleName());
             
             structuredLogger.logBusinessEvent(
