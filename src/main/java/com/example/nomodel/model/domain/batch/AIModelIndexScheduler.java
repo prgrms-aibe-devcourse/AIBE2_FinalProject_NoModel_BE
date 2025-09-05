@@ -33,7 +33,7 @@ public class AIModelIndexScheduler {
 
     /**
      * 매 5분마다 AIModel 증분 인덱싱 배치 실행
-     * 최근 5분 이내 생성되거나 수정된 모델 처리 (새 모델 + 수정 모델 모두 포함)
+     * 최근 5분 이내 수정된 모델 처리 (BaseTimeEntity 특성상 새 모델도 포함)
      * 실시간 검색을 위해 짧은 간격으로 동기화
      */
     @Scheduled(fixedRate = 300000) // 5분 = 5 * 60 * 1000ms
@@ -47,7 +47,7 @@ public class AIModelIndexScheduler {
                     .addString("syncType", "incremental")
                     .toJobParameters();
             
-            log.info("AIModel 5분 증분 인덱싱 배치 시작 - fromDateTime: {} (생성+수정 모델)", fromDateTime);
+            log.info("AIModel 5분 증분 인덱싱 배치 시작 - fromDateTime: {} (updatedAt 기준)", fromDateTime);
             jobLauncher.run(aiModelIndexJob, jobParameters);
             
         } catch (Exception e) {

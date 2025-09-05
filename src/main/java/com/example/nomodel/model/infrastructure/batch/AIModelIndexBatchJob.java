@@ -73,7 +73,8 @@ public class AIModelIndexBatchJob {
 
     /**
      * MySQL에서 증분 처리로 AIModel을 읽는 Reader
-     * JobParameter로 전달된 fromDateTime 이후 생성되거나 수정된 모델 처리
+     * JobParameter로 전달된 fromDateTime 이후 수정된 모델 처리
+     * (BaseTimeEntity 특성상 생성 시 updatedAt도 설정되므로 새 모델도 포함)
      */
     @Bean
     @StepScope
@@ -84,12 +85,12 @@ public class AIModelIndexBatchJob {
         LocalDateTime actualFromDateTime = fromDateTime != null ? 
                 fromDateTime : LocalDateTime.now().minusMinutes(5);
         
-        log.info("배치 Reader 초기화 - 증분 처리 시작 시간: {} (생성 또는 수정된 모델)", actualFromDateTime);
+        log.info("배치 Reader 초기화 - 증분 처리 시작 시간: {} (updatedAt 기준)", actualFromDateTime);
         
         return new RepositoryItemReaderBuilder<AIModel>()
                 .name("aiModelIncrementalReader")
                 .repository(aiModelRepository)
-                .methodName("findModelsCreatedOrUpdatedAfterPaged")
+                .methodName("findModelsUpdatedAfterPaged")
                 .arguments(actualFromDateTime)
                 .sorts(Map.of("updatedAt", Sort.Direction.ASC)) // 정렬은 JPQL에서 처리
                 .pageSize(50)
