@@ -11,8 +11,10 @@ import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import com.example.nomodel.review.application.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +45,41 @@ public class AIModelDetailService {
 
     private final AIModelJpaRepository aiModelRepository;
     private final AIModelSearchRepository searchRepository;
+    private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final FileJpaRepository fileRepository;
     private final ReviewService reviewService;
     private final MemberJpaRepository memberRepository;
 
     /**
-     * AI 모델 상세 조회
+     * AI 모델 상세 조회 + 조회수 증가 (통합 메소드)
+     */
+    @Transactional
+    public AIModelDetailResponse getModelDetailWithViewIncrement(Long modelId) {
+        // 1. AI 모델 기본 정보 조회
+        AIModel model = aiModelRepository.findById(modelId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
+        
+        // 2. 조회수 증가 (JPA + Elasticsearch 동시 업데이트)
+        incrementViewCountBothSources(modelId);
+        
+        // 3. Elasticsearch 문서에서 통계 정보 조회 (업데이트된 데이터)
+        AIModelDocument document = findModelDocument(modelId);
+        
+        // 4. 소유자 정보 조회
+        String ownerName = getOwnerName(model);
+        
+        // 5. 파일 정보 조회
+        List<File> files = fileRepository.findImageFilesByRelation(RelationType.MODEL, modelId);
+        
+        // 6. 리뷰 정보 조회 (예외 발생하지 않도록 처리)
+        List<ReviewResponse> reviews = getModelReviews(modelId);
+        
+        // 7. 응답 DTO 생성
+        return AIModelDetailResponse.from(model, ownerName, document, files, reviews);
+    }
+
+    /**
+     * AI 모델 상세 조회 (조회수 증가 없음)
      */
     public AIModelDetailResponse getModelDetail(Long modelId) {
         // 1. AI 모델 기본 정보 조회
@@ -72,17 +103,46 @@ public class AIModelDetailService {
     }
 
     /**
-     * 조회수 증가
+     * 조회수 증가 (JPA + Elasticsearch 동시 업데이트)
      */
     @Transactional
-    public void increaseViewCount(Long modelId) {
-        // Elasticsearch 문서에서 사용량 증가
+    public void incrementViewCountBothSources(Long modelId) {
+        // 1. JPA ModelStatistics 업데이트
+        ModelStatistics statistics = getOrCreateModelStatistics(modelId);
+        statistics.incrementViewCount();
+        modelStatisticsRepository.save(statistics);
+        
+        // 2. Elasticsearch 문서 업데이트
         AIModelDocument document = findModelDocument(modelId);
         if (document != null) {
             document.increaseUsage();
             searchRepository.save(document);
-            log.debug("AI 모델 조회수 증가: modelId={}, viewCount={}", modelId, document.getUsageCount());
         }
+        
+        log.debug("AI 모델 조회수 증가 완료: modelId={}, JPA_viewCount={}, ES_usageCount={}", 
+                 modelId, statistics.getViewCount(), 
+                 document != null ? document.getUsageCount() : "N/A");
+    }
+
+    /**
+     * 조회수 증가 (레거시 메소드 - Elasticsearch만 업데이트)
+     */
+    @Transactional
+    public void increaseViewCount(Long modelId) {
+        incrementViewCountBothSources(modelId);
+    }
+    
+    /**
+     * ModelStatistics 조회 또는 생성
+     */
+    private ModelStatistics getOrCreateModelStatistics(Long modelId) {
+        return modelStatisticsRepository.findByModelId(modelId)
+                .orElseGet(() -> {
+                    AIModel model = aiModelRepository.findById(modelId)
+                            .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
+                    ModelStatistics newStatistics = ModelStatistics.createInitialStatistics(model);
+                    return modelStatisticsRepository.save(newStatistics);
+                });
     }
 
     /**
