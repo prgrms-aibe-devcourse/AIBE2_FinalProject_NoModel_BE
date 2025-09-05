@@ -46,23 +46,31 @@ public class AIModelDetailService {
     private final AIModelJpaRepository aiModelRepository;
     private final AIModelSearchRepository searchRepository;
     private final ModelStatisticsJpaRepository modelStatisticsRepository;
+    private final ViewCountThrottleService viewCountThrottleService;
     private final FileJpaRepository fileRepository;
     private final ReviewService reviewService;
     private final MemberJpaRepository memberRepository;
 
     /**
      * AI 모델 상세 조회 + 조회수 증가 (통합 메소드)
+     * 
+     * @param modelId 모델 ID
+     * @param memberId 회원 ID (중복 방지용)
      */
     @Transactional
-    public AIModelDetailResponse getModelDetailWithViewIncrement(Long modelId) {
+    public AIModelDetailResponse getModelDetailWithViewIncrement(Long modelId, Long memberId) {
         // 1. AI 모델 기본 정보 조회
         AIModel model = aiModelRepository.findById(modelId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
         
-        // 2. 조회수 증가 (JPA + Elasticsearch 동시 업데이트)
-        incrementViewCountBothSources(modelId);
+        // 2. 중복 방지 체크 후 조회수 증가
+        if (viewCountThrottleService.canIncrementViewCount(modelId, memberId)) {
+            incrementViewCountBothSources(modelId);
+        } else {
+            log.debug("조회수 증가 생략 (중복 방지): modelId={}, memberId={}", modelId, memberId);
+        }
         
-        // 3. Elasticsearch 문서에서 통계 정보 조회 (업데이트된 데이터)
+        // 3. Elasticsearch 문서에서 통계 정보 조회
         AIModelDocument document = findModelDocument(modelId);
         
         // 4. 소유자 정보 조회
@@ -168,17 +176,10 @@ public class AIModelDetailService {
     }
 
     /**
-     * 모델 리뷰 조회 (예외 발생하지 않도록 처리)
+     * 모델 리뷰 조회 (빈 리스트 또는 리뷰 목록 반환)
      */
     private List<ReviewResponse> getModelReviews(Long modelId) {
-        try {
-            return reviewService.getReviewsByModel(modelId);
-        } catch (ApplicationException e) {
-            // 리뷰가 없는 경우 빈 리스트 반환
-            if (e.getErrorCode() == ErrorCode.REVIEW_NOT_FOUND) {
-                return List.of();
-            }
-            throw e;
-        }
+        // ReviewService가 이제 예외를 던지지 않고 빈 리스트를 반환하므로 단순화
+        return reviewService.getReviewsByModel(modelId);
     }
 }
