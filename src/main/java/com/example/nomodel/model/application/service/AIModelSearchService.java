@@ -45,6 +45,22 @@ public class AIModelSearchService {
     }
 
     /**
+     * 관리자 모델 목록 조회 (공개된 ADMIN 타입 모델들)
+     */
+    public Page<AIModelDocument> getAdminModels(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return searchRepository.findByOwnTypeAndIsPublic("ADMIN", true, pageable);
+    }
+
+    /**
+     * 사용자 본인 모델 목록 조회 (공개/비공개 모두)
+     */
+    public Page<AIModelDocument> getUserModels(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return searchRepository.findByOwnerId(userId, pageable);
+    }
+
+    /**
      * 사용자 접근 가능한 모델 검색 (본인 모델 + 공개 모델)
      */
     public Page<AIModelDocument> searchAccessibleModels(String keyword, Long userId, int page, int size) {
