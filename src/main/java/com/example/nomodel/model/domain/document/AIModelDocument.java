@@ -85,6 +85,11 @@ public class AIModelDocument {
     private Long usageCount;
 
     /**
+     * 조회수
+     */
+    private Long viewCount;
+
+    /**
      * 평점
      */
     private Double rating;
@@ -110,7 +115,7 @@ public class AIModelDocument {
     private AIModelDocument(Long modelId, String modelName, String prompt,
                            String[] tags, String ownType, Long ownerId, String ownerName,
                            BigDecimal price, Boolean isPublic,
-                           Long usageCount, Double rating, Long reviewCount,
+                           Long usageCount, Long viewCount, Double rating, Long reviewCount,
                            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.modelId = modelId;
         this.modelName = modelName;
@@ -123,6 +128,7 @@ public class AIModelDocument {
         this.price = price;
         this.isPublic = isPublic;
         this.usageCount = usageCount != null ? usageCount : 0L;
+        this.viewCount = viewCount != null ? viewCount : 0L;
         this.rating = rating != null ? rating : 0.0;
         this.reviewCount = reviewCount != null ? reviewCount : 0L;
         this.createdAt = createdAt;
@@ -143,6 +149,26 @@ public class AIModelDocument {
                 .ownerName(ownerName)
                 .price(aiModel.getPrice())
                 .isPublic(aiModel.isPublic())
+                .createdAt(aiModel.getCreatedAt())
+                .updatedAt(aiModel.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * AIModel 엔티티와 통계 정보로부터 AIModelDocument 생성
+     */
+    public static AIModelDocument from(AIModel aiModel, String ownerName, Long viewCount) {
+        return AIModelDocument.builder()
+                .modelId(aiModel.getId())
+                .modelName(aiModel.getModelName())
+                .prompt(extractPrompt(aiModel))
+                .tags(extractTags(aiModel))
+                .ownType(aiModel.getOwnType().name())
+                .ownerId(aiModel.getOwnerId())
+                .ownerName(ownerName)
+                .price(aiModel.getPrice())
+                .isPublic(aiModel.isPublic())
+                .viewCount(viewCount)
                 .createdAt(aiModel.getCreatedAt())
                 .updatedAt(aiModel.getUpdatedAt())
                 .build();

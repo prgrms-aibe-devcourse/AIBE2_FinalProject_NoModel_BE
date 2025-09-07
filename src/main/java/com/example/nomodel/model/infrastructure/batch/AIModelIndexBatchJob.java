@@ -4,8 +4,10 @@ import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class AIModelIndexBatchJob {
     private final PlatformTransactionManager transactionManager;
     private final AIModelJpaRepository aiModelRepository;
     private final AIModelSearchRepository searchRepository;
+    private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final MemberJpaRepository memberRepository;
 
     /**
@@ -99,13 +102,15 @@ public class AIModelIndexBatchJob {
 
     /**
      * AIModel을 AIModelDocument로 변환하는 Processor
+     * ModelStatistics에서 viewCount를 포함하여 문서 생성
      */
     @Bean
     public ItemProcessor<AIModel, AIModelDocument> aiModelProcessor() {
         return aiModel -> {
             try {
                 String ownerName = getOwnerName(aiModel);
-                return AIModelDocument.from(aiModel, ownerName);
+                Long viewCount = getViewCount(aiModel);
+                return AIModelDocument.from(aiModel, ownerName, viewCount);
                 
             } catch (Exception e) {
                 log.error("AIModel 변환 실패: modelId={}", aiModel.getId(), e);
@@ -137,5 +142,15 @@ public class AIModelIndexBatchJob {
                 .map(Member::getEmail)
                 .map(Email::getValue)
                 .orElse("Unknown");
+    }
+
+    /**
+     * 모델의 조회수 조회
+     * ModelStatistics에서 viewCount를 가져오며, 없으면 0 반환
+     */
+    private Long getViewCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getViewCount)
+                .orElse(0L);
     }
 }
