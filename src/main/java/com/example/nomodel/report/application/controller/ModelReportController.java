@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +28,7 @@ import java.util.List;
 @RequestMapping("/reports")
 @RequiredArgsConstructor
 @Tag(name = "Model Report", description = "AI 모델 신고 관리 API")
-public class ModelReportController {
+public class  ModelReportController {
 
     private final ModelReportService modelReportService;
 
@@ -60,31 +59,11 @@ public class ModelReportController {
         
         log.info("모델 신고 처리 완료: reportId={}", response.getReportId());
         
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiUtils.success(response));
+        return ResponseEntity.ok(ApiUtils.success(response));
     }
 
     @Operation(
-        summary = "모델의 신고 목록 조회", 
-        description = "특정 모델에 대한 모든 신고 목록을 조회합니다. (관리자용)"
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "404", description = "모델을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping("/models/{modelId}")
-    public ResponseEntity<?> getModelReports(
-            @Parameter(description = "조회할 모델 ID", example = "1") 
-            @PathVariable Long modelId) {
-        
-        List<ModelReportResponse> reports = modelReportService.getModelReports(modelId);
-        
-        return ResponseEntity.ok(ApiUtils.success(reports));
-    }
-
-    @Operation(
-        summary = "내 모델 신고 목록 조회", 
+        summary = "내 모델 신고 목록 조회",
         description = "현재 로그인한 사용자가 신고한 모든 모델 신고 목록을 조회합니다."
     )
     @ApiResponses({
@@ -123,47 +102,5 @@ public class ModelReportController {
         ModelReportResponse report = modelReportService.getModelReport(reportId, reporterId);
         
         return ResponseEntity.ok(ApiUtils.success(report));
-    }
-
-    @Operation(
-        summary = "모델 신고 통계 조회", 
-        description = "특정 모델의 신고 관련 통계 정보를 조회합니다."
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "404", description = "모델을 찾을 수 없음"),
-        @ApiResponse(responseCode = "500", description = "서버 오류")
-    })
-    @GetMapping("/models/{modelId}/stats")
-    public ResponseEntity<?> getModelReportStats(
-            @Parameter(description = "조회할 모델 ID", example = "1") 
-            @PathVariable Long modelId) {
-        
-        long totalReports = modelReportService.getTotalReportCount(modelId);
-        long activeReports = modelReportService.getActiveReportCount(modelId);
-        
-        ModelReportStats stats = ModelReportStats.builder()
-                .modelId(modelId)
-                .totalReportCount(totalReports)
-                .activeReportCount(activeReports)
-                .build();
-        
-        return ResponseEntity.ok(ApiUtils.success(stats));
-    }
-
-    /**
-     * 모델 신고 통계 응답 DTO
-     */
-    @lombok.Builder
-    @lombok.Getter
-    public static class ModelReportStats {
-        @Parameter(description = "모델 ID")
-        private Long modelId;
-        
-        @Parameter(description = "전체 신고 수")
-        private long totalReportCount;
-        
-        @Parameter(description = "활성 신고 수 (처리 중)")
-        private long activeReportCount;
     }
 }
