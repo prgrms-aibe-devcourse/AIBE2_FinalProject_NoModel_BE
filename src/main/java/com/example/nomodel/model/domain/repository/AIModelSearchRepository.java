@@ -71,25 +71,25 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     /**
      * 인기 모델 검색 (사용량 기준)
      */
-    @Query("{\"bool\": {\"filter\": [{\"term\": {\"isPublic\": true}}]}, \"sort\": [{\"usageCount\": {\"order\": \"desc\"}}, {\"rating\": {\"order\": \"desc\"}}]}")
+    @Query("{\"bool\": {\"filter\": [{\"term\": {\"isPublic\": true}}]}}")
     Page<AIModelDocument> findPopularModels(Pageable pageable);
 
     /**
      * 최신 모델 검색
      */
-    @Query("{\"bool\": {\"filter\": [{\"term\": {\"isPublic\": true}}]}, \"sort\": [{\"createdAt\": {\"order\": \"desc\"}}]}")
+    @Query("{\"bool\": {\"filter\": [{\"term\": {\"isPublic\": true}}]}}")
     Page<AIModelDocument> findRecentModels(Pageable pageable);
 
     /**
      * 평점 높은 모델 검색
      */
-    @Query("{\"bool\": {\"must\": [{\"range\": {\"rating\": {\"gte\": ?0}}}], \"filter\": [{\"term\": {\"isPublic\": true}}, {\"range\": {\"reviewCount\": {\"gte\": 1}}}]}, \"sort\": [{\"rating\": {\"order\": \"desc\"}}, {\"reviewCount\": {\"order\": \"desc\"}}]}")
+    @Query("{\"bool\": {\"must\": [{\"range\": {\"rating\": {\"gte\": ?0}}}], \"filter\": [{\"term\": {\"isPublic\": true}}, {\"range\": {\"reviewCount\": {\"gte\": 1}}}]}}")
     Page<AIModelDocument> findHighRatedModels(Double minRating, Pageable pageable);
 
     /**
      * 관리자 추천 모델 검색
      */
-    @Query("{\"bool\": {\"filter\": [{\"term\": {\"ownType\": \"ADMIN\"}}, {\"term\": {\"isPublic\": true}}]}, \"sort\": [{\"rating\": {\"order\": \"desc\"}}, {\"usageCount\": {\"order\": \"desc\"}}]}")
+    @Query("{\"bool\": {\"filter\": [{\"term\": {\"ownType\": \"ADMIN\"}}, {\"term\": {\"isPublic\": true}}]}}")
     Page<AIModelDocument> findRecommendedModels(Pageable pageable);
 
     /**

@@ -117,7 +117,9 @@ public class AIModelSearchService {
      */
     public Page<AIModelDocument> getPopularModels(int page, int size) {
         
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, 
+            Sort.by("usageCount").descending()
+                .and(Sort.by("rating").descending()));
         return searchRepository.findPopularModels(pageable);
     }
 
@@ -126,7 +128,7 @@ public class AIModelSearchService {
      */
     public Page<AIModelDocument> getRecentModels(int page, int size) {
         
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.findRecentModels(pageable);
     }
 
@@ -135,7 +137,9 @@ public class AIModelSearchService {
      */
     public Page<AIModelDocument> getRecommendedModels(int page, int size) {
         
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, 
+            Sort.by("rating").descending()
+                .and(Sort.by("usageCount").descending()));
         return searchRepository.findRecommendedModels(pageable);
     }
 
@@ -144,7 +148,9 @@ public class AIModelSearchService {
      */
     public Page<AIModelDocument> getHighRatedModels(Double minRating, int page, int size) {
         
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, 
+            Sort.by("rating").descending()
+                .and(Sort.by("reviewCount").descending()));
         return searchRepository.findHighRatedModels(minRating, pageable);
     }
 
