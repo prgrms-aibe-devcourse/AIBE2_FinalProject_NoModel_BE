@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * AI 모델 상세 조회 API 컨트롤러
+ * JPA 기반 완전한 모델 상세 정보 조회 (파일, 리뷰, 통계 포함)
  */
 @RestController
 @RequestMapping("/models")

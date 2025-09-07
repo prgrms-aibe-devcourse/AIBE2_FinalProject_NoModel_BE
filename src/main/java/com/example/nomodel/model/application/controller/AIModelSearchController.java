@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * AI 모델 검색 API 컨트롤러
@@ -110,16 +109,4 @@ public class AIModelSearchController {
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "모델 상세 정보", description = "문서 ID로 모델 상세 정보 조회")
-    @GetMapping("/{documentId}")
-    public ResponseEntity<?> getModelDetail(
-            @Parameter(description = "모델 문서 ID") @PathVariable String documentId) {
-
-        Optional<AIModelDocument> result = searchService.findById(documentId);
-        if (result.isPresent()) {
-            return ResponseEntity.ok(ApiUtils.success(result.get()));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
 }
