@@ -28,6 +28,11 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     Page<AIModelDocument> findByOwnerId(Long ownerId, Pageable pageable);
 
     /**
+     * 모델 ID로 검색
+     */
+    Page<AIModelDocument> findByModelId(Long modelId, Pageable pageable);
+
+    /**
      * 소유 타입별 검색 (USER, ADMIN)
      */
     Page<AIModelDocument> findByOwnTypeAndIsPublic(String ownType, Boolean isPublic, Pageable pageable);
