@@ -111,25 +111,17 @@ public class AIModelDetailService {
     }
 
     /**
-     * 조회수 증가 (JPA + Elasticsearch 동시 업데이트)
+     * 조회수 증가 (JPA only - Elasticsearch는 배치로 동기화)
      */
     @Transactional
     public void incrementViewCountBothSources(Long modelId) {
-        // 1. JPA ModelStatistics 업데이트
+        // JPA ModelStatistics 업데이트만 수행
         ModelStatistics statistics = getOrCreateModelStatistics(modelId);
         statistics.incrementViewCount();
         modelStatisticsRepository.save(statistics);
         
-        // 2. Elasticsearch 문서 업데이트
-        AIModelDocument document = findModelDocument(modelId);
-        if (document != null) {
-            document.increaseUsage();
-            searchRepository.save(document);
-        }
-        
-        log.debug("AI 모델 조회수 증가 완료: modelId={}, JPA_viewCount={}, ES_usageCount={}", 
-                 modelId, statistics.getViewCount(), 
-                 document != null ? document.getUsageCount() : "N/A");
+        log.debug("AI 모델 조회수 증가 완료: modelId={}, JPA_viewCount={} (Elasticsearch는 배치 동기화)", 
+                 modelId, statistics.getViewCount());
     }
 
     /**

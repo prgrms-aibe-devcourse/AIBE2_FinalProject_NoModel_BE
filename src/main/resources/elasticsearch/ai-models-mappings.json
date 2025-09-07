@@ -45,6 +45,9 @@
     "usageCount": {
       "type": "long"
     },
+    "viewCount": {
+      "type": "long"
+    },
     "rating": {
       "type": "double"
     },
