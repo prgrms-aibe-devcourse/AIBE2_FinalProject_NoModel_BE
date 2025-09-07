@@ -157,7 +157,7 @@ public class AIModelDetailService {
      * Elasticsearch 문서 조회
      */
     private AIModelDocument findModelDocument(Long modelId) {
-        Page<AIModelDocument> documents = searchRepository.findByOwnerId(modelId, PageRequest.of(0, 1));
+        Page<AIModelDocument> documents = searchRepository.findByModelId(modelId, PageRequest.of(0, 1));
         return documents.getContent().isEmpty() ? null : documents.getContent().get(0);
     }
 
