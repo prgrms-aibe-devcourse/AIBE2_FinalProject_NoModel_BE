@@ -28,7 +28,7 @@ public class AIModelSearchController {
 
     private final AIModelSearchService searchService;
 
-    @Operation(summary = "AI 모델 통합 검색", description = "모델명, 설명, 태그에서 키워드 검색")
+    @Operation(summary = "AI 모델 통합 검색", description = "모델명, 설명, 태그에서 키워드 검색. 키워드가 없으면 전체 공개 모델 조회")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "검색 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
@@ -36,7 +36,7 @@ public class AIModelSearchController {
     })
     @GetMapping
     public ResponseEntity<?> searchModels(
-            @Parameter(description = "검색 키워드") @RequestParam String keyword,
+            @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
