@@ -379,9 +379,7 @@ class AIModelSearchControllerTest {
     void getModelNameSuggestions_Success() throws Exception {
         // given
         String prefix = "GPT";
-        AIModelDocument document1 = createMockDocument("1", "GPT-4", "GPT model 4");
-        AIModelDocument document2 = createMockDocument("2", "GPT-3.5", "GPT model 3.5");
-        List<AIModelDocument> mockSuggestions = Arrays.asList(document1, document2);
+        List<String> mockSuggestions = Arrays.asList("GPT-4", "GPT-3.5");
         
         given(searchService.getModelNameSuggestions(eq(prefix)))
                 .willReturn(mockSuggestions);
@@ -393,8 +391,8 @@ class AIModelSearchControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.response").isArray())
-                .andExpect(jsonPath("$.response[0].modelName").value("GPT-4"))
-                .andExpect(jsonPath("$.response[1].modelName").value("GPT-3.5"));
+                .andExpect(jsonPath("$.response[0]").value("GPT-4"))
+                .andExpect(jsonPath("$.response[1]").value("GPT-3.5"));
 
         then(searchService).should().getModelNameSuggestions(eq(prefix));
     }

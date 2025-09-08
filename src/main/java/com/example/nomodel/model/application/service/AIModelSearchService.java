@@ -9,6 +9,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Suggester;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,7 @@ import java.util.Optional;
 public class AIModelSearchService {
 
     private final AIModelSearchRepository searchRepository;
+    private final ElasticsearchClient elasticsearchClient;
 
     /**
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
@@ -175,18 +180,48 @@ public class AIModelSearchService {
 
     /**
      * 자동완성 제안 (completion suggester 기반)
+     * 모델명 문자열 리스트만 반환
      */
-    public List<AIModelDocument> getModelNameSuggestions(String prefix) {
-        return searchRepository.findModelNameSuggestions(prefix);
-    }
-
-    /**
-     * 부분 모델명 검색 (edge n-gram 기반)
-     */
-    public Page<AIModelDocument> searchByPartialName(String partial, int page, int size) {
+    public List<String> getModelNameSuggestions(String prefix) {
+        log.debug("모델명 자동완성 요청: prefix={}", prefix);
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        return searchRepository.searchByPartialName(partial, pageable);
+        try {
+            // Completion Suggester 빌드
+            Suggester suggester = Suggester.of(s -> s
+                .suggesters("model-name-suggest", st -> st
+                    .prefix(prefix)
+                    .completion(c -> c
+                        .field("suggest")
+                        .size(10)
+                        .skipDuplicates(true)
+                        // 컨텍스트 필터링은 매핑에 contexts가 있는 경우만 사용
+                        // .contexts(ctxs -> ctxs.category(cat -> cat.name("isPublic").contexts("true")))
+                    )
+                )
+            );
+
+            SearchRequest req = SearchRequest.of(b -> b
+                .index("ai-models")
+                .suggest(suggester)
+                // _source를 아예 끄고 size를 0으로 설정
+                .source(src -> src.fetch(false))
+                .size(0)
+            );
+
+            SearchResponse<Void> resp = elasticsearchClient.search(req, Void.class);
+            List<String> suggestions = resp.suggest().get("model-name-suggest").stream()
+                .flatMap(s -> s.completion().options().stream())
+                .map(o -> o.text())
+                .distinct()
+                .toList();
+            
+            log.debug("자동완성 결과: count={}, suggestions={}", suggestions.size(), suggestions);
+            return suggestions;
+        } catch (Exception e) {
+            log.error("자동완성 검색 중 오류 발생: prefix={}", prefix, e);
+            // 오류 발생 시 빈 리스트 반환
+            return List.of();
+        }
     }
 
     /**

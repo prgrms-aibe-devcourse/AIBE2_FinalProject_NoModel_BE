@@ -44,9 +44,62 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     Page<AIModelDocument> searchByModelName(String keyword, Pageable pageable);
 
     /**
-     * 모델명과 프롬프트에서 통합 검색
+     * 모델명과 프롬프트에서 통합 검색 (정확도 우선)
      */
-    @Query("{\"bool\": {\"must\": [{\"multi_match\": {\"query\": \"?0\", \"fields\": [\"modelName^3\", \"prompt^2\", \"tags\"], \"type\": \"best_fields\"}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}}")
+    @Query("""
+        {
+          "bool": {
+            "should": [
+              {
+                "match_phrase": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 10
+                  }
+                }
+              },
+              {
+                "match": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 5
+                  }
+                }
+              },
+              {
+                "match_phrase": {
+                  "prompt": {
+                    "query": "?0",
+                    "boost": 3
+                  }
+                }
+              },
+              {
+                "match": {
+                  "prompt": {
+                    "query": "?0",
+                    "boost": 2
+                  }
+                }
+              },
+              {
+                "terms": {
+                  "tags": ["?0"],
+                  "boost": 1.5
+                }
+              }
+            ],
+            "filter": [
+              {
+                "term": {
+                  "isPublic": true
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        }
+        """)
     Page<AIModelDocument> searchByModelNameAndPrompt(String keyword, Pageable pageable);
 
     /**
@@ -97,17 +150,6 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     @Query("{\"bool\": {\"filter\": [{\"term\": {\"ownType\": \"ADMIN\"}}, {\"term\": {\"isPublic\": true}}]}}")
     Page<AIModelDocument> findRecommendedModels(Pageable pageable);
 
-    /**
-     * 자동완성을 위한 모델명 검색 (completion suggester)
-     */
-    @Query("{\"suggest\": {\"modelName_suggest\": {\"prefix\": \"?0\", \"completion\": {\"field\": \"suggest\", \"size\": 10}}}}")
-    List<AIModelDocument> findModelNameSuggestions(String prefix);
-
-    /**
-     * 부분 검색을 위한 모델명 검색 (한글 분석기 활용)
-     */
-    @Query("{\"bool\": {\"must\": [{\"match\": {\"modelName\": {\"query\": \"?0\", \"fuzziness\": \"AUTO\"}}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}}")
-    Page<AIModelDocument> searchByPartialName(String partial, Pageable pageable);
 
     /**
      * 유사 모델 검색 (More Like This)
