@@ -1,60 +1,55 @@
 package com.example.nomodel.point.application.controller;
 
+import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.point.application.dto.request.PointChargeRequest;
-import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
 import com.example.nomodel.point.application.dto.response.PointChargeResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
 import com.example.nomodel.point.application.service.PointService;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/members/{memberId}/points")
+@RequestMapping("/points") // memberId 제거
 public class PointController {
 
     private final PointService pointService;
 
+    // 포인트 잔액 조회
     @GetMapping("/balance")
-    public ApiUtils.ApiResult<?> getBalance(@PathVariable Long memberId) {
-        try {
-            PointBalanceResponse response = pointService.getPointBalance(memberId);
-            return ApiUtils.success(response);
-        } catch (Exception e) {
-            return ApiUtils.error("해당 회원을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
-        }
+    public ApiUtils.ApiResult<?> getBalance(@AuthenticationPrincipal CustomUserDetails user) {
+        Long memberId = user.getMemberId(); // JWT에서 추출
+        PointBalanceResponse response = pointService.getPointBalance(memberId);
+        return ApiUtils.success(response);
     }
 
     // 포인트 거래내역 조회
     @GetMapping("/transactions")
-    public ApiUtils.ApiResult<?> getTransactions(@PathVariable Long memberId) {
-        try {
-            List<PointTransactionResponse> response = pointService.getPointTransactions(memberId, 0, 10);
-
-            return ApiUtils.success(response);
-        } catch (Exception e) {
-            return ApiUtils.error("거래내역을 조회할 수 없습니다.", HttpStatus.NOT_FOUND);
-        }
+    public ApiUtils.ApiResult<?> getTransactions(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Long memberId = user.getMemberId();
+        List<PointTransactionResponse> response = pointService.getPointTransactions(memberId, page, size);
+        return ApiUtils.success(response);
     }
 
     // 포인트 충전
     @PostMapping("/charge")
     public ApiUtils.ApiResult<?> chargePoints(
-            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid PointChargeRequest request
     ) {
-        try {
-            PointChargeResponse response = pointService.chargePoints(memberId, request.getAmount());
-            return ApiUtils.success(response);
-        } catch (Exception e) {
-            return ApiUtils.error("포인트 충전에 실패했습니다.", HttpStatus.BAD_REQUEST);
-        }
+        Long memberId = user.getMemberId();
+        PointChargeResponse response = pointService.chargePoints(memberId, request.getAmount());
+        return ApiUtils.success(response);
     }
 }
