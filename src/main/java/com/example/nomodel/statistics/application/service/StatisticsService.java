@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
+import static java.lang.Math.round;
 import static java.util.Calendar.*;
 
 @Service
@@ -126,9 +127,6 @@ public class StatisticsService {
       cur = cur.plusDays(1);
     }
 
-    // 5) "월~일" 고정 순서로 정렬 (원한다면 유지)
-//    List<String> ORDER = List.of("월","화","수","목","금","토","일");
-//    result.sort(Comparator.comparingInt(i -> ORDER.indexOf(i.getDay())));
     return result;
   }
 
@@ -142,5 +140,19 @@ public class StatisticsService {
       case SATURDAY -> "토";
       case SUNDAY -> "일";
     };
+  }
+
+  public List<RatingDistributionDto> getRatingDistribution() {
+
+    RatingSummaryDto s = reviewRepository.getRatingSummary();
+
+    List<RatingDistributionDto> result = new ArrayList<>();
+    long[] counts = new long[]{0, s.getC1(), s.getC2(), s.getC3(), s.getC4(), s.getC5()};
+    for(int i=1; i<=5; i++) {
+      double pct = s.getTotal() == 0 ? 0d : counts[i] * 100.0 / s.getTotal();
+      RatingDistributionDto item = new RatingDistributionDto(i, counts[i], Math.round(pct));
+      result.add(item);
+    }
+    return result;
   }
 }
