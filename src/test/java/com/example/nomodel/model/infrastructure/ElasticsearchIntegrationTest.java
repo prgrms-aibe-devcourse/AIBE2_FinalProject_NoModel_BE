@@ -331,6 +331,31 @@ class ElasticsearchIntegrationTest {
     }
 
     @Test
+    @DisplayName("자동완성 제안 생성 테스트")
+    void autocompleteSuggestionsTest() throws InterruptedException {
+        // given
+        AIModelDocument stableDiffusion = createTestDocument("1", "Stable Diffusion v1.5", "AI image generation model", 1L, "StabilityAI");
+        AIModelDocument gpt4 = createTestDocument("2", "GPT-4 Turbo", "Advanced language model", 2L, "OpenAI");
+        AIModelDocument creative = createTestDocument("3", "Creative Model Pro", "Creative AI assistant", 3L, "CreativeAI");
+        
+        searchRepository.save(stableDiffusion);
+        searchRepository.save(gpt4);
+        searchRepository.save(creative);
+        
+        Thread.sleep(1000);
+
+        // then - suggest 리스트가 올바르게 생성되는지 확인
+        assertThat(stableDiffusion.getSuggest()).isNotNull();
+        assertThat(stableDiffusion.getSuggest()).contains("stable", "diffusion");
+        
+        assertThat(gpt4.getSuggest()).isNotNull();
+        assertThat(gpt4.getSuggest()).contains("gpt", "turbo");
+        
+        assertThat(creative.getSuggest()).isNotNull();
+        assertThat(creative.getSuggest()).contains("creative", "model", "pro");
+    }
+
+    @Test
     @DisplayName("문서 삭제")
     void deleteDocument() throws InterruptedException {
         // given
