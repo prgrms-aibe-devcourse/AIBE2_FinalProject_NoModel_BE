@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -295,26 +296,38 @@ class ElasticsearchIntegrationTest {
     }
 
     @Test
-    @DisplayName("모델명 자동완성 제안")
-    void findModelNameSuggestions() throws InterruptedException {
+    @DisplayName("검색 정확도 테스트")
+    void searchAccuracyTest() throws InterruptedException {
         // given
-        AIModelDocument gpt4 = createTestDocument("1", "GPT-4 Turbo", "Latest GPT", 1L, "OpenAI");
-        AIModelDocument gpt35 = createTestDocument("2", "GPT-3.5", "Previous GPT", 1L, "OpenAI");
-        AIModelDocument claude = createTestDocument("3", "Claude-3", "Anthropic model", 2L, "Anthropic");
+        AIModelDocument creative1 = createTestDocument("1", "Creative Model v1.0", "Creative AI model", 1L, "CreativeAI");
+        AIModelDocument creative2 = createTestDocument("2", "Creative Model v1.6", "Enhanced creative model", 1L, "CreativeAI");
+        AIModelDocument sdxl = createTestDocument("3", "SDXL 1.0", "Stable Diffusion XL", 2L, "StabilityAI");
         
-        searchRepository.save(gpt4);
-        searchRepository.save(gpt35);
-        searchRepository.save(claude);
+        searchRepository.save(creative1);
+        searchRepository.save(creative2);
+        searchRepository.save(sdxl);
         
         Thread.sleep(1000);
 
-        // when
-        List<AIModelDocument> suggestions = searchRepository.findModelNameSuggestions("GPT");
+        // when - "Creative Model v1.0" 정확한 검색
+        Page<AIModelDocument> exactResults = searchRepository.searchByModelNameAndPrompt("Creative Model v1.0", 
+                PageRequest.of(0, 10, Sort.by("_score").descending()));
 
-        // then
-        assertThat(suggestions).isNotNull();
-        // TODO: 실제 자동완성 구현 시 검증 추가
-        // assertThat(suggestions).hasSize(2);
+        // when - "Creative" 부분 검색
+        Page<AIModelDocument> partialResults = searchRepository.searchByModelNameAndPrompt("Creative", 
+                PageRequest.of(0, 10, Sort.by("_score").descending()));
+
+        // then - 정확한 검색에서는 정확한 모델이 먼저 나와야 함
+        assertThat(exactResults.getContent()).isNotEmpty();
+        if (!exactResults.getContent().isEmpty()) {
+            assertThat(exactResults.getContent().get(0).getModelName()).contains("Creative Model");
+        }
+        
+        // then - 부분 검색에서도 Creative 관련 모델들이 나와야 함
+        assertThat(partialResults.getContent()).isNotEmpty();
+        assertThat(partialResults.getContent())
+            .extracting(AIModelDocument::getModelName)
+            .anyMatch(name -> name.contains("Creative"));
     }
 
     @Test
