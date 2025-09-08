@@ -1,11 +1,14 @@
 package com.example.nomodel.point.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
+import com.example.nomodel.point.application.dto.request.PointChargeRequest;
 import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
+import com.example.nomodel.point.application.dto.response.PointChargeResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
 import com.example.nomodel.point.application.service.PointService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +41,20 @@ public class PointController {
             return ApiUtils.success(response);
         } catch (Exception e) {
             return ApiUtils.error("거래내역을 조회할 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // 포인트 충전
+    @PostMapping("/charge")
+    public ApiUtils.ApiResult<?> chargePoints(
+            @PathVariable Long memberId,
+            @RequestBody @Valid PointChargeRequest request
+    ) {
+        try {
+            PointChargeResponse response = pointService.chargePoints(memberId, request.getAmount());
+            return ApiUtils.success(response);
+        } catch (Exception e) {
+            return ApiUtils.error("포인트 충전에 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
     }
 }

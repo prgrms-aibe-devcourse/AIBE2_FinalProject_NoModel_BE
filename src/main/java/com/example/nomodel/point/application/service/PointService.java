@@ -4,6 +4,7 @@ import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
+import com.example.nomodel.point.application.dto.response.PointChargeResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
 import com.example.nomodel.point.domain.model.*;
 import com.example.nomodel.point.domain.policy.PointRewardPolicy;
@@ -106,6 +107,39 @@ public class PointService {
                 .map(PointTransactionResponse::from)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public PointChargeResponse chargePoints(Long memberId, BigDecimal amount) {
+        // 유효성 검사
+        if (amount == null || amount.signum() <= 0) {
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
+        }
+
+        // 1. 회원 포인트 잔액 조회
+        MemberPointBalance balance = pointBalanceRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 2. 거래 내역 생성
+        PointTransaction transaction = new PointTransaction(
+                memberId,
+                TransactionDirection.CREDIT,   // 충전은 CREDIT
+                TransactionType.CHARGE,       // 충전 타입
+                amount,
+                balance.getTotalPoints(),
+                balance.getTotalPoints().add(amount),
+                RefererType.CHARGE,           // 충전이므로 "CHARGE" 참조 타입 추가 (enum 필요)
+                null                          // 외부 결제 ID가 있으면 여기 넣기
+        );
+
+        transactionRepository.save(transaction);
+
+        // 3. 포인트 잔액 업데이트
+        balance.addPoints(amount);
+        pointBalanceRepository.save(balance);
+
+        return new PointChargeResponse(transaction);
+    }
+
 
 
 
