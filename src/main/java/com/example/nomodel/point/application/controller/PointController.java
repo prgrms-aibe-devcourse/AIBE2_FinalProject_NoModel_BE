@@ -3,9 +3,11 @@ package com.example.nomodel.point.application.controller;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.point.application.dto.request.PointChargeRequest;
+import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
 import com.example.nomodel.point.application.dto.response.PointChargeResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
+import com.example.nomodel.point.application.dto.response.PointUseResponse;
 import com.example.nomodel.point.application.service.PointService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,5 +53,19 @@ public class PointController {
         Long memberId = user.getMemberId();
         PointChargeResponse response = pointService.chargePoints(memberId, request.getAmount());
         return ApiUtils.success(response);
+    }
+
+    @PostMapping("/use")
+    public ApiUtils.ApiResult<?> usePoints(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody @Valid PointUseRequest request
+    ) {
+        try {
+            Long memberId = user.getMemberId();
+            PointUseResponse response = pointService.usePoints(memberId, request.getAmount(), request.getRefererId());
+            return ApiUtils.success(response);
+        } catch (Exception e) {
+            return ApiUtils.error("포인트 사용에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
     }
 }

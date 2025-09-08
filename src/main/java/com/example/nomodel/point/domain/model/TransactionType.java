@@ -9,5 +9,6 @@ public enum TransactionType {
     MODEL_USAGE,
     WITHDRAWAL,
     EXPIRY,
-    CHARGE
+    CHARGE,
+    USE
 }

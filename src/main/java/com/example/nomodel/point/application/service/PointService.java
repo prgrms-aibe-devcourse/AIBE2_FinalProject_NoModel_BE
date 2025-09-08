@@ -6,6 +6,7 @@ import com.example.nomodel.point.application.dto.request.PointUseRequest;
 import com.example.nomodel.point.application.dto.response.PointBalanceResponse;
 import com.example.nomodel.point.application.dto.response.PointChargeResponse;
 import com.example.nomodel.point.application.dto.response.PointTransactionResponse;
+import com.example.nomodel.point.application.dto.response.PointUseResponse;
 import com.example.nomodel.point.domain.model.*;
 import com.example.nomodel.point.domain.policy.PointRewardPolicy;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
@@ -139,6 +140,38 @@ public class PointService {
 
         return new PointChargeResponse(transaction);
     }
+
+    @Transactional
+    public PointUseResponse usePoints(Long memberId, BigDecimal amount, Long refererId) {
+        // 유효성 검사
+        if (amount == null || amount.signum() <= 0) {
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
+        }
+
+        // 1. 회원 포인트 잔액 조회
+        MemberPointBalance balance = pointBalanceRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
+
+        // 2. 잔액 차감
+        balance.subtractPoints(amount);
+        pointBalanceRepository.save(balance);
+
+        // 3. 거래 내역 생성
+        PointTransaction transaction = new PointTransaction(
+                memberId,
+                TransactionDirection.DEBIT,   // 차감
+                TransactionType.USE,         // 사용
+                amount,
+                balance.getTotalPoints().add(amount), // 차감 전 잔액
+                balance.getTotalPoints(),             // 차감 후 잔액
+                RefererType.ORDER,                    // 사용은 보통 주문과 연관
+                refererId
+        );
+        transactionRepository.save(transaction);
+
+        return new PointUseResponse(transaction);
+    }
+
 
 
 
