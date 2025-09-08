@@ -8,14 +8,18 @@ SET @OLD_SQL_SAFE_UPDATES = @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;
 
 -- 외래키가 있는 테이블부터 순서대로 삭제
+DELETE FROM member_subscription WHERE 1=1;
 DELETE FROM model_statistics_tb WHERE 1=1;
 DELETE FROM ai_model_tb WHERE 1=1;
 DELETE FROM member_tb WHERE 1=1;
+DELETE FROM subscription WHERE 1=1;
 
 -- AUTO_INCREMENT 리셋
 ALTER TABLE member_tb AUTO_INCREMENT = 1;
 ALTER TABLE ai_model_tb AUTO_INCREMENT = 1;
 ALTER TABLE model_statistics_tb AUTO_INCREMENT = 1;
+ALTER TABLE subscription AUTO_INCREMENT = 1;
+ALTER TABLE member_subscription AUTO_INCREMENT = 1;
 
 SET SQL_SAFE_UPDATES = @OLD_SQL_SAFE_UPDATES;
 
