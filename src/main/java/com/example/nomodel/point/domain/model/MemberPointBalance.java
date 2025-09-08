@@ -42,31 +42,68 @@ public class MemberPointBalance {
         this(memberId, BigDecimal.ZERO);
     }
 
-    // getter
+    // ===== Getter =====
     public Long getMemberId() { return memberId; }
     public BigDecimal getTotalPoints() { return totalPoints; }
     public BigDecimal getAvailablePoints() { return availablePoints; }
     public BigDecimal getPendingPoints() { return pendingPoints; }
     public BigDecimal getReservedPoints() { return reservedPoints; }
 
-    // 포인트 추가/차감 로직
+    // ===== 기본 포인트 입출금 =====
     public void addPoints(BigDecimal amount) {
-        if (amount == null || amount.signum() < 0) {
-            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
-        }
+        validateAmount(amount);
         this.totalPoints = this.totalPoints.add(amount);
         this.availablePoints = this.availablePoints.add(amount);
     }
 
     public void subtractPoints(BigDecimal amount) {
-        if (amount == null || amount.signum() < 0) {
-            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
-        }
+        validateAmount(amount);
         if (this.availablePoints.compareTo(amount) < 0) {
             throw new ApplicationException(ErrorCode.POINT_INSUFFICIENT_BALANCE);
         }
         this.totalPoints = this.totalPoints.subtract(amount);
         this.availablePoints = this.availablePoints.subtract(amount);
     }
-}
 
+    // ===== 보류 포인트 (pending) 관리 =====
+    public void addPendingPoints(BigDecimal amount) {
+        validateAmount(amount);
+        this.totalPoints = this.totalPoints.add(amount);
+        this.pendingPoints = this.pendingPoints.add(amount);
+    }
+
+    public void confirmPendingToAvailable(BigDecimal amount) {
+        validateAmount(amount);
+        if (this.pendingPoints.compareTo(amount) < 0) {
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
+        }
+        this.pendingPoints = this.pendingPoints.subtract(amount);
+        this.availablePoints = this.availablePoints.add(amount);
+    }
+
+    // ===== 예약 포인트 (reserved) 관리 =====
+    public void reservePoints(BigDecimal amount) {
+        validateAmount(amount);
+        if (this.availablePoints.compareTo(amount) < 0) {
+            throw new ApplicationException(ErrorCode.POINT_INSUFFICIENT_BALANCE);
+        }
+        this.availablePoints = this.availablePoints.subtract(amount);
+        this.reservedPoints = this.reservedPoints.add(amount);
+    }
+
+    public void releaseReservedPoints(BigDecimal amount) {
+        validateAmount(amount);
+        if (this.reservedPoints.compareTo(amount) < 0) {
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
+        }
+        this.reservedPoints = this.reservedPoints.subtract(amount);
+        this.availablePoints = this.availablePoints.add(amount);
+    }
+
+    // ===== 유효성 검사 =====
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.signum() < 0) {
+            throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
+        }
+    }
+}
