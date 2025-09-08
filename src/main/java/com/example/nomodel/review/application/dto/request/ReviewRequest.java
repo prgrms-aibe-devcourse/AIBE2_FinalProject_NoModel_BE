@@ -1,9 +1,16 @@
 package com.example.nomodel.review.application.dto.request;
 
-public class ReviewRequest {
-    private Integer rating;
-    private String content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-    public Integer getRating() { return rating; }
-    public String getContent() { return content; }
+@Getter
+@NoArgsConstructor
+public class ReviewRequest {
+
+    @Schema(description = "리뷰 평점 (1~5)", example = "5")
+    private int rating;
+
+    @Schema(description = "리뷰 내용", example = "모델 결과물이 정말 마음에 들어요!")
+    private String content;
 }
