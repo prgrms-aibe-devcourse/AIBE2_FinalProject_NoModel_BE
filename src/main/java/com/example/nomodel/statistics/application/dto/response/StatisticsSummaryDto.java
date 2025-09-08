@@ -1,7 +1,5 @@
 package com.example.nomodel.statistics.application.dto.response;
 
-import lombok.AllArgsConstructor;
-
 
 public class StatisticsSummaryDto {
   private long totalUsers;
