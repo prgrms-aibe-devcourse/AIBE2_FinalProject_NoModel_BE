@@ -62,15 +62,17 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                 "match": {
                   "modelName": {
                     "query": "?0",
-                    "boost": 5
+                    "boost": 5,
+                    "fuzziness": "AUTO"
                   }
                 }
               },
               {
-                "match_phrase": {
-                  "prompt": {
-                    "query": "?0",
-                    "boost": 3
+                "wildcard": {
+                  "modelName.keyword": {
+                    "value": "*?0*",
+                    "boost": 3,
+                    "case_insensitive": true
                   }
                 }
               },
@@ -78,14 +80,18 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                 "match": {
                   "prompt": {
                     "query": "?0",
-                    "boost": 2
+                    "boost": 2,
+                    "fuzziness": "AUTO"
                   }
                 }
               },
               {
-                "terms": {
-                  "tags": ["?0"],
-                  "boost": 1.5
+                "wildcard": {
+                  "tags.keyword": {
+                    "value": "*?0*",
+                    "boost": 1.5,
+                    "case_insensitive": true
+                  }
                 }
               }
             ],
