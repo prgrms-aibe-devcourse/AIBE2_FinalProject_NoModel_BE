@@ -25,17 +25,22 @@ public class RemoveBgService {
 
         var job = jobs.enqueueRemoveBg(ownerId, fileId, paramsJson);
 
-        // 비동기 실행 (GenerationJobService 에서 @Async 로 실행)
-        jobs.runRemoveBg(job.getId(),
-                (inputFileId, opts) -> {
-                    try {
-                        return provider.removeBackground(inputFileId, opts);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+// 트랜잭션 커밋 이후에 비동기 실행
+        org.springframework.transaction.support.TransactionSynchronizationManager
+                .registerSynchronization(new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                        jobs.runRemoveBg(job.getId(),
+                                (inputFileId, opts) -> {
+                                    try {
+                                        return provider.removeBackground(inputFileId, opts);
+                                    } catch (Exception e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                },
+                                params
+                        );
                     }
-                },
-                params
-        );
+                });
 
         return job.getId();
     }
