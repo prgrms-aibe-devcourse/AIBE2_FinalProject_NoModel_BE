@@ -41,8 +41,9 @@ public class AIModelDocument {
 
     /**
      * 자동완성을 위한 모델명 (completion suggester)
+     * 다중 입력 방식 지원: 전체 모델명 + 개별 단어들
      */
-    private String suggest;
+    private java.util.List<String> suggest;
 
     /**
      * 모델 프롬프트 (검색용)
@@ -119,7 +120,7 @@ public class AIModelDocument {
                            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.modelId = modelId;
         this.modelName = modelName;
-        this.suggest = modelName; // 자동완성용 (모델명과 동일)
+        this.suggest = buildSuggestions(modelName); // 자동완성용 (다중 입력 방식)
         this.prompt = prompt;
         this.tags = tags;
         this.ownType = ownType;
@@ -219,5 +220,36 @@ public class AIModelDocument {
             return new String[]{"AI", "IMAGE_GENERATION", aiModel.getModelMetadata().getSamplerIndex().name()};
         }
         return new String[]{"AI", "IMAGE_GENERATION"};
+    }
+
+    /**
+     * 모델명으로부터 다양한 자동완성 제안 생성
+     * 예: "Stable Diffusion v1.5" → ["Stable Diffusion v1.5", "stable", "diffusion"]
+     */
+    private static java.util.List<String> buildSuggestions(String modelName) {
+        if (modelName == null || modelName.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+
+        // 1. 공백과 특수문자로 단어 분리
+        String[] words = modelName.trim()
+                .toLowerCase()  // 소문자로 통일
+                .split("[\\s\\-\\_\\.]"); // 공백, 하이픈, 언더스코어, 점으로 분리
+        
+        // 2. 유효한 단어들만 추가 (2글자 이상)
+        java.util.List<String> validWords = new java.util.ArrayList<>();
+        for (String word : words) {
+            String trimmedWord = word.trim();
+            if (trimmedWord.length() >= 2 && !trimmedWord.matches("^[0-9.]+$")) { // 숫자만으로 된 단어 제외
+                validWords.add(trimmedWord);
+            }
+        }
+        
+        // 3. 전체 모델명 + 개별 단어들 결합
+        java.util.List<String> allSuggestions = new java.util.ArrayList<>();
+        allSuggestions.add(modelName.trim()); // 전체 모델명
+        allSuggestions.addAll(validWords); // 개별 단어들
+        
+        return allSuggestions;
     }
 }
