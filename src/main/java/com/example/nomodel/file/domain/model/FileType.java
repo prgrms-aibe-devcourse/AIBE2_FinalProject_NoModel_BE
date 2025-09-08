@@ -7,17 +7,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum FileType {
 
-    THUMBNAIL("썸네일", "THUMBNAIL"),
-    PREVIEW("프리뷰", "PREVIEW");
+    ORIGINAL("원본", "ORIGINAL");
 
     private final String description;
     private final String value;
-
-    public boolean isThumbnail() {
-        return this == THUMBNAIL;
-    }
-
-    public boolean isPreview() {
-        return this == PREVIEW;
-    }
 }

@@ -8,8 +8,10 @@ public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR("ISE001", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     INVALID_REQUEST("IRE001", HttpStatus.BAD_REQUEST, "Invalid request"),
+    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
+    MODEL_NOT_FOUND("MONF001", HttpStatus.NOT_FOUND, "Model not found"),
     EMAIL_ALREADY_EXISTS("EAE001", HttpStatus.CONFLICT, "Email already exists"),
     MEMBER_NOT_ACTIVE("MNA001", HttpStatus.FORBIDDEN, "Member is not active"),
     
@@ -37,7 +39,22 @@ public enum ErrorCode {
     // 신고 관련 에러
     REPORT_INVALID_REPORTER("RIR001", HttpStatus.INTERNAL_SERVER_ERROR, "Report must have a valid reporter"),
     REPORT_INVALID_STATUS_TRANSITION("RIST001", HttpStatus.BAD_REQUEST, "Invalid report status transition"),
+
+    // Firebase 관련 에러
+    FIREBASE_KEY_FILE_NOT_FOUND("FKFNF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file not found"),
+    FIREBASE_INITIALIZATION_FAILED("FIF001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase initialization failed"),
+    FIREBASE_KEY_FILE_READ_ERROR("FKFRE001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase key file read error"),
+
+    // File Storage 관련 에러
+    FILE_UPLOAD_FAILED("FUF001", HttpStatus.INTERNAL_SERVER_ERROR, "File upload failed"),
+    FILE_DELETE_FAILED("FDF001", HttpStatus.INTERNAL_SERVER_ERROR, "File delete failed"),
+    INVALID_FILE_TYPE("IFT001", HttpStatus.BAD_REQUEST, "Invalid file type"),
+    FILE_SIZE_EXCEEDED("FSE001", HttpStatus.BAD_REQUEST, "File size exceeded"),
+    FILE_NOT_FOUND("FNF001", HttpStatus.NOT_FOUND, "File not found"),
+    FIREBASE_STORAGE_BUCKET_NOT_CONFIGURED("FSBNC001", HttpStatus.INTERNAL_SERVER_ERROR, "Firebase storage bucket not configured"),
     REPORT_NOT_FOUND("RNF001", HttpStatus.NOT_FOUND, "Report not found"),
+    DUPLICATE_REPORT("RP002", HttpStatus.CONFLICT, "Report already exists"),
+    REPORT_ACCESS_DENIED("RP003", HttpStatus.FORBIDDEN, "Not allowed to access this report"),
 
     //리뷰 관련 에러
     REVIEW_NOT_FOUND("RV001", HttpStatus.NOT_FOUND, "Review not found"),

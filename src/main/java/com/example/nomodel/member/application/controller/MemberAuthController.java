@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/auth")
@@ -66,8 +64,6 @@ public class MemberAuthController {
                 (int) (authTokenDTO.refreshTokenValidTime() / 1000));
         response.addCookie(refreshTokenCookie);
         
-        log.info("로그인 성공 - 토큰을 쿠키로 설정 완료");
-        
         // 응답에는 토큰 값 제외하고 성공 메시지만 포함
         return ResponseEntity.ok().body(ApiUtils.success("로그인 성공"));
     }
@@ -92,8 +88,6 @@ public class MemberAuthController {
                 (int) (authTokenDTO.refreshTokenValidTime() / 1000));
         response.addCookie(refreshTokenCookie);
         
-        log.info("토큰 재발급 성공 - 새로운 토큰을 쿠키로 설정 완료");
-        
         return ResponseEntity.ok().body(ApiUtils.success("토큰 재발급 성공"));
     }
 
@@ -114,8 +108,6 @@ public class MemberAuthController {
         // Refresh Token 쿠키 삭제
         Cookie refreshTokenCookie = createTokenCookie("refreshToken", "", 0);
         response.addCookie(refreshTokenCookie);
-        
-        log.info("로그아웃 성공 - 토큰 쿠키 삭제 완료");
         
         return ResponseEntity.ok().body(ApiUtils.success("로그아웃 성공"));
     }

@@ -126,7 +126,7 @@ public class TestApiController {
         )
         @RequestBody Map<String, Object> userRequest
     ) {
-        return ResponseEntity.status(201).body(Map.of(
+        return ResponseEntity.ok(Map.of(
             "id", 1001,
             "name", userRequest.get("name"),
             "email", userRequest.get("email"),

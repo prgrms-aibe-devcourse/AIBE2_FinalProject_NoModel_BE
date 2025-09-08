@@ -161,7 +161,7 @@ SELECT
 FROM seq;
 
 -- 8. 파일 데이터 (50개)
-INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, created_at, updated_at)
+INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, is_primary, created_at, updated_at)
 SELECT 
     CONCAT(
         CASE ROW_NUMBER() OVER () % 8
@@ -183,19 +183,14 @@ SELECT
         END
     ) as file_name,
     CASE WHEN ROW_NUMBER() OVER () % 2 = 0 THEN 'PREVIEW' ELSE 'THUMBNAIL' END as file_type,
-    CONCAT('/uploads/', YEAR(NOW()), '/', MONTH(NOW()), '/', DAY(NOW()), '/',
-           SUBSTRING(MD5(RAND()), 1, 8), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 12),
-           CASE ROW_NUMBER() OVER () % 4
-               WHEN 0 THEN '.jpg'
-               WHEN 1 THEN '.png'
-               WHEN 2 THEN '.webp'
-               ELSE '.gif'
-           END
-    ) as file_url,
+    -- Firebase Storage URLs을 사용 (실제 업로드된 이미지)
+    CASE ROW_NUMBER() OVER () % 5
+        WHEN 0 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/testImage_be8eb30c-ce18-438f-b485-593a6ef2dcfe?generation=1756904909282705&alt=media'
+        WHEN 1 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/sample_model_image_001.jpg?generation=1756904909282705&alt=media'
+        WHEN 2 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/generated_art_002.png?generation=1756904909282705&alt=media'
+        WHEN 3 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/custom_thumbnail_003.webp?generation=1756904909282705&alt=media'
+        ELSE 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/ai_artwork_default.jpg?generation=1756904909282705&alt=media'
+    END as file_url,
     CASE ROW_NUMBER() OVER () % 4
         WHEN 0 THEN 'image/jpeg'
         WHEN 1 THEN 'image/png'
@@ -209,6 +204,11 @@ SELECT
         ELSE 'AD'
     END as relation_type,
     FLOOR(1 + (RAND() * 1000)) as relation_id,
+    -- 각 relation_id의 첫 번째 파일을 대표 이미지로 설정 (약 20% 확률)
+    CASE WHEN ROW_NUMBER() OVER (PARTITION BY FLOOR(1 + (RAND() * 1000)) ORDER BY RAND()) = 1 
+         AND RAND() < 0.2 THEN TRUE 
+         ELSE FALSE 
+    END as is_primary,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
 FROM (

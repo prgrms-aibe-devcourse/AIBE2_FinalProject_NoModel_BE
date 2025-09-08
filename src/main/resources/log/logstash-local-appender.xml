@@ -28,8 +28,6 @@
             <!-- Full logger names for complete debugging context -->
             <shortenedLoggerNameLength>-1</shortenedLoggerNameLength>
             
-            <!-- Include all key-value pairs -->
-            <includeKeyValue>true</includeKeyValue>
             
             <!-- Pretty print disabled for Logstash compatibility -->
             <!-- <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/> -->
@@ -43,8 +41,6 @@
         <!-- Very small ring buffer for immediate log visibility -->
         <ringBufferSize>32</ringBufferSize>
         
-        <!-- Immediate flush for instant debugging feedback -->
-        <immediateFlush>true</immediateFlush>
         
         <!-- Short write timeout for responsive development -->
         <writeTimeout>3 second</writeTimeout>
