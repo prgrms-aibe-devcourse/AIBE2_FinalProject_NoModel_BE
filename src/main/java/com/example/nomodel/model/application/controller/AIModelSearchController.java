@@ -94,19 +94,8 @@ public class AIModelSearchController {
     public ResponseEntity<?> getModelNameSuggestions(
             @Parameter(description = "자동완성 접두사") @RequestParam String prefix) {
 
-        List<AIModelDocument> result = searchService.getModelNameSuggestions(prefix);
-        return ResponseEntity.ok(ApiUtils.success(result));
-    }
-
-    @Operation(summary = "부분 모델명 검색", description = "모델명 부분 검색 (edge n-gram 기반)")
-    @GetMapping("/partial")
-    public ResponseEntity<?> searchByPartialName(
-            @Parameter(description = "부분 검색어") @RequestParam String partial,
-            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
-
-        Page<AIModelDocument> result = searchService.searchByPartialName(partial, page, size);
-        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
+        List<String> suggestions = searchService.getModelNameSuggestions(prefix);
+        return ResponseEntity.ok(ApiUtils.success(suggestions));
     }
 
 }
