@@ -14,7 +14,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/generate/stable-diffusion")
+@RequestMapping("/generate/stable-diffusion")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "GEN_PROVIDER", havingValue = "stable-diffusion")
 public class StableDiffusionController {
