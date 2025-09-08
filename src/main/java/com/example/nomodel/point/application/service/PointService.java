@@ -10,6 +10,10 @@ import com.example.nomodel.point.domain.policy.PointRewardPolicy;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import com.example.nomodel.point.domain.service.PointDomainService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
@@ -92,6 +96,18 @@ public class PointService {
             }
         }).start();
     }
+
+    @Transactional(readOnly = true)
+    public List<PointTransactionResponse> getPointTransactions(Long memberId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PointTransaction> transactions = transactionRepository.findByMemberId(memberId, pageable);
+
+        return transactions.stream()
+                .map(PointTransactionResponse::from)
+                .collect(Collectors.toList());
+    }
+
+
 
 }
 

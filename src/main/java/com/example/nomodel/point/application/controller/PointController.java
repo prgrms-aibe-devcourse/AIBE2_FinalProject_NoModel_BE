@@ -28,4 +28,16 @@ public class PointController {
             return ApiUtils.error("해당 회원을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
         }
     }
+
+    // 포인트 거래내역 조회
+    @GetMapping("/transactions")
+    public ApiUtils.ApiResult<?> getTransactions(@PathVariable Long memberId) {
+        try {
+            List<PointTransactionResponse> response = pointService.getPointTransactions(memberId, 0, 10);
+
+            return ApiUtils.success(response);
+        } catch (Exception e) {
+            return ApiUtils.error("거래내역을 조회할 수 없습니다.", HttpStatus.NOT_FOUND);
+        }
+    }
 }
