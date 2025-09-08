@@ -2,6 +2,7 @@ package com.example.nomodel.statistics.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.statistics.application.dto.response.DailyActivityDto;
+import com.example.nomodel.statistics.application.dto.response.RatingDistributionDto;
 import com.example.nomodel.statistics.application.dto.response.StatisticsMonthlyDto;
 import com.example.nomodel.statistics.application.dto.response.StatisticsSummaryDto;
 import com.example.nomodel.statistics.application.service.StatisticsService;
@@ -33,6 +34,12 @@ public class StatisticsController {
   @GetMapping("/admin/dashboard/daily-activity")
   public ResponseEntity<?> getDailyActivity() {
     List<DailyActivityDto> result = statisticsService.getDailyActivity();
+    return ResponseEntity.ok(ApiUtils.success(result));
+  }
+
+  @GetMapping("/admin/dashboard/rating-distribution")
+  public ResponseEntity<?> getRatingDistribution() {
+    List<RatingDistributionDto> result = statisticsService.getRatingDistribution();
     return ResponseEntity.ok(ApiUtils.success(result));
   }
 }
