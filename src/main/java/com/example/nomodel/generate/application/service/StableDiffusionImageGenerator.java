@@ -25,7 +25,10 @@ import java.util.Map;
 @ConditionalOnProperty(name = "GEN_PROVIDER", havingValue = "stable-diffusion")
 public class StableDiffusionImageGenerator {
 
-    private final WebClient webClient;
+    private final WebClient webClient = WebClient.builder()
+            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)) // 10MB
+            .build();
+    
     private final ObjectMapper objectMapper;
 
     @Value("${STABLE_DIFFUSION_API_URL:http://220.127.239.150:7860}")
