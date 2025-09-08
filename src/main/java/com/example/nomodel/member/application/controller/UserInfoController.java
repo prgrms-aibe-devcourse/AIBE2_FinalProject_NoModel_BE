@@ -3,7 +3,7 @@ package com.example.nomodel.member.application.controller;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.member.application.service.UserInfoService;
-import com.example.nomodel.member.dto.UserInfoResponse;
+import com.example.nomodel.member.application.dto.response.UserInfoResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -3,7 +3,7 @@ package com.example.nomodel.member.application.service;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.model.Role;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
-import com.example.nomodel.member.dto.UserInfoResponse;
+import com.example.nomodel.member.application.dto.response.UserInfoResponse;
 import com.example.nomodel.point.domain.model.MemberPointBalance;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.subscription.domain.model.MemberSubscription;
@@ -42,18 +42,18 @@ public class UserInfoService {
         // 포인트 정보 조회
         Integer points = getCurrentPoints(memberId);
 
-        // 관리자 여부 확인
-        Boolean isAdmin = member.getRole() == Role.ADMIN;
+        // 사용자 권한 확인
+        String role = member.getRole().name();
 
-        return UserInfoResponse.builder()
-                .id(member.getId())
-                .name(member.getUsername())
-                .email(member.getEmail().getValue())
-                .joinedAt(member.getCreatedAt())
-                .planType(planType)
-                .points(points)
-                .isAdmin(isAdmin)
-                .build();
+        return new UserInfoResponse(
+                member.getId(),
+                member.getUsername(),
+                member.getEmail().getValue(),
+                member.getCreatedAt(),
+                planType,
+                points,
+                role
+        );
     }
 
     /**
