@@ -4,6 +4,8 @@ package com.example.nomodel.model.domain.repository;
 import com.example.nomodel.model.domain.model.AdResult;
 import com.example.nomodel.statistics.application.dto.response.DailyCount;
 import com.example.nomodel.statistics.application.dto.response.MonthlyCount;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -62,6 +64,16 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
   List<DailyCount> countDailyProjects(
           @Param("from") LocalDateTime from,
           @Param("to")   LocalDateTime to
+  );
+  
+  // 특정 회원의 모델 사용 내역 조회 (페이징)
+  Page<AdResult> findByMemberIdOrderByCreatedAtDesc(@Param("memberId") Long memberId, Pageable pageable);
+  
+  // 특정 회원과 특정 모델의 사용 내역 조회 (페이징)
+  Page<AdResult> findByMemberIdAndModelIdOrderByCreatedAtDesc(
+      @Param("memberId") Long memberId,
+      @Param("modelId") Long modelId,
+      Pageable pageable
   );
   
 }
