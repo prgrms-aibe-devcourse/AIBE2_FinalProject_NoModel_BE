@@ -54,15 +54,4 @@ public class WebClientConfig {
                 .build();
     }
 
-    @Bean
-    public WebClient replicateWebClient(
-            @Value("${REPLICATE_API_BASE_URL}") String baseUrl,
-            @Value("${REPLICATE_API_TOKEN}") String token
-    ) {
-        return WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader("Authorization", "Token " + token)
-                .build();
-    }
-
 }
