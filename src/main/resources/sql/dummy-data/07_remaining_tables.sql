@@ -134,7 +134,7 @@ INSERT INTO discount_policy (name, discount_type, discount_value, is_active, max
 ('플래시 세일', 'PERCENTAGE', 50.00, 0, 1, 0, '2023-12-15', '2023-12-16');
 
 -- 7. 모델 리뷰 데이터 (100개)
-INSERT INTO model_review (model_id, reviewer_id, value, content, status, created_at)
+INSERT INTO model_review (model_id, reviewer_id, rating_value, content, status, created_at)
 WITH RECURSIVE seq(n) AS (
     SELECT 1 
     UNION ALL 
@@ -143,7 +143,7 @@ WITH RECURSIVE seq(n) AS (
 SELECT 
     (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
     (FLOOR(2 + (RAND() * 604))) as reviewer_id,
-    (FLOOR(1 + (RAND() * 5))) as value,
+    (FLOOR(1 + (RAND() * 5))) as rating_value,
     CASE FLOOR(1 + (RAND() * 10))
         WHEN 1 THEN '정말 훌륭한 모델입니다! 결과물의 품질이 매우 뛰어나고 사용하기도 편합니다.'
         WHEN 2 THEN '기대했던 것보다 좋은 결과를 얻을 수 있었습니다. 추천합니다.'
