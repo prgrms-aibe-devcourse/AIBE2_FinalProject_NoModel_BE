@@ -2,7 +2,7 @@ package com.example.nomodel._core.config;
 
 import com.example.nomodel.member.domain.repository.RefreshTokenRedisRepository;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,12 +15,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 @Profile("test")
 public class TestRedisConfig {
 
-    @MockBean
+    @MockitoBean
     private RedisConnectionFactory redisConnectionFactory;
 
-    @MockBean
+    @MockitoBean
     private RedisTemplate<String, Object> redisTemplate;
 
-    @MockBean
+    @MockitoBean
     private RefreshTokenRedisRepository refreshTokenRedisRepository;
 }
