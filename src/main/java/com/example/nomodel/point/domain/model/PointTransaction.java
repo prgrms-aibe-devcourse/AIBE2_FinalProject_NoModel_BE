@@ -5,7 +5,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "point_transaction")
+@Table(
+        name = "point_transaction",
+        indexes = {
+                @Index(name = "idx_point_transaction_created_at", columnList = "created_at")
+        }
+)
 public class PointTransaction {
 
     @Id

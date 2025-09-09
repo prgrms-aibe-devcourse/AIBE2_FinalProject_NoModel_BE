@@ -10,7 +10,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Setter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "member_tb")
+@Table(
+        name = "member_tb",
+        indexes = {
+                @Index(name = "idx_member_created_at", columnList = "created_at")
+        }
+)
 public class Member extends BaseTimeEntity {
 
     @Id
