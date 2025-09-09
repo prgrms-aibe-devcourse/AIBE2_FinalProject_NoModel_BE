@@ -3,7 +3,7 @@ package com.example.nomodel.generationjob.application.service;
 import com.example.nomodel.file.application.service.FileService;
 import com.example.nomodel.file.domain.model.FileType;
 import com.example.nomodel.file.domain.model.RelationType;
-import com.example.nomodel.generate.application.service.provider.ImageGenerator;
+import com.example.nomodel.generate.application.service.StableDiffusionImageGenerator;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generationjob.domain.model.GenerationJob;
 import com.example.nomodel.generationjob.domain.repository.GenerationJobRepository;
@@ -26,7 +26,7 @@ public class GenerationJobService {
 
     private final GenerationJobRepository repo;
     private final FileService fileService;
-    private final ImageGenerator imageGenerator; // replicate/dummy 중 활성 빈
+    private final StableDiffusionImageGenerator imageGenerator; // replicate/dummy 중 활성 빈
 
     /** remove-bg 잡 큐잉 */
     @Transactional
