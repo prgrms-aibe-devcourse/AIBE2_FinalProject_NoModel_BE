@@ -295,8 +295,7 @@ class ModelUsageControllerTest {
         // When & Then
         mockMvc.perform(get("/members/me/models/usage"))
             .andDo(print())
-            .andExpect(status().isFound())
-            .andExpect(redirectedUrl("http://localhost/login"));
+            .andExpect(status().isUnauthorized());
         
         verifyNoInteractions(modelUsageService);
     }

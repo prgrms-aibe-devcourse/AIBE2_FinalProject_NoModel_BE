@@ -2,6 +2,7 @@ package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.OwnType;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -36,6 +37,9 @@ class AIModelSearchServiceTest {
 
     @Mock
     private AIModel aiModel;
+    
+    @Mock
+    private OwnType ownType;
 
     @InjectMocks
     private AIModelSearchService searchService;
@@ -499,6 +503,14 @@ class AIModelSearchServiceTest {
         
         given(aiModel.getId()).willReturn(1L);
         given(aiModel.getModelName()).willReturn("TestModel");
+        given(aiModel.getOwnType()).willReturn(OwnType.USER);
+        given(aiModel.getOwnerId()).willReturn(1L);
+        given(aiModel.getPrice()).willReturn(BigDecimal.ZERO);
+        given(aiModel.isPublic()).willReturn(true);
+        given(aiModel.getCreatedAt()).willReturn(java.time.LocalDateTime.now());
+        given(aiModel.getUpdatedAt()).willReturn(java.time.LocalDateTime.now());
+        given(aiModel.getModelMetadata()).willReturn(null);
+        
         given(searchRepository.save(any(AIModelDocument.class)))
                 .willReturn(expectedDocument);
 
@@ -565,9 +577,9 @@ class AIModelSearchServiceTest {
     // 헬퍼 메서드
     private AIModelDocument createMockDocument(String id, String modelName, String prompt) {
         AIModelDocument document = mock(AIModelDocument.class);
-        given(document.getId()).willReturn(id);
-        given(document.getModelName()).willReturn(modelName);
-        given(document.getPrompt()).willReturn(prompt);
+        lenient().when(document.getId()).thenReturn(id);
+        lenient().when(document.getModelName()).thenReturn(modelName);
+        lenient().when(document.getPrompt()).thenReturn(prompt);
         return document;
     }
 }
