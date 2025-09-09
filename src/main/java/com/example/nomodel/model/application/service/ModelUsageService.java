@@ -45,20 +45,9 @@ public class ModelUsageService {
             int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        
-        Page<AdResult> adResultPage;
-        
-        if (modelId != null) {
-            // 특정 모델의 사용 내역 조회
-            adResultPage = adResultRepository.findByMemberIdAndModelIdOrderByCreatedAtDesc(
-                memberId, modelId, pageable
-            );
-        } else {
-            // 전체 모델 사용 내역 조회
-            adResultPage = adResultRepository.findByMemberIdOrderByCreatedAtDesc(
-                memberId, pageable
-            );
-        }
+        Page<AdResult> adResultPage = (modelId != null) 
+            ? getModelSpecificUsageHistory(memberId, modelId, pageable)
+            : getAllModelUsageHistory(memberId, pageable);
         
         // AdResult ID 목록 추출
         List<Long> adResultIds = adResultPage.getContent().stream()
@@ -94,5 +83,23 @@ public class ModelUsageService {
     public ModelUsageCountResponse getModelUsageCount(Long memberId) {
         long count = adResultRepository.countByMemberId(memberId);
         return ModelUsageCountResponse.from(count);
+    }
+    
+    /**
+     * 특정 모델의 사용 내역 조회
+     */
+    private Page<AdResult> getModelSpecificUsageHistory(Long memberId, Long modelId, Pageable pageable) {
+        return adResultRepository.findByMemberIdAndModelIdOrderByCreatedAtDesc(
+            memberId, modelId, pageable
+        );
+    }
+    
+    /**
+     * 전체 모델의 사용 내역 조회
+     */
+    private Page<AdResult> getAllModelUsageHistory(Long memberId, Pageable pageable) {
+        return adResultRepository.findByMemberIdOrderByCreatedAtDesc(
+            memberId, pageable
+        );
     }
 }
