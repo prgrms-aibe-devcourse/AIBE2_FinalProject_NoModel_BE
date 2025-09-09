@@ -18,6 +18,10 @@ ALTER TABLE ai_model_tb DROP COLUMN update_time;
 ALTER TABLE model_statistics_tb DROP COLUMN reg_time;
 ALTER TABLE model_statistics_tb DROP COLUMN update_time;
 
+-- file_tb 테이블 정리
+ALTER TABLE file_tb DROP COLUMN IF EXISTS reg_time;
+ALTER TABLE file_tb DROP COLUMN IF EXISTS update_time;
+
 -- 외래키 체크 활성화
 SET foreign_key_checks = 1;
 

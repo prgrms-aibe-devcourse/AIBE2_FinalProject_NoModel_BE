@@ -1,6 +1,8 @@
 package com.example.nomodel._core.aop;
 
 import com.example.nomodel._core.aop.annotation.BusinessCritical;
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.logging.StructuredLogger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,16 +89,24 @@ public class ServicePerformanceAspect {
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
             
-            // 비즈니스 로직 실패는 항상 로깅 (중요한 비즈니스 컨텍스트)
-            Map<String, Object> context = createBusinessContext(joinPoint, executionTime, false);
-            context.put("errorMessage", e.getMessage());
-            context.put("errorType", e.getClass().getSimpleName());
+            // 예외 심각도 결정 (비즈니스 예외 vs 시스템 오류)
+            String severity = determineExceptionSeverity(e);
             
-            structuredLogger.logBusinessEvent(
-                log, "SERVICE_FAILURE", 
-                "Business service method failed: " + operation,
-                "CRITICAL", context
-            );
+            // 심각도가 낮은 비즈니스 예외는 DEBUG 레벨로 처리
+            if ("LOW".equals(severity)) {
+                log.debug("비즈니스 예외 발생: {} - {}", operation, e.getMessage());
+            } else {
+                // 중요한 오류만 로깅
+                Map<String, Object> context = createBusinessContext(joinPoint, executionTime, false);
+                context.put("errorMessage", e.getMessage() != null ? e.getMessage() : "No error message available");
+                context.put("errorType", e.getClass().getSimpleName());
+                
+                structuredLogger.logBusinessEvent(
+                    log, "SERVICE_FAILURE", 
+                    "Business service method failed: " + operation,
+                    severity, context
+                );
+            }
             
             throw e;
         }
@@ -145,6 +155,55 @@ public class ServicePerformanceAspect {
         if (executionTime > slowMethodThresholdMs * 2) return "CRITICAL";
         if (executionTime > slowMethodThresholdMs) return "HIGH";
         return "MEDIUM";
+    }
+    
+    /**
+     * 예외 심각도 결정
+     * 정상적인 비즈니스 예외와 실제 시스템 오류를 구분
+     */
+    private String determineExceptionSeverity(Exception e) {
+        // ApplicationException 중에서도 정상적인 비즈니스 상황인지 판단
+        if (e instanceof ApplicationException) {
+            ApplicationException appException = (ApplicationException) e;
+            ErrorCode errorCode = appException.getErrorCode();
+            
+            // 정상적인 비즈니스 상황 (데이터가 없는 경우)
+            if (isNormalBusinessCase(errorCode)) {
+                return "LOW"; // DEBUG 레벨로 처리
+            }
+            
+            // 클라이언트 오류 (잘못된 요청)
+            if (isClientError(errorCode)) {
+                return "MEDIUM"; // WARN 레벨
+            }
+            
+            // 시스템 오류
+            return "CRITICAL";
+        }
+        
+        // 기타 시스템 예외는 모두 CRITICAL
+        return "CRITICAL";
+    }
+    
+    /**
+     * 정상적인 비즈니스 상황 판단 (데이터가 없는 경우)
+     */
+    private boolean isNormalBusinessCase(ErrorCode errorCode) {
+        return errorCode == ErrorCode.REVIEW_NOT_FOUND ||
+               errorCode == ErrorCode.MODEL_NOT_FOUND; // 조회에서만 정상 상황
+    }
+    
+    /**
+     * 클라이언트 오류 판단 (잘못된 요청)
+     */
+    private boolean isClientError(ErrorCode errorCode) {
+        return errorCode == ErrorCode.INVALID_REQUEST ||
+               errorCode == ErrorCode.INVALID_ENUM_VALUE ||
+               errorCode == ErrorCode.INVALID_RATING_VALUE ||
+               errorCode == ErrorCode.DUPLICATE_REVIEW ||
+               errorCode == ErrorCode.REVIEW_NOT_ALLOWED ||
+               errorCode == ErrorCode.MEMBER_ALREADY_EXISTS ||
+               errorCode == ErrorCode.EMAIL_ALREADY_EXISTS;
     }
     
     /**

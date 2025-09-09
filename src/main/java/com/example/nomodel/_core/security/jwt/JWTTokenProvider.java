@@ -10,6 +10,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
 public class JWTTokenProvider {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String ACCESS_TOKEN_COOKIE_NAME = "accessToken";
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
     private static final String AUTHORITIES_KEY = "auth";
     private static final String MEMBER_ID_KEY = "memberId";
     private static final String BEARER_TYPE = "Bearer";
@@ -162,13 +165,47 @@ public class JWTTokenProvider {
     }
 
     public String resolveToken(HttpServletRequest request) {
+        // 1순위: Authorization 헤더에서 토큰 추출 (기존 방식 유지)
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-
-        // 토큰이 유효하고, 'Bearer '로 시작하며 충분한 길이를 갖는지 확인
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_TYPE) && bearerToken.length() > 7) {
+            log.debug("토큰을 Authorization 헤더에서 추출: {}", bearerToken.substring(0, 20) + "...");
             return bearerToken.substring(7);  // 'Bearer ' 이후의 실제 토큰만 반환
         }
 
+        // 2순위: 쿠키에서 Access Token 추출
+        String tokenFromCookie = resolveTokenFromCookies(request, ACCESS_TOKEN_COOKIE_NAME);
+        if (StringUtils.hasText(tokenFromCookie)) {
+            log.debug("토큰을 쿠키에서 추출: {}", tokenFromCookie.substring(0, Math.min(20, tokenFromCookie.length())) + "...");
+            return tokenFromCookie;
+        }
+
+        log.debug("토큰을 찾을 수 없음 - Authorization 헤더와 쿠키 모두 확인됨");
         return null;
+    }
+
+    /**
+     * 쿠키에서 특정 토큰을 추출하는 메서드
+     * @param request HTTP 요청
+     * @param cookieName 찾을 쿠키 이름
+     * @return 토큰 값 또는 null
+     */
+    public String resolveTokenFromCookies(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookieName.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Refresh Token을 쿠키에서 추출하는 메서드
+     * @param request HTTP 요청
+     * @return Refresh Token 또는 null
+     */
+    public String resolveRefreshTokenFromCookies(HttpServletRequest request) {
+        return resolveTokenFromCookies(request, REFRESH_TOKEN_COOKIE_NAME);
     }
 }
