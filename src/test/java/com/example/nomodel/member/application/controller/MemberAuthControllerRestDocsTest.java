@@ -105,18 +105,8 @@ class MemberAuthControllerRestDocsTest {
                         responseFields(
                                 fieldWithPath("success").type(JsonFieldType.BOOLEAN)
                                         .description("요청 성공 여부"),
-                                fieldWithPath("response").type(JsonFieldType.OBJECT)
-                                        .description("토큰 정보"),
-                                fieldWithPath("response.grantType").type(JsonFieldType.STRING)
-                                        .description("토큰 타입 (Bearer)"),
-                                fieldWithPath("response.accessToken").type(JsonFieldType.STRING)
-                                        .description("액세스 토큰"),
-                                fieldWithPath("response.accessTokenValidTime").type(JsonFieldType.NUMBER)
-                                        .description("액세스 토큰 만료 시간 (밀리초)"),
-                                fieldWithPath("response.refreshToken").type(JsonFieldType.STRING)
-                                        .description("리프레시 토큰"),
-                                fieldWithPath("response.refreshTokenValidTime").type(JsonFieldType.NUMBER)
-                                        .description("리프레시 토큰 만료 시간 (밀리초)"),
+                                fieldWithPath("response").type(JsonFieldType.STRING)
+                                        .description("로그인 성공 메시지"),
                                 fieldWithPath("error").type(JsonFieldType.NULL)
                                         .description("에러 정보 (성공시 null)").optional()
                         )
@@ -145,18 +135,8 @@ class MemberAuthControllerRestDocsTest {
                         responseFields(
                                 fieldWithPath("success").type(JsonFieldType.BOOLEAN)
                                         .description("요청 성공 여부"),
-                                fieldWithPath("response").type(JsonFieldType.OBJECT)
-                                        .description("새로운 토큰 정보"),
-                                fieldWithPath("response.grantType").type(JsonFieldType.STRING)
-                                        .description("토큰 타입 (Bearer)"),
-                                fieldWithPath("response.accessToken").type(JsonFieldType.STRING)
-                                        .description("새로운 액세스 토큰"),
-                                fieldWithPath("response.accessTokenValidTime").type(JsonFieldType.NUMBER)
-                                        .description("액세스 토큰 만료 시간 (밀리초)"),
-                                fieldWithPath("response.refreshToken").type(JsonFieldType.STRING)
-                                        .description("새로운 리프레시 토큰"),
-                                fieldWithPath("response.refreshTokenValidTime").type(JsonFieldType.NUMBER)
-                                        .description("리프레시 토큰 만료 시간 (밀리초)"),
+                                fieldWithPath("response").type(JsonFieldType.STRING)
+                                        .description("토큰 재발급 성공 메시지"),
                                 fieldWithPath("error").type(JsonFieldType.NULL)
                                         .description("에러 정보 (성공시 null)").optional()
                         )
@@ -180,8 +160,8 @@ class MemberAuthControllerRestDocsTest {
                         responseFields(
                                 fieldWithPath("success").type(JsonFieldType.BOOLEAN)
                                         .description("요청 성공 여부"),
-                                fieldWithPath("response").type(JsonFieldType.NULL)
-                                        .description("응답 데이터 (로그아웃시 null)").optional(),
+                                fieldWithPath("response").type(JsonFieldType.STRING)
+                                        .description("로그아웃 성공 메시지"),
                                 fieldWithPath("error").type(JsonFieldType.NULL)
                                         .description("에러 정보 (성공시 null)").optional()
                         )

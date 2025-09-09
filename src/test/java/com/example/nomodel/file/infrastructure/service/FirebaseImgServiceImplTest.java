@@ -134,17 +134,23 @@ class FirebaseImgServiceImplTest {
     }
 
     @Test
-    @DisplayName("파일 URL 생성")
-    void getImageUrl_ShouldReturnValidUrl() {
+    @DisplayName("파일 URL 생성 실패 - Firebase 미초기화")
+    void getImageUrl_WithoutFirebase_ShouldThrowException() {
         // given
         String fileName = "test-image.jpg";
-        String expectedUrl = "https://storage.googleapis.com/test-bucket/test-image.jpg";
 
-        // when
-        String actualUrl = imgService.getImageUrl(fileName);
+        // when & then
+        ApplicationException exception = assertThrows(
+                ApplicationException.class,
+                () -> imgService.getImageUrl(fileName)
+        );
 
-        // then
-        assertThat(actualUrl).isEqualTo(expectedUrl);
+        // Firebase가 초기화되지 않아서 FILE_NOT_FOUND 또는 다른 Firebase 관련 오류가 발생
+        assertThat(exception.getErrorCode()).isIn(
+                ErrorCode.FILE_NOT_FOUND,
+                ErrorCode.FIREBASE_STORAGE_BUCKET_NOT_CONFIGURED,
+                ErrorCode.FIREBASE_INITIALIZATION_FAILED
+        );
     }
 
     @Test

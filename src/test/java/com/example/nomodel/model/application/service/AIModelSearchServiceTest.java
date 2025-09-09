@@ -161,7 +161,7 @@ class AIModelSearchServiceTest {
         AIModelDocument document = createMockDocument("1", "DALL-E", "Image generation model");
         Page<AIModelDocument> expectedPage = new PageImpl<>(List.of(document));
         
-        given(searchRepository.searchWithMultipleFilters(keyword, tag, minPrice, maxPrice, any(Pageable.class)))
+        given(searchRepository.searchWithMultipleFilters(eq(keyword), eq(tag), eq(minPrice), eq(maxPrice), any(Pageable.class)))
                 .willReturn(expectedPage);
 
         // when
@@ -171,7 +171,7 @@ class AIModelSearchServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
         
-        then(searchRepository).should().searchWithMultipleFilters(keyword, tag, minPrice, maxPrice, any(Pageable.class));
+        then(searchRepository).should().searchWithMultipleFilters(eq(keyword), eq(tag), eq(minPrice), eq(maxPrice), any(Pageable.class));
     }
 
     @Test

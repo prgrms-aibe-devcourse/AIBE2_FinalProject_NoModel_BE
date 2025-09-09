@@ -11,10 +11,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,8 +24,13 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 
+import static com.example.nomodel._core.restdocs.RestDocsConfig.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.*;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
@@ -31,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ModelUsageController.class)
 @AutoConfigureMockMvc
+@AutoConfigureRestDocs
 @DisplayName("ModelUsageController 단위 테스트")
 class ModelUsageControllerTest {
 
@@ -104,7 +112,13 @@ class ModelUsageControllerTest {
             .andExpect(jsonPath("$.response.content[0].resultImageUrl").value("https://example.com/image1.jpg"))
             .andExpect(jsonPath("$.response.totalElements").value(2))
             .andExpect(jsonPath("$.response.pageNumber").value(0))
-            .andExpect(jsonPath("$.response.pageSize").value(20));
+            .andExpect(jsonPath("$.response.pageSize").value(20))
+            .andDo(document("model-usage-history",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                queryParameters(modelUsageHistoryParams()),
+                responseFields(modelUsageHistoryResponse())
+            ));
         
         verify(modelUsageService).getModelUsageHistory(memberId, null, 0, 20);
     }
@@ -240,7 +254,12 @@ class ModelUsageControllerTest {
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.response.totalCount").value(15));
+            .andExpect(jsonPath("$.response.totalCount").value(15))
+            .andDo(document("model-usage-count",
+                preprocessRequest(prettyPrint()),
+                preprocessResponse(prettyPrint()),
+                responseFields(modelUsageCountResponse())
+            ));
         
         verify(modelUsageService).getModelUsageCount(memberId);
     }

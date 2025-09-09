@@ -90,9 +90,9 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.grantType").value("Bearer"))
-                .andExpect(jsonPath("$.response.accessToken").value("access-token"))
-                .andExpect(jsonPath("$.response.refreshToken").value("refresh-token"));
+                .andExpect(jsonPath("$.response").value("로그인 성공"))
+                .andExpect(cookie().exists("accessToken"))
+                .andExpect(cookie().exists("refreshToken"));
 
         then(memberAuthService).should().login(any(LoginRequestDto.class));
     }
@@ -147,7 +147,9 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.accessToken").value("new-access-token"));
+                .andExpect(jsonPath("$.response").value("토큰 재발급 성공"))
+                .andExpect(cookie().exists("accessToken"))
+                .andExpect(cookie().exists("refreshToken"));
 
         then(memberAuthService).should().refreshToken(any());
     }
@@ -176,7 +178,7 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response").doesNotExist());
+                .andExpect(jsonPath("$.response").value("로그아웃 성공"));
 
         then(memberAuthService).should().logout(any());
     }
