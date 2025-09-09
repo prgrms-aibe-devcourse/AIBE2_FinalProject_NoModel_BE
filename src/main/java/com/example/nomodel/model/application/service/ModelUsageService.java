@@ -1,11 +1,10 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel._core.exception.ApplicationException;
-import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel.file.domain.model.File;
 import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.file.domain.repository.FileJpaRepository;
+import com.example.nomodel.model.application.dto.response.ModelUsageCountResponse;
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryPageResponse;
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryResponse;
 import com.example.nomodel.model.domain.model.AdResult;
@@ -33,36 +32,29 @@ public class ModelUsageService {
 
     /**
      * 회원의 모델 사용 내역 조회
-     * @param userDetails 인증된 사용자 정보
+     * @param memberId 회원 ID
      * @param modelId 특정 모델 ID (optional)
      * @param page 페이지 번호
      * @param size 페이지 크기
      * @return 모델 사용 내역 페이지
      */
     public ModelUsageHistoryPageResponse getModelUsageHistory(
-            CustomUserDetails userDetails,
+            Long memberId,
             Long modelId,
             int page,
             int size
     ) {
-        if (userDetails == null || userDetails.getMemberId() == null) {
-            throw new ApplicationException(ErrorCode.UNAUTHORIZED, "인증된 사용자가 아닙니다.");
-        }
-
-        Long memberId = userDetails.getMemberId();
         Pageable pageable = PageRequest.of(page, size);
         
         Page<AdResult> adResultPage;
         
         if (modelId != null) {
             // 특정 모델의 사용 내역 조회
-            log.info("회원 {}의 모델 {} 사용 내역 조회", memberId, modelId);
             adResultPage = adResultRepository.findByMemberIdAndModelIdOrderByCreatedAtDesc(
                 memberId, modelId, pageable
             );
         } else {
             // 전체 모델 사용 내역 조회
-            log.info("회원 {}의 전체 모델 사용 내역 조회", memberId);
             adResultPage = adResultRepository.findByMemberIdOrderByCreatedAtDesc(
                 memberId, pageable
             );
@@ -96,15 +88,11 @@ public class ModelUsageService {
 
     /**
      * 회원의 모델 사용 통계 조회
-     * @param userDetails 인증된 사용자 정보
+     * @param memberId 회원 ID
      * @return 모델 사용 통계
      */
-    public long getModelUsageCount(CustomUserDetails userDetails) {
-        if (userDetails == null || userDetails.getMemberId() == null) {
-            throw new ApplicationException(ErrorCode.UNAUTHORIZED, "인증된 사용자가 아닙니다.");
-        }
-
-        Long memberId = userDetails.getMemberId();
-        return adResultRepository.countByMemberId(memberId);
+    public ModelUsageCountResponse getModelUsageCount(Long memberId) {
+        long count = adResultRepository.countByMemberId(memberId);
+        return ModelUsageCountResponse.from(count);
     }
 }
