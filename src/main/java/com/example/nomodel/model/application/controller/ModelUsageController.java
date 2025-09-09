@@ -1,4 +1,4 @@
-package com.example.nomodel.model.interfaces.controller;
+package com.example.nomodel.model.application.controller;
 
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
