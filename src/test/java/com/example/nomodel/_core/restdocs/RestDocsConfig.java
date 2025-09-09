@@ -125,6 +125,60 @@ public class RestDocsConfig {
         );
     }
 
+    // ========== 인증 관련 ==========
+    
+    /**
+     * 인증 헤더 파라미터
+     */
+    public static org.springframework.restdocs.headers.HeaderDescriptor[] authHeaders() {
+        return new org.springframework.restdocs.headers.HeaderDescriptor[]{
+            org.springframework.restdocs.headers.HeaderDocumentation.headerWithName("Authorization").description("Bearer {token}")
+        };
+    }
+
+    /**
+     * 회원가입 요청 필드
+     */
+    public static FieldDescriptor[] signUpRequestFields() {
+        return new FieldDescriptor[]{
+            fieldWithPath("username").type(JsonFieldType.STRING).description("사용자명 (2-20자)"),
+            fieldWithPath("email").type(JsonFieldType.STRING).description("이메일 주소"),
+            fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호 (4-20자)")
+        };
+    }
+
+    /**
+     * 로그인 요청 필드
+     */
+    public static FieldDescriptor[] loginRequestFields() {
+        return new FieldDescriptor[]{
+            fieldWithPath("email").type(JsonFieldType.STRING).description("이메일 주소"),
+            fieldWithPath("password").type(JsonFieldType.STRING).description("비밀번호")
+        };
+    }
+
+    /**
+     * 인증 성공 응답 필드 (메시지만)
+     */
+    public static FieldDescriptor[] authSuccessResponse() {
+        return new FieldDescriptor[]{
+            fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+            fieldWithPath("response").type(JsonFieldType.STRING).description("성공 메시지"),
+            fieldWithPath("error").type(JsonFieldType.NULL).description("에러 정보 (성공시 null)").optional()
+        };
+    }
+
+    /**
+     * 회원가입 성공 응답 필드 (response가 null)
+     */
+    public static FieldDescriptor[] signUpSuccessResponse() {
+        return new FieldDescriptor[]{
+            fieldWithPath("success").type(JsonFieldType.BOOLEAN).description("요청 성공 여부"),
+            fieldWithPath("response").type(JsonFieldType.NULL).description("응답 데이터 (회원가입시 null)").optional(),
+            fieldWithPath("error").type(JsonFieldType.NULL).description("에러 정보 (성공시 null)").optional()
+        };
+    }
+
     // ========== 유틸리티 메서드 ==========
     
     /**
