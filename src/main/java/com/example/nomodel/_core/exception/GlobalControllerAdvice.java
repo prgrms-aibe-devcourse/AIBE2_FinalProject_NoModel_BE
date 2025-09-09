@@ -24,7 +24,7 @@ public class GlobalControllerAdvice {
 
     @ExceptionHandler(ApplicationException.class)
     public ResponseEntity<?> applicationHandler(ApplicationException e){
-        log.error("Error occurs {}", e.toString());
+        log.error("ApplicationException occurs: ", e);
 
         ErrorResponse errorResponse = new ErrorResponse(
             e.getErrorCode().getStatus().value(),
@@ -38,7 +38,7 @@ public class GlobalControllerAdvice {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> validationHandler(MethodArgumentNotValidException e) {
-        log.error("Validation error occurs {}", e.getMessage());
+        log.error("Validation error occurs: ", e);
 
         // 첫 번째 필드 에러의 메시지를 사용
         FieldError fieldError = e.getBindingResult().getFieldErrors().get(0);
@@ -56,7 +56,7 @@ public class GlobalControllerAdvice {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> applicationHandler(Exception e){
-        log.error("Error occurs {}", e.getMessage());
+        log.error("Unhandled Exception occurs: ", e);
 
         ErrorCode error = ErrorCode.INTERNAL_SERVER_ERROR;
 

@@ -27,6 +27,7 @@ repositories {
 ext {
     set('snippetsDir', file("build/generated-snippets"))
     set('springModulithVersion', "1.4.1")
+    set('elasticsearchVersion', "8.18.1")
 }
 
 dependencies {
@@ -47,11 +48,15 @@ dependencies {
     // Data Access & Persistence
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     
     // Messaging & Events
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    
+    // Firebase
+    implementation 'com.google.firebase:firebase-admin:9.4.1'
     
     // Spring Modulith
     implementation 'org.springframework.modulith:spring-modulith-starter-core'
@@ -94,6 +99,12 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom "org.springframework.modulith:spring-modulith-bom:${springModulithVersion}"
+    }
+    dependencies {
+        // Elasticsearch 클라이언트 버전을 최신 호환 버전으로 설정 (8.18.1)
+        // Spring Data Elasticsearch 5.5.x와 호환되는 조합
+        dependency "co.elastic.clients:elasticsearch-java:${elasticsearchVersion}"
+        dependency "org.elasticsearch.client:elasticsearch-rest-client:${elasticsearchVersion}"
     }
 }
 

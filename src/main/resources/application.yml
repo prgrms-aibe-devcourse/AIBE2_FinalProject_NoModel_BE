@@ -11,9 +11,15 @@ spring:
       - optional:file:.env[.properties]
       - optional:classpath:config/application-docker.yml
       - optional:classpath:config/application-monitoring.yml
+      - optional:classpath:config/external-services.yml
+  batch:
+    jdbc:
+      initialize-schema: always  # 배치 테이블 자동 생성
+    job:
+      enabled: false  # 애플리케이션 시작 시 자동 실행 비활성화
 
-# JWT 설정
-jwt:
-  secret: ${JWT_SECRET:your-secret-key-here-must-be-at-least-256-bits-long-for-security}
-  access-token-lifetime: ${JWT_ACCESS_TOKEN_LIFETIME:1800000}  # 30분 (30 * 60 * 1000)
-  refresh-token-lifetime: ${JWT_REFRESH_TOKEN_LIFETIME:259200000}  # 3일 (3 * 24 * 60 * 60 * 1000)
+# 애플리케이션 설정
+app:
+  batch:
+    aimodel-index:
+      enabled: true  # AIModel 인덱싱 스케줄러 활성화 (증분 처리)
