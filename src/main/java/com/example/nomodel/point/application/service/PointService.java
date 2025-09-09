@@ -43,7 +43,6 @@ public class PointService {
 
         return PointBalanceResponse.from(balance);
         }
-
     /**
      * 리뷰 보상 포인트 지급
      * 정책: 한 모델당 한 번만 보상
@@ -51,7 +50,8 @@ public class PointService {
     @Transactional
     public void rewardForReview(Long reviewerId, Long modelId) {
         BigDecimal rewardAmount = rewardPolicy.getReviewRewardAmount();
-        // 1. 정책 위반 체크: 같은 모델에 대해 이미 보상받았는지 확인
+
+        // 1. 정책 위반 체크: 같은 모델에 대해 이미 보상받았는지 확인 (빠른 실패)
         boolean alreadyRewarded = transactionRepository
                 .existsByMemberIdAndRefererTypeAndRefererIdAndTransactionType(
                         reviewerId,
@@ -68,7 +68,7 @@ public class PointService {
         MemberPointBalance balance = pointBalanceRepository.findByMemberId(reviewerId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 3. 거래 내역 저장
+        // 3. 거래 내역 생성
         PointTransaction transaction = new PointTransaction(
                 reviewerId,
                 TransactionDirection.CREDIT,
@@ -79,13 +79,19 @@ public class PointService {
                 RefererType.REVIEW,
                 modelId
         );
-        transactionRepository.save(transaction);
 
-        // 4. 보류 포인트 적립
+        // 4. 거래 내역 저장 (중복 보상 DB 제약 예외 처리)
+        try {
+            transactionRepository.save(transaction);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new ApplicationException(ErrorCode.DUPLICATE_REVIEW_REWARD);
+        }
+
+        // 5. 보류 포인트 적립
         balance.addPendingPoints(rewardAmount);
         pointBalanceRepository.save(balance);
 
-        // 5. 5초 뒤 보류 → 가용 포인트 전환 (시연용)
+        // 6. 5초 뒤 보류 → 가용 포인트 전환 (시연용)
         new Thread(() -> {
             try {
                 Thread.sleep(5000); // 5초 대기
