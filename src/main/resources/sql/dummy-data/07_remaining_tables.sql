@@ -160,7 +160,33 @@ SELECT
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at
 FROM seq;
 
--- 8. 파일 데이터 (50개)
+-- 8. AdResult 데이터 (30개)
+INSERT INTO ad_result (model_id, model_name, member_id, prompt, created_at, updated_at)
+SELECT 
+    (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
+    (SELECT model_name FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_name,
+    (FLOOR(2 + (RAND() * 604))) as member_id,
+    CASE FLOOR(1 + (RAND() * 10))
+        WHEN 1 THEN 'beautiful landscape with mountains'
+        WHEN 2 THEN 'anime character with blue hair'
+        WHEN 3 THEN 'cyberpunk city at night'
+        WHEN 4 THEN 'watercolor painting of flowers'
+        WHEN 5 THEN 'portrait of a fantasy warrior'
+        WHEN 6 THEN 'abstract art with geometric shapes'
+        WHEN 7 THEN 'realistic photo of a cat'
+        WHEN 8 THEN 'sci-fi spaceship design'
+        WHEN 9 THEN 'traditional japanese garden'
+        ELSE 'creative digital art composition'
+    END as prompt,
+    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 90) DAY) as created_at,
+    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
+FROM (
+    SELECT ROW_NUMBER() OVER () as n
+    FROM information_schema.columns
+    LIMIT 30
+) numbers;
+
+-- 9. 파일 데이터 (50개)
 INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, is_primary, created_at, updated_at)
 SELECT 
     CONCAT(
@@ -197,11 +223,12 @@ SELECT
         WHEN 2 THEN 'image/webp'
         ELSE 'image/gif'
     END as content_type,
-    CASE ROW_NUMBER() OVER () % 4
+    CASE ROW_NUMBER() OVER () % 5
         WHEN 0 THEN 'MODEL'
         WHEN 1 THEN 'REVIEW'
         WHEN 2 THEN 'PROFILE'
-        ELSE 'AD'
+        WHEN 3 THEN 'AD'
+        ELSE 'AD_RESULT'
     END as relation_type,
     FLOOR(1 + (RAND() * 1000)) as relation_id,
     -- 각 relation_id의 첫 번째 파일을 대표 이미지로 설정 (약 20% 확률)
