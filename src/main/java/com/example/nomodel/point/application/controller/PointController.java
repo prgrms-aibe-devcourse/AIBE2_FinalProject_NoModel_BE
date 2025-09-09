@@ -55,17 +55,14 @@ public class PointController {
         return ApiUtils.success(response);
     }
 
+    // 포인트 사용
     @PostMapping("/use")
     public ApiUtils.ApiResult<?> usePoints(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid PointUseRequest request
     ) {
-        try {
-            Long memberId = user.getMemberId();
-            PointUseResponse response = pointService.usePoints(memberId, request.getAmount(), request.getRefererId());
-            return ApiUtils.success(response);
-        } catch (Exception e) {
-            return ApiUtils.error("포인트 사용에 실패했습니다.", HttpStatus.BAD_REQUEST);
-        }
+        Long memberId = user.getMemberId();
+        PointUseResponse response = pointService.usePoints(memberId, request.getAmount(), request.getRefererId());
+        return ApiUtils.success(response);
     }
 }
