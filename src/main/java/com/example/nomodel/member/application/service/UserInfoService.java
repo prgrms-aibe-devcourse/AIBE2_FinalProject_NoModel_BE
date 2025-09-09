@@ -4,6 +4,8 @@ import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.model.Role;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.member.application.dto.response.UserInfoResponse;
+import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
+import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
 import com.example.nomodel.point.domain.model.MemberPointBalance;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.subscription.domain.model.MemberSubscription;
@@ -25,6 +27,8 @@ public class UserInfoService {
     private final MemberJpaRepository memberRepository;
     private final MemberSubscriptionRepository memberSubscriptionRepository;
     private final MemberPointBalanceRepository memberPointBalanceRepository;
+    private final AIModelJpaRepository aiModelRepository;
+    private final AdResultJpaRepository adResultRepository;
 
     /**
      * 사용자 정보 조회
@@ -45,6 +49,12 @@ public class UserInfoService {
         // 사용자 권한 확인
         String role = member.getRole().name();
 
+        // 모델 수 조회
+        Long modelCount = getModelCount(memberId);
+
+        // 프로젝트 수 조회
+        Long projectCount = getProjectCount(memberId);
+
         return new UserInfoResponse(
                 member.getId(),
                 member.getUsername(),
@@ -52,7 +62,9 @@ public class UserInfoService {
                 member.getCreatedAt(),
                 planType,
                 points,
-                role
+                role,
+                modelCount,
+                projectCount
         );
     }
 
@@ -81,5 +93,23 @@ public class UserInfoService {
                 .map(MemberPointBalance::getAvailablePoints)
                 .map(BigDecimal::intValue)
                 .orElse(0);
+    }
+
+    /**
+     * 사용자가 제작한 모델 수 조회
+     * @param memberId 회원 ID
+     * @return 모델 수
+     */
+    private Long getModelCount(Long memberId) {
+        return aiModelRepository.countByOwnerId(memberId);
+    }
+
+    /**
+     * 사용자가 생성한 프로젝트 수 조회
+     * @param memberId 회원 ID
+     * @return 프로젝트 수
+     */
+    private Long getProjectCount(Long memberId) {
+        return adResultRepository.countByMemberId(memberId);
     }
 }

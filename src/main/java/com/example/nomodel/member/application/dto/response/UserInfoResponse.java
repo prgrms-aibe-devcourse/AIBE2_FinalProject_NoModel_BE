@@ -27,6 +27,12 @@ public record UserInfoResponse(
         Integer points,
 
         @Schema(description = "사용자 권한", allowableValues = {"USER", "ADMIN"}, example = "USER")
-        String role
+        String role,
+
+        @Schema(description = "제작한 모델 수", example = "5")
+        Long modelCount,
+
+        @Schema(description = "생성한 프로젝트 수", example = "12")
+        Long projectCount
 ) {
 }

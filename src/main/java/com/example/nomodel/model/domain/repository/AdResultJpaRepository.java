@@ -27,6 +27,10 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
   long countProjectsJoinedBetween(@Param("from") LocalDateTime from,
                                @Param("to")   LocalDateTime to);
   
+  // 특정 사용자의 프로젝트 수
+  @Query("select count(ar) from AdResult ar where ar.memberId = :memberId")
+  long countByMemberId(@Param("memberId") Long memberId);
+  
   // 월별 생성량 (전체)
   @Query("""
            select new com.example.nomodel.statistics.application.dto.response.MonthlyCount(
