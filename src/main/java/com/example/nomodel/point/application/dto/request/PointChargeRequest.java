@@ -6,8 +6,10 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class PointChargeRequest {
 
     @NotNull(message = "충전 금액은 필수입니다.")
