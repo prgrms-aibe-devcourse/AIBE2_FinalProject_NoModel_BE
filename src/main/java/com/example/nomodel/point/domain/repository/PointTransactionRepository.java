@@ -1,6 +1,10 @@
 package com.example.nomodel.point.domain.repository;
 
 import com.example.nomodel.point.domain.model.PointTransaction;
+import com.example.nomodel.point.domain.model.RefererType;
+import com.example.nomodel.point.domain.model.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.example.nomodel.statistics.application.dto.response.MonthlyCount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +15,17 @@ import java.util.List;
 
 public interface PointTransactionRepository extends JpaRepository<PointTransaction, Long> {
     List<PointTransaction> findByMemberId(Long memberId);
+    boolean existsByMemberIdAndRefererTypeAndRefererIdAndTransactionType(
+            Long memberId,
+            RefererType refererType,
+            Long refererId,
+            TransactionType transactionType
+    );
+
+    Page<PointTransaction> findByMemberId(Long memberId, Pageable pageable);
+
+    List<PointTransaction> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+
     
     // 전체 판매량
     @Query("select sum(pt.pointAmount) from PointTransaction pt")

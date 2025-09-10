@@ -1,24 +1,27 @@
 package com.example.nomodel.point.application.dto.response;
 
+import com.example.nomodel.point.domain.model.MemberPointBalance;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 
+@Getter
+@AllArgsConstructor
 public class PointBalanceResponse {
+    private Long memberId;
     private BigDecimal totalPoints;
     private BigDecimal availablePoints;
     private BigDecimal pendingPoints;
     private BigDecimal reservedPoints;
 
-    public PointBalanceResponse(BigDecimal totalPoints, BigDecimal availablePoints,
-                                BigDecimal pendingPoints, BigDecimal reservedPoints) {
-        this.totalPoints = totalPoints;
-        this.availablePoints = availablePoints;
-        this.pendingPoints = pendingPoints;
-        this.reservedPoints = reservedPoints;
+    public static PointBalanceResponse from(MemberPointBalance balance) {
+        return new PointBalanceResponse(
+                balance.getMemberId(),
+                balance.getTotalPoints(),
+                balance.getAvailablePoints(),
+                balance.getPendingPoints(),
+                balance.getReservedPoints()
+        );
     }
-
-    // getter
-    public BigDecimal getTotalPoints() { return totalPoints; }
-    public BigDecimal getAvailablePoints() { return availablePoints; }
-    public BigDecimal getPendingPoints() { return pendingPoints; }
-    public BigDecimal getReservedPoints() { return reservedPoints; }
 }

@@ -8,5 +8,6 @@ public enum RefererType {
     REFERRAL,
     LOGIN,
     MANUAL,
-    SYSTEM
+    SYSTEM,
+    CHARGE
 }
