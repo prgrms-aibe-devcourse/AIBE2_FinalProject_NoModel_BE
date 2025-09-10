@@ -1,9 +1,16 @@
 package com.example.nomodel.model.application.service;
 
+import com.example.nomodel.member.domain.model.Email;
+import com.example.nomodel.member.domain.model.Member;
+import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
+import com.example.nomodel.review.domain.repository.ReviewRepository;
+import com.example.nomodel.review.domain.model.ReviewStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +24,9 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.HashMap;
 
 /**
  * Elasticsearch 인덱스 관리 서비스
@@ -31,6 +41,9 @@ public class ElasticsearchIndexService {
     private final ObjectMapper objectMapper;
     private final AIModelJpaRepository aiModelJpaRepository;
     private final AIModelSearchRepository aiModelSearchRepository;
+    private final ModelStatisticsJpaRepository modelStatisticsRepository;
+    private final MemberJpaRepository memberRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * ai-models 인덱스를 재생성 (settings + mappings 분리)
@@ -99,6 +112,7 @@ public class ElasticsearchIndexService {
 
     /**
      * MySQL에서 Elasticsearch로 모든 AI 모델 데이터 동기화
+     * 배치 최적화: 일괄 조회로 N+1 문제 해결
      */
     public long syncAllModelsToElasticsearch() {
         try {
@@ -108,16 +122,47 @@ public class ElasticsearchIndexService {
             List<AIModel> allModels = aiModelJpaRepository.findAll();
             log.info("MySQL에서 {} 개의 AI 모델 조회됨", allModels.size());
             
-            // 2. Elasticsearch 인덱스 초기화
+            if (allModels.isEmpty()) {
+                log.info("동기화할 모델이 없습니다.");
+                return 0;
+            }
+            
+            // 2. 모든 모델 ID 수집
+            List<Long> modelIds = allModels.stream()
+                    .map(AIModel::getId)
+                    .toList();
+            
+            // 3. 일괄 데이터 조회 (N+1 문제 해결)
+            Map<Long, ModelStatistics> statisticsMap = modelStatisticsRepository.findAll()
+                    .stream()
+                    .filter(stats -> modelIds.contains(stats.getModel().getId()))
+                    .collect(Collectors.toMap(stats -> stats.getModel().getId(), Function.identity()));
+                    
+            Map<Long, String> ownerNameMap = buildOwnerNameMap(allModels);
+            Map<Long, Double> ratingMap = buildRatingMap(modelIds);
+            Map<Long, Long> reviewCountMap = buildReviewCountMap(modelIds);
+            
+            log.info("통계 데이터 일괄 조회 완료 - Statistics: {}, Ratings: {}, ReviewCounts: {}", 
+                    statisticsMap.size(), ratingMap.size(), reviewCountMap.size());
+            
+            // 4. Elasticsearch 인덱스 초기화
             aiModelSearchRepository.deleteAll();
             log.info("기존 Elasticsearch 데이터 삭제 완료");
             
-            // 3. 각 모델을 Elasticsearch에 색인
+            // 5. 각 모델을 Elasticsearch에 색인
             long indexedCount = 0;
             for (AIModel model : allModels) {
                 try {
-                    String ownerName = getOwnerName(model);
-                    AIModelDocument document = AIModelDocument.from(model, ownerName);
+                    Long modelId = model.getId();
+                    String ownerName = ownerNameMap.get(modelId);
+                    ModelStatistics stats = statisticsMap.get(modelId);
+                    Long usageCount = stats != null ? stats.getUsageCount() : 0L;
+                    Long viewCount = stats != null ? stats.getViewCount() : 0L;
+                    Double rating = ratingMap.getOrDefault(modelId, 0.0);
+                    Long reviewCount = reviewCountMap.getOrDefault(modelId, 0L);
+                    
+                    AIModelDocument document = AIModelDocument.from(
+                        model, ownerName, usageCount, viewCount, rating, reviewCount);
                     aiModelSearchRepository.save(document);
                     indexedCount++;
                     
@@ -139,16 +184,120 @@ public class ElasticsearchIndexService {
     }
     
     /**
-     * 소유자 이름 조회 (임시 구현 - Member 서비스 연동 필요)
+     * 소유자 이름 맵 생성 (일괄 최적화)
      */
-    private String getOwnerName(AIModel model) {
-        // TODO: MemberService에서 실제 소유자 이름을 조회해야 함
-        if (model.getOwnType() != null) {
-            return model.getOwnType().name() + "_USER_" + model.getOwnerId();
+    private Map<Long, String> buildOwnerNameMap(List<AIModel> models) {
+        Map<Long, String> ownerNameMap = new HashMap<>();
+        
+        // 소유자가 있는 모델들의 소유자 ID 수집
+        List<Long> ownerIds = models.stream()
+                .filter(model -> model.getOwnerId() != null)
+                .map(AIModel::getOwnerId)
+                .distinct()
+                .toList();
+        
+        // 일괄 소유자 조회
+        Map<Long, String> memberEmailMap = memberRepository.findAllById(ownerIds)
+                .stream()
+                .collect(Collectors.toMap(Member::getId, member -> member.getEmail().getValue()));
+        
+        // 각 모델의 소유자 이름 매핑
+        for (AIModel model : models) {
+            String ownerName;
+            if (model.getOwnerId() == null) {
+                ownerName = model.getOwnType() != null ? model.getOwnType().name() : "ADMIN";
+            } else {
+                ownerName = memberEmailMap.getOrDefault(model.getOwnerId(), "Unknown");
+            }
+            ownerNameMap.put(model.getId(), ownerName);
         }
-        return "UNKNOWN_USER_" + model.getOwnerId();
+        
+        return ownerNameMap;
+    }
+    
+    /**
+     * 평점 맵 생성 (일괄 최적화)
+     */
+    private Map<Long, Double> buildRatingMap(List<Long> modelIds) {
+        List<Object[]> ratingResults = reviewRepository.getReviewStatisticsByModelIds(modelIds, ReviewStatus.ACTIVE);
+        
+        Map<Long, Double> ratingMap = new HashMap<>();
+        for (Object[] result : ratingResults) {
+            Long modelId = (Long) result[0];
+            Double avgRating = (Double) result[2];
+            ratingMap.put(modelId, avgRating != null ? avgRating : 0.0);
+        }
+        
+        return ratingMap;
+    }
+    
+    /**
+     * 리뷰 개수 맵 생성 (일괄 최적화)
+     */
+    private Map<Long, Long> buildReviewCountMap(List<Long> modelIds) {
+        List<Object[]> reviewResults = reviewRepository.getReviewStatisticsByModelIds(modelIds, ReviewStatus.ACTIVE);
+        
+        Map<Long, Long> reviewCountMap = new HashMap<>();
+        for (Object[] result : reviewResults) {
+            Long modelId = (Long) result[0];
+            Long reviewCount = (Long) result[1];
+            reviewCountMap.put(modelId, reviewCount != null ? reviewCount : 0L);
+        }
+        
+        return reviewCountMap;
     }
 
+    /**
+     * 소유자 이름 조회 (개별 - 사용 안함)
+     */
+    @Deprecated
+    private String getOwnerName(AIModel aiModel) {
+        if (aiModel.getOwnerId() == null) {
+            return aiModel.getOwnType() != null ? aiModel.getOwnType().name() : "ADMIN";
+        }
+        
+        return memberRepository.findById(aiModel.getOwnerId())
+                .map(Member::getEmail)
+                .map(Email::getValue)
+                .orElse("Unknown");
+    }
+
+    /**
+     * 모델의 사용량 조회 (개별 - 사용 안함)
+     */
+    @Deprecated
+    private Long getUsageCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getUsageCount)
+                .orElse(0L);
+    }
+
+    /**
+     * 모델의 조회수 조회 (개별 - 사용 안함)
+     */
+    @Deprecated
+    private Long getViewCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getViewCount)
+                .orElse(0L);
+    }
+
+    /**
+     * 모델의 평점 조회 (개별 - 사용 안함)
+     */
+    @Deprecated
+    private Double getAverageRating(AIModel aiModel) {
+        return reviewRepository.calculateAverageRatingByModelId(aiModel.getId(), ReviewStatus.ACTIVE);
+    }
+
+    /**
+     * 모델의 리뷰 수 조회 (개별 - 사용 안함)
+     */
+    @Deprecated
+    private Long getReviewCount(AIModel aiModel) {
+        return reviewRepository.countByModelIdAndStatus(aiModel.getId(), ReviewStatus.ACTIVE);
+    }
+    
     /**
      * 인덱스 상태 확인
      */

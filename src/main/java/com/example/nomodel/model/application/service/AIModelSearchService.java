@@ -1,8 +1,15 @@
 package com.example.nomodel.model.application.service;
 
+import com.example.nomodel.member.domain.model.Email;
+import com.example.nomodel.member.domain.model.Member;
+import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
+import com.example.nomodel.review.domain.repository.ReviewRepository;
+import com.example.nomodel.review.domain.model.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +39,9 @@ public class AIModelSearchService {
 
     private final AIModelSearchRepository searchRepository;
     private final ElasticsearchClient elasticsearchClient;
+    private final ModelStatisticsJpaRepository modelStatisticsRepository;
+    private final MemberJpaRepository memberRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
@@ -256,7 +266,13 @@ public class AIModelSearchService {
     public AIModelDocument indexModel(AIModel aiModel, String ownerName) {
         log.info("AI 모델 색인: modelId={}, modelName={}", aiModel.getId(), aiModel.getModelName());
         
-        AIModelDocument document = AIModelDocument.from(aiModel, ownerName);
+        Long usageCount = getUsageCount(aiModel);
+        Long viewCount = getViewCount(aiModel);
+        Double rating = getAverageRating(aiModel);
+        Long reviewCount = getReviewCount(aiModel);
+        
+        AIModelDocument document = AIModelDocument.from(
+            aiModel, ownerName, usageCount, viewCount, rating, reviewCount);
         return searchRepository.save(document);
     }
 
@@ -273,7 +289,14 @@ public class AIModelSearchService {
         
         if (!existingDocs.isEmpty()) {
             AIModelDocument existingDoc = existingDocs.getContent().get(0);
-            AIModelDocument updatedDocument = AIModelDocument.from(updatedModel, ownerName);
+            
+            Long usageCount = getUsageCount(updatedModel);
+            Long viewCount = getViewCount(updatedModel);
+            Double rating = getAverageRating(updatedModel);
+            Long reviewCount = getReviewCount(updatedModel);
+            
+            AIModelDocument updatedDocument = AIModelDocument.from(
+                updatedModel, ownerName, usageCount, viewCount, rating, reviewCount);
             // ID는 기존 것을 유지
             return Optional.of(searchRepository.save(updatedDocument));
         }
@@ -345,5 +368,37 @@ public class AIModelSearchService {
     public void deleteModel(String documentId) {
         log.info("AI 모델 문서 삭제: documentId={}", documentId);
         searchRepository.deleteById(documentId);
+    }
+    
+    /**
+     * 모델의 사용량 조회
+     */
+    private Long getUsageCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getUsageCount)
+                .orElse(0L);
+    }
+
+    /**
+     * 모델의 조회수 조회
+     */
+    private Long getViewCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getViewCount)
+                .orElse(0L);
+    }
+
+    /**
+     * 모델의 평점 조회
+     */
+    private Double getAverageRating(AIModel aiModel) {
+        return reviewRepository.calculateAverageRatingByModelId(aiModel.getId(), ReviewStatus.ACTIVE);
+    }
+
+    /**
+     * 모델의 리뷰 수 조회
+     */
+    private Long getReviewCount(AIModel aiModel) {
+        return reviewRepository.countByModelIdAndStatus(aiModel.getId(), ReviewStatus.ACTIVE);
     }
 }
