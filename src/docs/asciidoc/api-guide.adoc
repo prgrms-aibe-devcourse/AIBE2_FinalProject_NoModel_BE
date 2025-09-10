@@ -123,3 +123,31 @@ include::{snippets}/model-usage-history/http-request.adoc[]
 include::{snippets}/model-usage-history/query-parameters.adoc[]
 include::{snippets}/model-usage-history/http-response.adoc[]
 include::{snippets}/model-usage-history/response-fields.adoc[]
+
+[[report-api]]
+= Report API
+
+모델 신고 관련 API입니다.
+
+[[model-reports]]
+== Model Reports
+
+=== 모델 신고 생성
+include::{snippets}/integration-model-report-create/curl-request.adoc[]
+include::{snippets}/integration-model-report-create/http-request.adoc[]
+include::{snippets}/integration-model-report-create/request-fields.adoc[]
+include::{snippets}/integration-model-report-create/http-response.adoc[]
+include::{snippets}/integration-model-report-create/response-fields.adoc[]
+
+=== 내 신고 목록 조회
+include::{snippets}/integration-model-report-my-list/curl-request.adoc[]
+include::{snippets}/integration-model-report-my-list/http-request.adoc[]
+include::{snippets}/integration-model-report-my-list/http-response.adoc[]
+include::{snippets}/integration-model-report-my-list/response-fields.adoc[]
+
+=== 신고 상세 조회
+include::{snippets}/integration-model-report-detail/curl-request.adoc[]
+include::{snippets}/integration-model-report-detail/http-request.adoc[]
+include::{snippets}/integration-model-report-detail/path-parameters.adoc[]
+include::{snippets}/integration-model-report-detail/http-response.adoc[]
+include::{snippets}/integration-model-report-detail/response-fields.adoc[]
