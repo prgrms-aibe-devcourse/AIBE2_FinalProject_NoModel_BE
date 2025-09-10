@@ -3,6 +3,7 @@ package com.example.nomodel.point.application.dto.request;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,5 +18,7 @@ public class PointUseRequest {
     private BigDecimal amount;
 
     // 어디서 사용했는지 참조 ID (예: 주문 ID)
+    @NotNull(message = "참조 ID는 필수입니다.")   // ⭐ 필수 추가
+    @Positive(message = "참조 ID는 양수여야 합니다.")
     private Long refererId;
 }
