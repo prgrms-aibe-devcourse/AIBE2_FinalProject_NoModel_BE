@@ -1,7 +1,7 @@
 package com.example.nomodel._core.fixture;
 
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
-import com.example.nomodel._core.security.jwt.dto.AuthTokenDTO;
+import com.example.nomodel.member.application.dto.response.AuthTokenDTO;
 import com.example.nomodel.member.domain.model.*;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.ModelMetadata;
@@ -71,10 +71,10 @@ public class TestDataFixture {
     }
     
     /**
-     * 시스템 AIModel 생성
+     * 관리자 AIModel 생성
      */
-    public static AIModel createSystemAIModel() {
-        return createAIModel("System Model", null, "System model prompt", BigDecimal.ZERO, true, OwnType.SYSTEM);
+    public static AIModel createAdminAIModel() {
+        return createAIModel("Admin Model", null, "Admin model prompt", BigDecimal.ZERO, true, OwnType.ADMIN);
     }
     
     /**
