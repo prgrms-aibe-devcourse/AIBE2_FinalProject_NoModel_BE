@@ -1,13 +1,16 @@
 package com.example.nomodel.model.application.controller;
 
+import com.example.nomodel._core.config.RestDocsConfiguration;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -18,14 +21,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.nomodel._core.config.RestDocsConfiguration.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.*;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AIModelSearchController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureRestDocs
+@ContextConfiguration(classes = RestDocsConfiguration.class)
 @DisplayName("AIModelSearchController 단위 테스트")
 class AIModelSearchControllerTest {
 
@@ -59,7 +69,17 @@ class AIModelSearchControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.response").exists())
                 .andExpect(jsonPath("$.response.content").isArray())
-                .andExpect(jsonPath("$.response.content[0].modelName").value("GPT-4"));
+                .andExpect(jsonPath("$.response.content[0].modelName").value("GPT-4"))
+                .andDo(document("model-search",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        queryParameters(
+                                parameterWithName("keyword").description("검색 키워드"),
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        responseFields(searchSuccessResponse())
+                ));
 
         then(searchService).should().search(eq(keyword), eq(0), eq(10));
     }
@@ -210,7 +230,19 @@ class AIModelSearchControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.content[0].modelName").value("MyModel"));
+                .andExpect(jsonPath("$.response.content[0].modelName").value("MyModel"))
+                .andDo(document("model-search-by-owner",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        pathParameters(
+                                parameterWithName("ownerId").description("모델 소유자 ID")
+                        ),
+                        queryParameters(
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        responseFields(searchSuccessResponse())
+                ));
 
         then(searchService).should().searchByOwner(eq(ownerId), eq(0), eq(10));
     }
@@ -232,7 +264,16 @@ class AIModelSearchControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.content[0].modelName").value("PopularModel"));
+                .andExpect(jsonPath("$.response.content[0].modelName").value("PopularModel"))
+                .andDo(document("model-popular",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        queryParameters(
+                                parameterWithName("page").description("페이지 번호 (0부터 시작)").optional(),
+                                parameterWithName("size").description("페이지 크기").optional()
+                        ),
+                        responseFields(searchSuccessResponse())
+                ));
 
         then(searchService).should().getPopularModels(eq(0), eq(10));
     }

@@ -116,6 +116,12 @@ tasks.named('test') {
 tasks.named('asciidoctor') {
     inputs.dir snippetsDir
     dependsOn test
+    attributes 'snippets': snippetsDir
+}
+
+// build 태스크가 asciidoctor를 포함하도록 설정
+build {
+    dependsOn asciidoctor
 }
 
 // Plain JAR 생성 비활성화

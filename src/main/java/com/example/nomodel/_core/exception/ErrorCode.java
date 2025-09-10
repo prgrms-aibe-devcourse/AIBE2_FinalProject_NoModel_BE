@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
+    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     INTERNAL_SERVER_ERROR("ISE001", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     INVALID_REQUEST("IRE001", HttpStatus.BAD_REQUEST, "Invalid request"),
     INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
@@ -65,7 +66,8 @@ public enum ErrorCode {
     // 포인트 관련 에러
     POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
     POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
-    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance.")
+    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
+    DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted")
     ;
 
     private final String errorCode;

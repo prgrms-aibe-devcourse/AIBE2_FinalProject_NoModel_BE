@@ -19,6 +19,11 @@ public interface FileJpaRepository extends JpaRepository<File, Long> {
     List<File> findByRelationTypeAndRelationId(RelationType relationType, Long relationId);
 
     /**
+     * 특정 관계 타입의 여러 관계 ID에 대한 파일 목록 조회 (N+1 문제 방지)
+     */
+    List<File> findByRelationTypeAndRelationIdIn(RelationType relationType, List<Long> relationIds);
+
+    /**
      * 특정 관계의 특정 타입 파일 목록 조회
      */
     List<File> findByRelationTypeAndRelationIdAndFileType(RelationType relationType, Long relationId, FileType fileType);

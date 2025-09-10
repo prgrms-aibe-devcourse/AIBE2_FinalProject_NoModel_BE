@@ -49,6 +49,7 @@ public class SecurityConfig {
             "/favicon.ico",
             "/test/**",          // 테스트 API 허용
             "/models/sync/**",   // 동기화 API 허용 (개발/테스트용)
+            "/models/search/**", // 모델 검색 API 허용 (공개)
             "/oauth2/**",
             "/login/**"
     };
