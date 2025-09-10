@@ -1,24 +1,30 @@
 -- ================================================================================
--- 테이블 구조 정리 스크립트
+-- 테이블 초기화 스크립트
 -- ================================================================================
--- 기존 테이블에서 사용하지 않는 컬럼 제거하여 JPA 엔티티와 완전 일치시킴
+-- 모든 테이블을 DROP하여 JPA가 새로 생성하도록 함
 
 -- 외래키 체크 비활성화
 SET foreign_key_checks = 0;
 
--- member_tb 테이블 정리
-ALTER TABLE member_tb DROP COLUMN reg_time;
-ALTER TABLE member_tb DROP COLUMN update_time;
-
--- ai_model_tb 테이블 정리  
-ALTER TABLE ai_model_tb DROP COLUMN reg_time;
-ALTER TABLE ai_model_tb DROP COLUMN update_time;
-
--- model_statistics_tb 테이블 정리
-ALTER TABLE model_statistics_tb DROP COLUMN reg_time;
-ALTER TABLE model_statistics_tb DROP COLUMN update_time;
+-- 모든 테이블 DROP (외래키 순서 고려)
+DROP TABLE IF EXISTS model_statistics_tb;
+DROP TABLE IF EXISTS member_subscription;
+DROP TABLE IF EXISTS member_point_balance;
+DROP TABLE IF EXISTS point_transaction;
+DROP TABLE IF EXISTS point_policy;
+DROP TABLE IF EXISTS member_coupon;
+DROP TABLE IF EXISTS coupon;
+DROP TABLE IF EXISTS discount_policy;
+DROP TABLE IF EXISTS model_review;
+DROP TABLE IF EXISTS model_report;
+DROP TABLE IF EXISTS file_tb;
+DROP TABLE IF EXISTS event_outbox;
+DROP TABLE IF EXISTS refresh_token;
+DROP TABLE IF EXISTS ai_model_tb;
+DROP TABLE IF EXISTS subscription;
+DROP TABLE IF EXISTS member_tb;
 
 -- 외래키 체크 활성화
 SET foreign_key_checks = 1;
 
-SELECT '테이블 구조 정리 완료 - BaseTimeEntity 필드만 유지' as status;
+SELECT '모든 테이블 DROP 완료 - JPA가 새로 생성함' as status;

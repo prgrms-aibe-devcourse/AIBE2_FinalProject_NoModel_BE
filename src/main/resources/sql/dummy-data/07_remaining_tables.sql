@@ -134,7 +134,7 @@ INSERT INTO discount_policy (name, discount_type, discount_value, is_active, max
 ('플래시 세일', 'PERCENTAGE', 50.00, 0, 1, 0, '2023-12-15', '2023-12-16');
 
 -- 7. 모델 리뷰 데이터 (100개)
-INSERT INTO model_review (model_id, reviewer_id, value, content, status, created_at)
+INSERT INTO model_review (model_id, reviewer_id, rating_value, content, status, created_at)
 WITH RECURSIVE seq(n) AS (
     SELECT 1 
     UNION ALL 
@@ -143,7 +143,7 @@ WITH RECURSIVE seq(n) AS (
 SELECT 
     (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
     (FLOOR(2 + (RAND() * 604))) as reviewer_id,
-    (FLOOR(1 + (RAND() * 5))) as value,
+    (FLOOR(1 + (RAND() * 5))) as rating_value,
     CASE FLOOR(1 + (RAND() * 10))
         WHEN 1 THEN '정말 훌륭한 모델입니다! 결과물의 품질이 매우 뛰어나고 사용하기도 편합니다.'
         WHEN 2 THEN '기대했던 것보다 좋은 결과를 얻을 수 있었습니다. 추천합니다.'
@@ -160,8 +160,34 @@ SELECT
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at
 FROM seq;
 
--- 8. 파일 데이터 (50개)
-INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, created_at, updated_at)
+-- 8. AdResult 데이터 (30개)
+INSERT INTO ad_result (model_id, model_name, member_id, prompt, created_at, updated_at)
+SELECT 
+    (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
+    (SELECT model_name FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_name,
+    (FLOOR(2 + (RAND() * 604))) as member_id,
+    CASE FLOOR(1 + (RAND() * 10))
+        WHEN 1 THEN 'beautiful landscape with mountains'
+        WHEN 2 THEN 'anime character with blue hair'
+        WHEN 3 THEN 'cyberpunk city at night'
+        WHEN 4 THEN 'watercolor painting of flowers'
+        WHEN 5 THEN 'portrait of a fantasy warrior'
+        WHEN 6 THEN 'abstract art with geometric shapes'
+        WHEN 7 THEN 'realistic photo of a cat'
+        WHEN 8 THEN 'sci-fi spaceship design'
+        WHEN 9 THEN 'traditional japanese garden'
+        ELSE 'creative digital art composition'
+    END as prompt,
+    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 90) DAY) as created_at,
+    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
+FROM (
+    SELECT ROW_NUMBER() OVER () as n
+    FROM information_schema.columns
+    LIMIT 30
+) numbers;
+
+-- 9. 파일 데이터 (50개)
+INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, is_primary, created_at, updated_at)
 SELECT 
     CONCAT(
         CASE ROW_NUMBER() OVER () % 8
@@ -183,32 +209,33 @@ SELECT
         END
     ) as file_name,
     CASE WHEN ROW_NUMBER() OVER () % 2 = 0 THEN 'PREVIEW' ELSE 'THUMBNAIL' END as file_type,
-    CONCAT('/uploads/', YEAR(NOW()), '/', MONTH(NOW()), '/', DAY(NOW()), '/',
-           SUBSTRING(MD5(RAND()), 1, 8), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 4), '-',
-           SUBSTRING(MD5(RAND()), 1, 12),
-           CASE ROW_NUMBER() OVER () % 4
-               WHEN 0 THEN '.jpg'
-               WHEN 1 THEN '.png'
-               WHEN 2 THEN '.webp'
-               ELSE '.gif'
-           END
-    ) as file_url,
+    -- Firebase Storage URLs을 사용 (실제 업로드된 이미지)
+    CASE ROW_NUMBER() OVER () % 5
+        WHEN 0 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/testImage_be8eb30c-ce18-438f-b485-593a6ef2dcfe?generation=1756904909282705&alt=media'
+        WHEN 1 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/sample_model_image_001.jpg?generation=1756904909282705&alt=media'
+        WHEN 2 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/generated_art_002.png?generation=1756904909282705&alt=media'
+        WHEN 3 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/custom_thumbnail_003.webp?generation=1756904909282705&alt=media'
+        ELSE 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/ai_artwork_default.jpg?generation=1756904909282705&alt=media'
+    END as file_url,
     CASE ROW_NUMBER() OVER () % 4
         WHEN 0 THEN 'image/jpeg'
         WHEN 1 THEN 'image/png'
         WHEN 2 THEN 'image/webp'
         ELSE 'image/gif'
     END as content_type,
-    CASE ROW_NUMBER() OVER () % 4
+    CASE ROW_NUMBER() OVER () % 5
         WHEN 0 THEN 'MODEL'
         WHEN 1 THEN 'REVIEW'
         WHEN 2 THEN 'PROFILE'
-        ELSE 'AD'
+        WHEN 3 THEN 'AD'
+        ELSE 'AD_RESULT'
     END as relation_type,
     FLOOR(1 + (RAND() * 1000)) as relation_id,
+    -- 각 relation_id의 첫 번째 파일을 대표 이미지로 설정 (약 20% 확률)
+    CASE WHEN ROW_NUMBER() OVER (PARTITION BY FLOOR(1 + (RAND() * 1000)) ORDER BY RAND()) = 1 
+         AND RAND() < 0.2 THEN TRUE 
+         ELSE FALSE 
+    END as is_primary,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
 FROM (

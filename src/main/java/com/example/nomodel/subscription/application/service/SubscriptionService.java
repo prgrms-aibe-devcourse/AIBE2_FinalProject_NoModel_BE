@@ -24,7 +24,7 @@ public class SubscriptionService {
     public List<SubscriptionResponse> getPlans() {
         return domainService.getAllPlans().stream()
                 .map(s -> new SubscriptionResponse(
-                        s.getId(), s.getName(), s.getDescription(), s.getPrice(), s.getPeriod()
+                        s.getId(), s.getPlanType().getValue(), s.getDescription(), s.getPrice(), s.getPeriod()
                 ))
                 .collect(Collectors.toList());
     }

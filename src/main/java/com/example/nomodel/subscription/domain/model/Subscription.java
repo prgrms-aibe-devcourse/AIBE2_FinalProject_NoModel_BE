@@ -11,7 +11,9 @@ public class Subscription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", nullable = false)
+    private PlanType planType;
     private String description;
     private BigDecimal price;
     private Long period; // 일 단위
@@ -20,8 +22,8 @@ public class Subscription {
 
     protected Subscription() {}
 
-    public Subscription(String name, String description, BigDecimal price, Long period) {
-        this.name = name;
+    public Subscription(PlanType planType, String description, BigDecimal price, Long period) {
+        this.planType = planType;
         this.description = description;
         this.price = price;
         this.period = period;
@@ -31,7 +33,7 @@ public class Subscription {
 
     // getter
     public Long getId() { return id; }
-    public String getName() { return name; }
+    public PlanType getPlanType() { return planType; }
     public String getDescription() { return description; }
     public BigDecimal getPrice() { return price; }
     public Long getPeriod() { return period; }

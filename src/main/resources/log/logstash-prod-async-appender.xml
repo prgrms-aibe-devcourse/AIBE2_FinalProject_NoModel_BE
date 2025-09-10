@@ -28,8 +28,6 @@
             <!-- Minimal logger names -->
             <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
             
-            <!-- Exclude key-value pairs for performance -->
-            <includeKeyValue>false</includeKeyValue>
         </encoder>
         
         <!-- Connection settings optimized for high availability -->
@@ -40,8 +38,6 @@
         <!-- Large ring buffer for maximum batching -->
         <ringBufferSize>1024</ringBufferSize>
         
-        <!-- Batched flush for maximum throughput -->
-        <immediateFlush>false</immediateFlush>
         
         <!-- Extended write timeout for stability under load -->
         <writeTimeout>60 second</writeTimeout>
