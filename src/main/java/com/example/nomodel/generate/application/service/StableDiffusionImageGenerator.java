@@ -1,5 +1,8 @@
 package com.example.nomodel.generate.application.service;
 
+import com.example.nomodel.file.application.service.FileService;
+import com.example.nomodel.file.domain.model.FileType;
+import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generate.application.dto.StableDiffusionRequest;
 import com.example.nomodel.generate.application.dto.StableDiffusionResponse;
@@ -30,6 +33,7 @@ public class StableDiffusionImageGenerator {
             .build();
     
     private final ObjectMapper objectMapper;
+    private final FileService fileService;
 
     @Value("${STABLE_DIFFUSION_API_URL:http://220.127.239.150:7860}")
     private String apiUrl;
@@ -41,9 +45,13 @@ public class StableDiffusionImageGenerator {
     private int retryMax;
 
     /**
-     * Stable Diffusion API를 사용하여 이미지 생성
+     * Stable Diffusion API를 사용하여 이미지 생성 후 Firebase에 저장
+     * @param mode 생성 모드
+     * @param prompt 프롬프트
+     * @param opts 추가 옵션
+     * @return 저장된 파일 ID
      */
-    public byte[] generate(GenerationMode mode, String prompt, Map<String, Object> opts) throws Exception {
+    public Long generate(GenerationMode mode, String prompt, Map<String, Object> opts) throws Exception {
         log.info("Generating image with Stable Diffusion API");
         log.info("Prompt: {}", prompt);
         log.info("Mode: {}", mode);
@@ -76,12 +84,28 @@ public class StableDiffusionImageGenerator {
                 throw new RuntimeException("No images returned from Stable Diffusion API");
             }
 
-            // Base64 디코딩하여 바이트 배열 반환
+            // Base64 디코딩하여 바이트 배열 변환
             String base64Image = response.getImages().get(0);
             byte[] imageBytes = Base64.getDecoder().decode(base64Image);
             
-            log.info("✅ Image generation completed successfully. Size: {} bytes", imageBytes.length);
-            return imageBytes;
+            log.info("Image generation completed. Size: {} bytes", imageBytes.length);
+            
+            // Firebase에 저장
+            // RelationType은 GENERATE 타입이 없으므로 MODEL 또는 새로운 타입을 추가해야 함
+            // 여기서는 일단 MODEL로 설정하거나, opts에서 relationId를 받아서 처리
+            Long relationId = getRelationId(opts);
+            RelationType relationType = getRelationType(opts);
+            
+            Long fileId = fileService.saveBytes(
+                imageBytes, 
+                "image/png", 
+                relationType, 
+                relationId, 
+                FileType.PREVIEW
+            );
+            
+            log.info("✅ Image generation and save completed successfully. FileId: {}", fileId);
+            return fileId;
 
         } catch (WebClientResponseException e) {
             log.error("HTTP error during Stable Diffusion API call: {}", e.getMessage());
@@ -144,5 +168,35 @@ public class StableDiffusionImageGenerator {
             case SUBJECT -> base + ", 1girl, portrait, high quality, detailed face, studio lighting, no text";
             case SUBJECT_SCENE -> base + ", 1girl, full body, detailed background, natural lighting, high quality, no text";
         };
+    }
+
+    /**
+     * 옵션에서 relationId를 추출
+     * 없으면 기본값 0L 반환 (임시)
+     */
+    private Long getRelationId(Map<String, Object> opts) {
+        Object relationId = opts.get("relationId");
+        if (relationId instanceof Number) {
+            return ((Number) relationId).longValue();
+        }
+        // 기본값으로 0L 반환 (실제로는 적절한 ID나 null 처리 필요)
+        return 0L;
+    }
+
+    /**
+     * 옵션에서 RelationType을 추출
+     * 없으면 기본값 MODEL 반환
+     */
+    private RelationType getRelationType(Map<String, Object> opts) {
+        Object relationType = opts.get("relationType");
+        if (relationType instanceof String) {
+            try {
+                return RelationType.valueOf((String) relationType);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid RelationType: {}, using MODEL as default", relationType);
+            }
+        }
+        // 기본값으로 MODEL 반환 (또는 GENERATE 타입을 RelationType에 추가해야 함)
+        return RelationType.MODEL;
     }
 }
