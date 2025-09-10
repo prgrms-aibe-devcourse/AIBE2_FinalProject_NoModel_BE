@@ -1,5 +1,6 @@
 package com.example.nomodel.model.domain.repository;
 
+import com.example.nomodel.model.application.dto.ModelWithStatisticsProjection;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.OwnType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -107,4 +108,17 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
     org.springframework.data.domain.Page<AIModel> findModelsUpdatedAfterPaged(
             @Param("fromDateTime") LocalDateTime fromDateTime, 
             org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * 모든 모델과 통계, 소유자 정보를 한 번에 조회 (하이브리드 최적화)
+     * LEFT JOIN으로 통계가 없는 모델도 포함
+     * 소유자 정보도 함께 조회하여 N+1 문제 해결
+     */
+    @Query("""
+        SELECT m as model, s as statistics, mem.email.value as ownerEmail
+        FROM AIModel m
+        LEFT JOIN ModelStatistics s ON s.model.id = m.id
+        LEFT JOIN Member mem ON mem.id = m.ownerId
+        """)
+    List<ModelWithStatisticsProjection> findAllModelsWithStatisticsAndOwner();
 }

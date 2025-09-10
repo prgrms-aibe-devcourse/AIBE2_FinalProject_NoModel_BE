@@ -3,6 +3,7 @@ package com.example.nomodel.model.application.service;
 import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.model.application.dto.ModelWithStatisticsProjection;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.ModelStatistics;
@@ -112,38 +113,33 @@ public class ElasticsearchIndexService {
 
     /**
      * MySQL에서 Elasticsearch로 모든 AI 모델 데이터 동기화
-     * 배치 최적화: 일괄 조회로 N+1 문제 해결
+     * 하이브리드 최적화: JOIN 쿼리 + 일괄 리뷰 통계 조회 (2번 쿼리)
      */
     public long syncAllModelsToElasticsearch() {
         try {
-            log.info("MySQL → Elasticsearch 전체 AI 모델 동기화 시작");
+            log.info("MySQL → Elasticsearch 전체 AI 모델 동기화 시작 (하이브리드 최적화)");
             
-            // 1. MySQL에서 모든 AI 모델 조회
-            List<AIModel> allModels = aiModelJpaRepository.findAll();
-            log.info("MySQL에서 {} 개의 AI 모델 조회됨", allModels.size());
+            // 1. JOIN 쿼리로 모델+통계+소유자 한 번에 조회 (1번 쿼리)
+            List<com.example.nomodel.model.application.dto.ModelWithStatisticsProjection> projections = 
+                    aiModelJpaRepository.findAllModelsWithStatisticsAndOwner();
             
-            if (allModels.isEmpty()) {
+            log.info("MySQL에서 {} 개의 AI 모델 조회됨 (JOIN 쿼리)", projections.size());
+            
+            if (projections.isEmpty()) {
                 log.info("동기화할 모델이 없습니다.");
                 return 0;
             }
             
             // 2. 모든 모델 ID 수집
-            List<Long> modelIds = allModels.stream()
-                    .map(AIModel::getId)
+            List<Long> modelIds = projections.stream()
+                    .map(p -> p.getModel().getId())
                     .toList();
             
-            // 3. 일괄 데이터 조회 (N+1 문제 해결)
-            Map<Long, ModelStatistics> statisticsMap = modelStatisticsRepository.findAll()
-                    .stream()
-                    .filter(stats -> modelIds.contains(stats.getModel().getId()))
-                    .collect(Collectors.toMap(stats -> stats.getModel().getId(), Function.identity()));
-                    
-            Map<Long, String> ownerNameMap = buildOwnerNameMap(allModels);
+            // 3. 리뷰 통계만 별도로 일괄 조회 (1번 쿼리)
             Map<Long, Double> ratingMap = buildRatingMap(modelIds);
             Map<Long, Long> reviewCountMap = buildReviewCountMap(modelIds);
             
-            log.info("통계 데이터 일괄 조회 완료 - Statistics: {}, Ratings: {}, ReviewCounts: {}", 
-                    statisticsMap.size(), ratingMap.size(), reviewCountMap.size());
+            log.info("하이브리드 최적화 완료 - 총 2번 쿼리로 모든 데이터 조회");
             
             // 4. Elasticsearch 인덱스 초기화
             aiModelSearchRepository.deleteAll();
@@ -151,13 +147,21 @@ public class ElasticsearchIndexService {
             
             // 5. 각 모델을 Elasticsearch에 색인
             long indexedCount = 0;
-            for (AIModel model : allModels) {
+            for (ModelWithStatisticsProjection projection : projections) {
                 try {
+                    AIModel model = projection.getModel();
                     Long modelId = model.getId();
-                    String ownerName = ownerNameMap.get(modelId);
-                    ModelStatistics stats = statisticsMap.get(modelId);
+                    
+                    // JOIN으로 가져온 데이터 사용
+                    String ownerName = projection.getOwnerEmail() != null ? 
+                            projection.getOwnerEmail() : 
+                            (model.getOwnType() != null ? model.getOwnType().name() : "ADMIN");
+                    
+                    ModelStatistics stats = projection.getStatistics();
                     Long usageCount = stats != null ? stats.getUsageCount() : 0L;
                     Long viewCount = stats != null ? stats.getViewCount() : 0L;
+                    
+                    // 리뷰 통계는 별도 조회한 것 사용
                     Double rating = ratingMap.getOrDefault(modelId, 0.0);
                     Long reviewCount = reviewCountMap.getOrDefault(modelId, 0L);
                     
@@ -167,14 +171,15 @@ public class ElasticsearchIndexService {
                     indexedCount++;
                     
                     if (indexedCount % 50 == 0) {
-                        log.info("진행 상황: {}/{} 모델 색인 완료", indexedCount, allModels.size());
+                        log.info("진행 상황: {}/{} 모델 색인 완료", indexedCount, projections.size());
                     }
                 } catch (Exception e) {
-                    log.error("모델 색인 실패: modelId={}, error={}", model.getId(), e.getMessage());
+                    log.error("모델 색인 실패: modelId={}, error={}", 
+                            projection.getModel().getId(), e.getMessage());
                 }
             }
             
-            log.info("MySQL → Elasticsearch 동기화 완료: {} 개 모델 색인됨", indexedCount);
+            log.info("MySQL → Elasticsearch 동기화 완료: {} 개 모델 색인됨 (하이브리드 최적화)", indexedCount);
             return indexedCount;
             
         } catch (Exception e) {
