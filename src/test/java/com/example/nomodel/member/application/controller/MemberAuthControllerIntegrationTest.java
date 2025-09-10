@@ -1,6 +1,7 @@
 package com.example.nomodel.member.application.controller;
 
 import com.example.nomodel._core.config.TestOAuth2Config;
+import com.example.nomodel._core.fixture.TestDataFixture;
 import com.example.nomodel.member.application.dto.request.LoginRequestDto;
 import com.example.nomodel.member.application.dto.request.SignUpRequestDto;
 import com.example.nomodel.member.domain.model.Email;
@@ -134,10 +135,10 @@ class MemberAuthControllerIntegrationTest {
     @Test
     @DisplayName("중복 이메일 회원가입 실패")
     void signUp_DuplicateEmail_ShouldFail() throws Exception {
-        // given - 기존 회원 생성
-        Email email = Email.of("existing@example.com");
-        Password password = Password.encode("password123", passwordEncoder);
-        Member existingMember = Member.createMember("existingUser", email, password);
+        // given - 기존 회원 생성 (TestDataFixture 사용)
+        Member existingMember = TestDataFixture.createMember("existingUser", "existing@example.com", "password123", 
+                com.example.nomodel.member.domain.model.Role.USER, 
+                com.example.nomodel.member.domain.model.Status.ACTIVE, passwordEncoder);
         memberJpaRepository.save(existingMember);
 
         // when & then - 동일한 이메일로 회원가입 시도
@@ -155,10 +156,10 @@ class MemberAuthControllerIntegrationTest {
     @Test
     @DisplayName("잘못된 비밀번호로 로그인 실패")
     void login_WrongPassword_ShouldFail() throws Exception {
-        // given - 회원 생성
-        Email email = Email.of("test@example.com");
-        Password password = Password.encode("correctPassword", passwordEncoder);
-        Member member = Member.createMember("testUser", email, password);
+        // given - 회원 생성 (TestDataFixture 사용)
+        Member member = TestDataFixture.createMember("testUser", "test@example.com", "correctPassword", 
+                com.example.nomodel.member.domain.model.Role.USER, 
+                com.example.nomodel.member.domain.model.Status.ACTIVE, passwordEncoder);
         memberJpaRepository.save(member);
 
         // when & then - 잘못된 비밀번호로 로그인
@@ -176,11 +177,8 @@ class MemberAuthControllerIntegrationTest {
     @Test
     @DisplayName("비활성 회원 로그인 실패")
     void login_SuspendedMember_ShouldFail() throws Exception {
-        // given - 비활성 회원 생성
-        Email email = Email.of("suspended@example.com");
-        Password password = Password.encode("password123", passwordEncoder);
-        Member member = Member.createMember("suspendedUser", email, password);
-        member.deactivate(); // 비활성화
+        // given - 비활성 회원 생성 (TestDataFixture 사용)
+        Member member = TestDataFixture.createSuspendedMember(passwordEncoder);
         memberJpaRepository.save(member);
 
         // when & then
