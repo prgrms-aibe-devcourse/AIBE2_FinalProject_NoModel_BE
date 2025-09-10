@@ -16,11 +16,11 @@ public record ModelUsageHistoryResponse(
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt
 ) {
-    public static ModelUsageHistoryResponse from(AdResult adResult, String resultImageUrl) {
+    public static ModelUsageHistoryResponse from(AdResult adResult, String modelName, String resultImageUrl) {
         return ModelUsageHistoryResponse.builder()
             .adResultId(adResult.getId())
             .modelId(adResult.getModelId())
-            .modelName(adResult.getModelName())
+            .modelName(modelName)
             .prompt(adResult.getPrompt())
             .resultImageUrl(resultImageUrl)
             .createdAt(adResult.getCreatedAt())

@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @Entity
 @Builder
 @AllArgsConstructor
@@ -28,21 +27,39 @@ public class AdResult extends BaseEntity {
   @Column(name = "model_id", nullable = false)
   private Long modelId;
   
-  @Column(name = "model_name", nullable = false, length = 100)
-  private String modelName;
-  
   @Column(name = "member_id", nullable = false)
   private Long memberId;
   
   @Column(name = "prompt", nullable = false, columnDefinition = "TEXT")
   private String prompt;
   
-  public static AdResult create(Long modelId, String modelName, Long memberId, String prompt) {
+  @Column(name = "ad_result_name", length = 200)
+  private String adResultName;
+  
+  @Column(name = "member_rating")
+  private Double memberRating;
+  
+  @Column(name = "result_image_url", length = 500)
+  private String resultImageUrl;
+  
+  public static AdResult create(Long modelId, Long memberId, String prompt, String adResultName) {
     return AdResult.builder()
       .modelId(modelId)
-      .modelName(modelName)
       .memberId(memberId)
       .prompt(prompt)
+      .adResultName(adResultName)
       .build();
+  }
+  
+  public void updateRating(Double rating) {
+    this.memberRating = rating;
+  }
+  
+  public void updateResultImageUrl(String imageUrl) {
+    this.resultImageUrl = imageUrl;
+  }
+  
+  public void updateAdResultName(String name) {
+    this.adResultName = name;
   }
 }

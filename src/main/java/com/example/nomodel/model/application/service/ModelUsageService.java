@@ -8,7 +8,9 @@ import com.example.nomodel.model.application.dto.response.ModelUsageCountRespons
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryPageResponse;
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryResponse;
 import com.example.nomodel.model.domain.model.AdResult;
+import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
+import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 public class ModelUsageService {
 
     private final AdResultJpaRepository adResultRepository;
+    private final AIModelJpaRepository aiModelRepository;
     private final FileJpaRepository fileRepository;
 
     /**
@@ -68,8 +71,24 @@ public class ModelUsageService {
                 (existing, replacement) -> existing // 중복 시 첫 번째 이미지 사용
             ));
         
+        // 모델 ID 목록 추출 및 모델명 조회 (N+1 문제 방지)
+        List<Long> modelIds = adResultPage.getContent().stream()
+            .map(AdResult::getModelId)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        Map<Long, String> modelNameMap = aiModelRepository.findAllById(modelIds).stream()
+            .collect(Collectors.toMap(
+                AIModel::getId,
+                AIModel::getModelName
+            ));
+        
         Page<ModelUsageHistoryResponse> responsePage = adResultPage.map(adResult -> 
-            ModelUsageHistoryResponse.from(adResult, imageUrlMap.get(adResult.getId()))
+            ModelUsageHistoryResponse.from(
+                adResult, 
+                modelNameMap.get(adResult.getModelId()), 
+                imageUrlMap.get(adResult.getId())
+            )
         );
         
         return ModelUsageHistoryPageResponse.from(responsePage);

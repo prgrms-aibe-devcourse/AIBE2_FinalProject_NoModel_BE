@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
   
@@ -75,5 +76,22 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
       @Param("modelId") Long modelId,
       Pageable pageable
   );
+  
+  /**
+   * 회원의 특정 AdResult 조회 (본인 소유 확인)
+   */
+  Optional<AdResult> findByIdAndMemberId(Long id, Long memberId);
+  
+  /**
+   * 회원의 총 프로젝트 개수 조회 (countByMemberId와 동일하지만 명확한 용도)
+   */
+  @Query("SELECT COUNT(ar) FROM AdResult ar WHERE ar.memberId = :memberId")
+  long countProjectsByMemberId(@Param("memberId") Long memberId);
+  
+  /**
+   * 회원의 평균 평점 조회
+   */
+  @Query("SELECT AVG(ar.memberRating) FROM AdResult ar WHERE ar.memberId = :memberId AND ar.memberRating IS NOT NULL")
+  Double findAverageRatingByMemberId(@Param("memberId") Long memberId);
   
 }

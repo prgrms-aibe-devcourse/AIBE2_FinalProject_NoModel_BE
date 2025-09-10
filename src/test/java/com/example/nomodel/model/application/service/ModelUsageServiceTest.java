@@ -7,7 +7,9 @@ import com.example.nomodel.model.application.dto.response.ModelUsageCountRespons
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryPageResponse;
 import com.example.nomodel.model.application.dto.response.ModelUsageHistoryResponse;
 import com.example.nomodel.model.domain.model.AdResult;
+import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
+import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +21,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,9 @@ class ModelUsageServiceTest {
     private AdResultJpaRepository adResultRepository;
     
     @Mock
+    private AIModelJpaRepository aiModelRepository;
+    
+    @Mock
     private FileJpaRepository fileRepository;
     
     @InjectMocks
@@ -50,8 +54,8 @@ class ModelUsageServiceTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
         
-        AdResult adResult1 = createAdResult(1L, 100L, "GPT-4", memberId, "테스트 프롬프트 1");
-        AdResult adResult2 = createAdResult(2L, 200L, "DALL-E", memberId, "테스트 프롬프트 2");
+        AdResult adResult1 = createAdResult(1L, 100L, "테스트 프롬프트 1");
+        AdResult adResult2 = createAdResult(2L, 200L, "테스트 프롬프트 2");
         List<AdResult> adResults = Arrays.asList(adResult1, adResult2);
         Page<AdResult> adResultPage = new PageImpl<>(adResults, pageable, 2);
         
@@ -59,10 +63,16 @@ class ModelUsageServiceTest {
         File resultFile2 = createFile(2L, "https://example.com/image2.jpg", "image/png");
         List<File> resultFiles = Arrays.asList(resultFile1, resultFile2);
         
+        AIModel aiModel1 = createAIModel(100L, "GPT-4");
+        AIModel aiModel2 = createAIModel(200L, "DALL-E");
+        List<AIModel> aiModels = Arrays.asList(aiModel1, aiModel2);
+        
         given(adResultRepository.findByMemberIdOrderByCreatedAtDesc(eq(memberId), eq(pageable)))
             .willReturn(adResultPage);
         given(fileRepository.findByRelationTypeAndRelationIdIn(eq(RelationType.AD_RESULT), anyList()))
             .willReturn(resultFiles);
+        given(aiModelRepository.findAllById(Arrays.asList(100L, 200L)))
+            .willReturn(aiModels);
         
         // When
         ModelUsageHistoryPageResponse response = modelUsageService.getModelUsageHistory(memberId, null, page, size);
@@ -95,17 +105,22 @@ class ModelUsageServiceTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
         
-        AdResult adResult = createAdResult(1L, modelId, "GPT-4", memberId, "특정 모델 프롬프트");
+        AdResult adResult = createAdResult(1L, modelId, "특정 모델 프롬프트");
         List<AdResult> adResults = Collections.singletonList(adResult);
         Page<AdResult> adResultPage = new PageImpl<>(adResults, pageable, 1);
         
         File resultFile = createFile(1L, "https://example.com/specific-image.jpg", "image/jpeg");
         List<File> resultFiles = Collections.singletonList(resultFile);
         
+        AIModel aiModel = createAIModel(modelId, "GPT-4");
+        List<AIModel> aiModels = Collections.singletonList(aiModel);
+        
         given(adResultRepository.findByMemberIdAndModelIdOrderByCreatedAtDesc(eq(memberId), eq(modelId), eq(pageable)))
             .willReturn(adResultPage);
         given(fileRepository.findByRelationTypeAndRelationIdIn(eq(RelationType.AD_RESULT), anyList()))
             .willReturn(resultFiles);
+        given(aiModelRepository.findAllById(Collections.singletonList(modelId)))
+            .willReturn(aiModels);
         
         // When
         ModelUsageHistoryPageResponse response = modelUsageService.getModelUsageHistory(memberId, modelId, page, size);
@@ -164,14 +179,19 @@ class ModelUsageServiceTest {
         int size = 10;
         Pageable pageable = PageRequest.of(page, size);
         
-        AdResult adResult = createAdResult(1L, 100L, "GPT-4", memberId, "이미지 없는 프롬프트");
+        AdResult adResult = createAdResult(1L, 100L, "이미지 없는 프롬프트");
         List<AdResult> adResults = Collections.singletonList(adResult);
         Page<AdResult> adResultPage = new PageImpl<>(adResults, pageable, 1);
+        
+        AIModel aiModel = createAIModel(100L, "GPT-4");
+        List<AIModel> aiModels = Collections.singletonList(aiModel);
         
         given(adResultRepository.findByMemberIdOrderByCreatedAtDesc(eq(memberId), eq(pageable)))
             .willReturn(adResultPage);
         given(fileRepository.findByRelationTypeAndRelationIdIn(eq(RelationType.AD_RESULT), anyList()))
             .willReturn(Collections.emptyList());
+        given(aiModelRepository.findAllById(Collections.singletonList(100L)))
+            .willReturn(aiModels);
         
         // When
         ModelUsageHistoryPageResponse response = modelUsageService.getModelUsageHistory(memberId, null, page, size);
@@ -228,14 +248,12 @@ class ModelUsageServiceTest {
         verify(adResultRepository).countByMemberId(memberId);
     }
 
-    private AdResult createAdResult(Long id, Long modelId, String modelName, Long memberId, String prompt) {
-        AdResult adResult = AdResult.builder()
-            .modelId(modelId)
-            .modelName(modelName)
-            .memberId(memberId)
-            .prompt(prompt)
-            .build();
-        adResult.setId(id);
+    private AdResult createAdResult(Long id, Long modelId, String prompt) {
+        AdResult adResult = mock(AdResult.class);
+        given(adResult.getId()).willReturn(id);
+        given(adResult.getModelId()).willReturn(modelId);
+        given(adResult.getPrompt()).willReturn(prompt);
+        given(adResult.getCreatedAt()).willReturn(java.time.LocalDateTime.now());
         return adResult;
     }
 
@@ -246,5 +264,13 @@ class ModelUsageServiceTest {
             .fileUrl(fileUrl)
             .contentType(contentType)
             .build();
+    }
+    
+    private AIModel createAIModel(Long id, String modelName) {
+        AIModel aiModel = AIModel.builder()
+            .modelName(modelName)
+            .build();
+        aiModel.setId(id);
+        return aiModel;
     }
 }
