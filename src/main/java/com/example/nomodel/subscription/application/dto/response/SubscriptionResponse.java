@@ -9,7 +9,7 @@ public class SubscriptionResponse {
     private BigDecimal price;
     private Long period;
 
-    public SubscriptionResponse(Long id, String name, String description, BigDecimal price, Long period) {
+    public SubscriptionResponse(Long id, String name, String description, BigDecimal price, Integer period) {
         this.id = id;
         this.name = name;
         this.description = description;
