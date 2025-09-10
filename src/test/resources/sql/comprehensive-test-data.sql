@@ -97,7 +97,14 @@ INSERT INTO file_tb (file_id, original_name, stored_name, file_path, file_size, 
 (4, 'realistic_preview.jpg', 'model_2_preview_20240106.jpg', '/uploads/models/previews/', 356789, 'IMAGE', 'MODEL_PREVIEW', 2, '2024-01-06 14:05:00', '2024-01-06 14:05:00'),
 -- 프로필 이미지들
 (5, 'profile_pic.jpg', 'member_5_profile_20240105.jpg', '/uploads/profiles/', 128000, 'IMAGE', 'MEMBER_PROFILE', 5, '2024-01-05 10:30:00', '2024-01-05 10:30:00'),
-(6, 'admin_avatar.png', 'member_3_profile_20240103.png', '/uploads/profiles/', 95000, 'IMAGE', 'MEMBER_PROFILE', 3, '2024-01-03 10:30:00', '2024-01-03 10:30:00');
+(6, 'admin_avatar.png', 'member_3_profile_20240103.png', '/uploads/profiles/', 95000, 'IMAGE', 'MEMBER_PROFILE', 3, '2024-01-03 10:30:00', '2024-01-03 10:30:00'),
+-- AdResult 결과물 이미지들
+(7, 'result_1.jpg', 'ad_result_1_20240105.jpg', '/uploads/ad-results/', 512000, 'IMAGE', 'AD_RESULT', 1, '2024-01-05 12:05:00', '2024-01-05 12:05:00'),
+(8, 'result_2.jpg', 'ad_result_2_20240105.jpg', '/uploads/ad-results/', 768000, 'IMAGE', 'AD_RESULT', 2, '2024-01-05 13:35:00', '2024-01-05 13:35:00'),
+(9, 'result_4.jpg', 'ad_result_4_20240107.jpg', '/uploads/ad-results/', 445000, 'IMAGE', 'AD_RESULT', 4, '2024-01-07 10:20:00', '2024-01-07 10:20:00'),
+(10, 'result_5.jpg', 'ad_result_5_20240107.jpg', '/uploads/ad-results/', 890000, 'IMAGE', 'AD_RESULT', 5, '2024-01-07 14:25:00', '2024-01-07 14:25:00'),
+(11, 'result_9.jpg', 'ad_result_9_20240111.jpg', '/uploads/ad-results/', 623000, 'IMAGE', 'AD_RESULT', 9, '2024-01-11 09:35:00', '2024-01-11 09:35:00'),
+(12, 'result_10.jpg', 'ad_result_10_20240111.jpg', '/uploads/ad-results/', 1024000, 'IMAGE', 'AD_RESULT', 10, '2024-01-11 15:45:00', '2024-01-11 15:45:00');
 
 -- ===== 7. REVIEW (리뷰) 도메인 =====
 INSERT INTO model_review (id, model_id, reviewer_id, rating, review_title, review_content, status, created_at, updated_at, created_by, updated_by) VALUES
@@ -107,7 +114,36 @@ INSERT INTO model_review (id, model_id, reviewer_id, rating, review_title, revie
 (4, 3, 7, 3, '평범한 수준', '나쁘지 않지만 특별함이 부족해요. 가격 대비 조금 아쉽네요.', 'ACTIVE', '2024-01-11 16:45:00', '2024-01-11 16:45:00', 'reviewer', 'reviewer'),
 (5, 1, 1, 5, '정말 추천해요!', '초보자도 쉽게 사용할 수 있고 결과물이 만족스럽습니다.', 'ACTIVE', '2024-01-12 11:30:00', '2024-01-12 11:30:00', 'normalUser', 'normalUser');
 
--- ===== 8. REPORT (신고) 도메인 =====
+-- ===== 8. AD_RESULT (광고 결과) 도메인 =====
+INSERT INTO ad_result_tb (ad_result_id, model_id, member_id, prompt, ad_result_name, member_rating, result_image_url, created_at, updated_at) VALUES
+-- activeCreator(ID: 5)가 생성한 결과물들 - Anime Style V2 모델 사용
+(1, 1, 5, 'cute anime girl, school uniform, cherry blossoms', 'Spring School Girl', 4.8, '/results/images/result_1_20240105.jpg', '2024-01-05 12:00:00', '2024-01-05 12:00:00'),
+(2, 1, 5, 'anime warrior, fantasy armor, glowing sword', 'Fantasy Warrior', 4.9, '/results/images/result_2_20240105.jpg', '2024-01-05 13:30:00', '2024-01-05 13:30:00'),
+(3, 1, 5, 'magical forest, fairy tale, soft lighting', 'Enchanted Forest', null, '/results/images/result_3_20240105.jpg', '2024-01-05 15:45:00', '2024-01-05 15:45:00'),
+
+-- premiumUser(ID: 2)의 결과물들 - 다양한 모델 사용
+(4, 2, 2, 'professional businessman portrait, suit, confident', 'Business Portrait', 4.5, '/results/images/result_4_20240107.jpg', '2024-01-07 10:15:00', '2024-01-07 10:15:00'),
+(5, 3, 2, 'mountain landscape, sunset, dramatic clouds', 'Mountain Sunset', 4.7, '/results/images/result_5_20240107.jpg', '2024-01-07 14:20:00', '2024-01-07 14:20:00'),
+(6, 1, 2, 'anime cat girl, maid outfit, kawaii style', 'Kawaii Maid', 4.2, '/results/images/result_6_20240108.jpg', '2024-01-08 16:30:00', '2024-01-08 16:30:00'),
+
+-- normalUser(ID: 1)의 결과물들 - 기본 모델 위주
+(7, 5, 1, 'simple portrait, natural lighting, smile', 'Natural Portrait', 4.0, '/results/images/result_7_20240109.jpg', '2024-01-09 11:45:00', '2024-01-09 11:45:00'),
+(8, 1, 1, 'anime style boy, casual clothes, friendly', 'Casual Boy', 4.3, '/results/images/result_8_20240110.jpg', '2024-01-10 13:20:00', '2024-01-10 13:20:00'),
+
+-- regularBuyer(ID: 6)의 결과물들 - 프리미엄 모델 위주
+(9, 2, 6, 'elegant woman portrait, studio lighting', 'Elegant Portrait', 4.6, '/results/images/result_9_20240111.jpg', '2024-01-11 09:30:00', '2024-01-11 09:30:00'),
+(10, 6, 6, 'ultra detailed landscape, photorealistic', 'Ultra Landscape', 4.9, '/results/images/result_10_20240111.jpg', '2024-01-11 15:40:00', '2024-01-11 15:40:00'),
+
+-- reviewer(ID: 7)의 결과물들 - 테스트 목적
+(11, 3, 7, 'fantasy castle, magical atmosphere', 'Magic Castle', 3.8, '/results/images/result_11_20240112.jpg', '2024-01-12 10:25:00', '2024-01-12 10:25:00'),
+(12, 1, 7, 'anime girl, summer dress, beach scene', 'Summer Beach', null, '/results/images/result_12_20240112.jpg', '2024-01-12 14:15:00', '2024-01-12 14:15:00'),
+
+-- 최근 활동들 - 다양한 사용자의 최신 결과물
+(13, 2, 5, 'realistic self-portrait, professional headshot', 'Pro Headshot', 4.7, '/results/images/result_13_20240114.jpg', '2024-01-14 11:20:00', '2024-01-14 11:20:00'),
+(14, 1, 6, 'anime couple, romantic scene, sunset', 'Romantic Anime', 4.4, '/results/images/result_14_20240115.jpg', '2024-01-15 16:50:00', '2024-01-15 16:50:00'),
+(15, 4, 5, 'experimental art style, abstract concept', 'Abstract Experiment', 3.9, '/results/images/result_15_20240116.jpg', '2024-01-16 12:30:00', '2024-01-16 12:30:00');
+
+-- ===== 9. REPORT (신고) 도메인 =====
 INSERT INTO report_tb (report_id, target_type, target_id, reporter_id, report_reason, report_description, status, created_at, updated_at) VALUES
 (1, 'MODEL', 4, 6, '부적절한 콘텐츠', '이 모델이 부적절한 내용을 생성하는 것 같습니다.', 'PENDING', '2024-01-13 14:30:00', '2024-01-13 14:30:00'),
 (2, 'REVIEW', 4, 2, '스팸/광고', '리뷰 내용이 광고성 게시물처럼 보입니다.', 'REVIEWED', '2024-01-14 09:45:00', '2024-01-15 10:30:00'),
@@ -122,6 +158,7 @@ ALTER TABLE member_point_balance AUTO_INCREMENT = 10;
 ALTER TABLE point_transaction AUTO_INCREMENT = 10;
 ALTER TABLE coupon AUTO_INCREMENT = 10;
 ALTER TABLE ai_model_tb AUTO_INCREMENT = 10;
-ALTER TABLE file_tb AUTO_INCREMENT = 10;
+ALTER TABLE file_tb AUTO_INCREMENT = 15;
 ALTER TABLE model_review AUTO_INCREMENT = 10;
+ALTER TABLE ad_result_tb AUTO_INCREMENT = 20;
 ALTER TABLE report_tb AUTO_INCREMENT = 10;
