@@ -69,13 +69,16 @@ public class PointService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 3. 거래 내역 생성
+        BigDecimal before = balance.getTotalPoints();
+        BigDecimal after = before.add(rewardAmount);
+
         PointTransaction transaction = new PointTransaction(
                 reviewerId,
                 TransactionDirection.CREDIT,
                 TransactionType.REWARD,
                 rewardAmount,
-                balance.getTotalPoints(),
-                balance.getTotalPoints().add(rewardAmount),
+                before,
+                after,
                 RefererType.REVIEW,
                 modelId
         );
