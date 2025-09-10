@@ -23,3 +23,6 @@ app:
   batch:
     aimodel-index:
       enabled: true  # AIModel 인덱싱 스케줄러 활성화 (증분 처리)
+  auth:
+    oauth2:
+      enabled: false  # OAuth2 기본 비활성화

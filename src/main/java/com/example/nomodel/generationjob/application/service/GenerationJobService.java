@@ -86,15 +86,13 @@ public class GenerationJobService {
             job.fail(e.getMessage());
             log.error("[JOB] FAIL COMPOSE id={} -> FAILED : {}", jobId, e.getMessage(), e);
         }
-        // JPA dirty checking으로 flush
     }
 
     /**
-     * remove-bg 실행 로직 (비동기 워커)
-     * - 별도 트랜잭션으로 분리(REQUIRES_NEW): enqueue 트랜잭션과 독립 실행
+     * remove-bg 실행 로직
      */
     @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
     public void runRemoveBg(
             UUID jobId,
             java.util.function.BiFunction<Long, Map<String, Object>, Long> worker,
@@ -119,6 +117,5 @@ public class GenerationJobService {
             job.fail(e.getMessage());
             log.error("[JOB] FAIL REMOVE_BG id={} -> FAILED : {}", jobId, e.getMessage(), e);
         }
-        // 종료 시점 flush
     }
 }

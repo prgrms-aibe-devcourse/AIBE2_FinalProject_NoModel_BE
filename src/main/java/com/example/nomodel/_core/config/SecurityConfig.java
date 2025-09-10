@@ -6,6 +6,7 @@ import com.example.nomodel._core.security.oauth2.CustomOAuth2UserService;
 import com.example.nomodel._core.security.oauth2.OAuth2SuccessHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,9 @@ public class SecurityConfig {
     private final JWTTokenProvider jwtTokenProvider;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Value("${app.auth.oauth2.enabled:false}")
+    private boolean oauth2Enabled;
 
     private static final String[] WHITE_LIST = {
             "/",
@@ -86,6 +90,9 @@ public class SecurityConfig {
                         // 보안 화이트리스트
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // 잡 조회는 로컬에서 누구나 조회 가능
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/generate/jobs/**", "/generate/jobs/**").permitAll()
 
                         // Swagger 허용 (context-path 유무 모두 커버)
                         .requestMatchers(
@@ -99,6 +106,9 @@ public class SecurityConfig {
                         .requestMatchers(ADMIN_LIST).hasRole("ADMIN")
                         // 금지된 경로
                         .requestMatchers(BAN_LIST).denyAll()
+
+
+
 
                         // 그 외 인증 필요
                         .anyRequest().authenticated()
@@ -114,12 +124,14 @@ public class SecurityConfig {
                     ex.accessDeniedHandler(accessDeniedHandler());
                 })
                 // JWT 필터 활성화
-                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler)
-                )
-        ;
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+        if (oauth2Enabled) {
+            httpSecurity.oauth2Login(oauth -> oauth
+                    .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                    .successHandler(oAuth2SuccessHandler)
+            );
+        }
 
         return httpSecurity.build();
     }

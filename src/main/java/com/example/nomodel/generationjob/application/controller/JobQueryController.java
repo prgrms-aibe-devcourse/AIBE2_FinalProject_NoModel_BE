@@ -10,17 +10,24 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @Slf4j
-@RestController
-@RequestMapping("/generate/jobs") // 현재 서버 context-path가 /api 이므로 최종 /api/api/generate/jobs
 @RequiredArgsConstructor
+@RestController
+@RequestMapping("/generate/jobs")
 public class JobQueryController {
 
     private final GenerationJobService jobs;
+    private final com.example.nomodel.file.domain.repository.FileJpaRepository fileRepo;
 
     @GetMapping("/{jobId}")
     public ResponseEntity<?> view(@PathVariable UUID jobId) {
-        log.info("GET job {}", jobId);
-        var job = jobs.view(jobId);          // 404 처리됨
-        return ResponseEntity.ok(JobViewResponse.from(job));
+        var job = jobs.view(jobId);
+
+        String resultUrl = (job.getResultFileId() == null) ? null
+                : fileRepo.findById(job.getResultFileId()).map(f -> f.getFileUrl()).orElse(null);
+
+        String inputUrl = (job.getInputFileId() == null) ? null
+                : fileRepo.findById(job.getInputFileId()).map(f -> f.getFileUrl()).orElse(null);
+
+        return ResponseEntity.ok(JobViewResponse.from(job, resultUrl, inputUrl));
     }
 }

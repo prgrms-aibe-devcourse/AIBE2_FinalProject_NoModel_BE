@@ -19,7 +19,7 @@ public class FirebaseImgServiceImpl implements ImgService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final String[] ALLOWED_IMAGE_TYPES = {
-        "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
+            "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"
     };
 
     @Override
@@ -29,17 +29,14 @@ public class FirebaseImgServiceImpl implements ImgService {
 
         try {
             Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+            Blob blob = bucket.create(fileName, file.getInputStream(), file.getContentType());
+            return publicUrlFrom(blob);
 
-            // 파일명에 UUID를 추가하여 중복 방지
-            String uniqueFileName = generateUniqueFileName(fileName);
-            Blob blob = bucket.create(uniqueFileName, file.getInputStream(), file.getContentType());
-
-            return blob.getMediaLink();
-                                
         } catch (Exception e) {
             throw new ApplicationException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
+
 
     @Override
     public void deleteImage(String fileName) {
@@ -48,7 +45,7 @@ public class FirebaseImgServiceImpl implements ImgService {
         try {
             Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
             Blob blob = bucket.get(fileName);
-            
+
             if (blob == null || !blob.delete()) {
                 throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
             }
@@ -63,15 +60,15 @@ public class FirebaseImgServiceImpl implements ImgService {
     @Override
     public String getImageUrl(String fileName) {
         validateStorageBucket();
-        
+
         try {
             Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
             Blob blob = bucket.get(fileName);
-            
+
             if (blob == null) {
                 throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
             }
-            
+
             return blob.getMediaLink();
         } catch (Exception e) {
             if (e instanceof ApplicationException) {
@@ -115,7 +112,7 @@ public class FirebaseImgServiceImpl implements ImgService {
 
     private String generateUniqueFileName(String originalFileName) {
         String uuid = UUID.randomUUID().toString();
-        
+
         // 파일 확장자 추출
         int lastDotIndex = originalFileName.lastIndexOf('.');
         if (lastDotIndex > 0) {
@@ -123,7 +120,44 @@ public class FirebaseImgServiceImpl implements ImgService {
             String nameWithoutExtension = originalFileName.substring(0, lastDotIndex);
             return nameWithoutExtension + "_" + uuid + extension;
         }
-        
+
         return originalFileName + "_" + uuid;
     }
+
+    // 바이트 배열 업로드 (객체키 그대로 사용)
+    @Override
+    public String uploadBytes(byte[] data, String contentType, String fileName) {
+        validateStorageBucket();
+        try {
+            Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+            Blob blob = bucket.create(fileName, data, contentType);
+            return publicUrlFrom(blob);
+        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    // 객체키로 바이너리 다운로드
+    @Override
+    public byte[] download(String fileName) {
+        validateStorageBucket();
+        try {
+            Bucket bucket = StorageClient.getInstance().bucket(firebaseStorageBucket);
+            Blob blob = bucket.get(fileName);
+            if (blob == null) throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
+            return blob.getContent();
+        } catch (Exception e) {
+            if (e instanceof ApplicationException) throw e;
+            throw new ApplicationException(ErrorCode.FILE_NOT_FOUND);
+        }
+    }
+
+    // 공개 URL 생성 유틸
+    private String publicUrlFrom(Blob blob) {
+        // Firebase Storage 공개 URL 패턴
+        // https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{objectName}?alt=media
+        String encoded = java.net.URLEncoder.encode(blob.getName(), java.nio.charset.StandardCharsets.UTF_8);
+        return "https://firebasestorage.googleapis.com/v0/b/" + blob.getBucket() + "/o/" + encoded + "?alt=media";
+    }
+
 }
