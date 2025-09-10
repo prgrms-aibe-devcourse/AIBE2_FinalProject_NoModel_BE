@@ -77,7 +77,11 @@ public class GenerationJobService {
 
             // (3) 임시: 생성 이미지만 저장
             Long resultId = fileService.saveBytes(
-                    base, "image/png", RelationType.AD, job.getInputFileId(), FileType.PREVIEW
+                    base,
+                    "image/png",
+                    RelationType.AD,
+                    job.getInputFileId(),
+                    FileType.PREVIEW
             );
 
             job.succeed(resultId);
@@ -104,7 +108,7 @@ public class GenerationJobService {
         log.info("[JOB] RUN REMOVE_BG id={} -> RUNNING (inputFileId={})", jobId, job.getInputFileId());
 
         try {
-            Long outFileId = worker.apply(job.getInputFileId(), params); // 입력 fileId -> 결과 fileId
+            Long outFileId = worker.apply(job.getInputFileId(), params);
 
             if (outFileId == null) {
                 throw new IllegalStateException("BackgroundRemovalService returned null fileId");

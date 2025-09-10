@@ -1,46 +1,88 @@
+// com.example.nomodel.file.application.support.FilePathStrategy
+
 package com.example.nomodel.file.application.support;
 
 import com.example.nomodel.file.domain.model.FileType;
 import com.example.nomodel.file.domain.model.RelationType;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class FilePathStrategy {
 
     private FilePathStrategy() {}
 
-    // Firebase에 저장할 "파일명" (= 객체 키) 생성
-    public static String buildObjectName(RelationType relationType,
-                                         Long relationId,
+    /**
+     * originalNameOrContentType에는
+     *  - 멀티파트 저장 시: original filename (예: "foo.png")
+     *  - 바이트 저장 시: content-type (예: "image/png")
+     * 가 들어온다.
+     */
+    public static String buildObjectName(RelationType relType,
+                                         Long relId,
                                          FileType fileType,
-                                         String extOrMime) {
-        // 확장자 추출 (mime 또는 파일명에서)
-        String ext = normalizeExt(extOrMime); // ".png", ".jpg" 등
-        LocalDate d = LocalDate.now();
-        String uid = UUID.randomUUID().toString();
+                                         String originalNameOrContentType) {
 
-        // 예: model/123/preview/2025/09/uid.png
-        return String.format("%s/%d/%s/%04d/%02d/%s%s",
-                relationType.name().toLowerCase(),
-                relationId,
-                fileType.name().toLowerCase(),
-                d.getYear(), d.getMonthValue(),
-                uid, ext);
+        String ext = resolveExtension(originalNameOrContentType);        // ".png" 같은 확장자
+        String uuid = UUID.randomUUID().toString();
+
+        switch (relType) {
+            case REMOVE_BG: {
+                // removebg/yyyy-MM/uuid.png
+                String ym = DateTimeFormatter.ofPattern("yyyy-MM").format(LocalDate.now());
+                return "removebg/" + ym + "/" + uuid + ext;
+            }
+            case AD:
+            default: {
+                String y = DateTimeFormatter.ofPattern("yyyy").format(LocalDate.now());
+                String m = DateTimeFormatter.ofPattern("MM").format(LocalDate.now());
+                String rel = relType.name().toLowerCase(Locale.ROOT);
+                String ft = fileType.name().toLowerCase(Locale.ROOT);
+                return rel + "/" + relId + "/" + ft + "/" + y + "/" + m + "/" + uuid + ext;
+            }
+        }
     }
 
-    private static String normalizeExt(String extOrMime) {
-        if (extOrMime == null) return "";
-        String v = extOrMime.toLowerCase();
+    /** filename 또는 content-type에서 확장자 추출 */
+    private static String resolveExtension(String nameOrType) {
+        if (nameOrType == null || nameOrType.isBlank()) return ".bin";
 
-        if (v.startsWith(".")) return v; // ".png"
-        if (v.contains("/")) { // "image/png"
-            String[] parts = v.split("/");
-            return parts.length == 2 ? "." + parts[1] : "";
+        // content-type 형태면("image/png") → ".png"
+        int slash = nameOrType.indexOf('/');
+        if (slash > 0 && !nameOrType.contains(".")) {
+            String sub = nameOrType.substring(slash + 1).trim().toLowerCase(Locale.ROOT);
+            // jpeg → jpg 등 간단 맵핑
+            if (sub.equals("jpeg")) sub = "jpg";
+            // svg+xml 같은 복합 타입 처리
+            int plus = sub.indexOf('+');
+            if (plus > 0) sub = sub.substring(0, plus);
+            return "." + safeExt(sub);
         }
-        // "filename.png"
-        int i = v.lastIndexOf('.');
-        if (i >= 0) return v.substring(i);
-        return "";
+
+        // 파일명 형태면 마지막 '.' 기준
+        int dot = nameOrType.lastIndexOf('.');
+        if (dot >= 0 && dot < nameOrType.length() - 1) {
+            String sub = nameOrType.substring(dot + 1).trim().toLowerCase(Locale.ROOT);
+            return "." + safeExt(sub);
+        }
+        return ".bin";
+    }
+
+    private static String safeExt(String ext) {
+        switch (ext) {
+            case "png":
+            case "jpg":
+            case "jpeg":
+            case "webp":
+            case "gif":
+            case "bmp":
+            case "tiff":
+            case "svg":
+                return ext.equals("jpeg") ? "jpg" : ext;
+            default:
+                return "bin";
+        }
     }
 }

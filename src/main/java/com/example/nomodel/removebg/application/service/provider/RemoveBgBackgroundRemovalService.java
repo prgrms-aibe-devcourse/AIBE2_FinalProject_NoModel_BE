@@ -68,7 +68,7 @@ public class RemoveBgBackgroundRemovalService implements BackgroundRemovalServic
         }
 
         // 4) 저장
-        Long resultId = fileService.saveBytes(out, "image/png", RelationType.AD, originalFileId, FileType.PREVIEW);
+        Long resultId = fileService.saveBytes(out, "image/png", RelationType.REMOVE_BG, originalFileId, FileType.PREVIEW);
         log.info("[remove.bg] succeed: originalFileId={} -> resultFileId={}", originalFileId, resultId);
         return resultId;
     }

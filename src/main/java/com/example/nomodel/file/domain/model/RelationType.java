@@ -10,7 +10,8 @@ public enum RelationType {
     MODEL("모델", "MODEL"),
     REVIEW("리뷰", "REVIEW"),
     PROFILE("프로필", "PROFILE"),
-    AD("광고", "AD");
+    AD("광고", "AD"),
+    REMOVE_BG("배경제거", "REMOVE_BG");
 
     private final String description;
     private final String value;
@@ -29,5 +30,9 @@ public enum RelationType {
 
     public boolean isAdRelated() {
         return this == AD;
+    }
+
+    public boolean isRemoveBgRelated() {
+        return this == REMOVE_BG;
     }
 }
