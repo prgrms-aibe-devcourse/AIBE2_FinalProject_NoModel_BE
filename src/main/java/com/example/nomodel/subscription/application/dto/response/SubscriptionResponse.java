@@ -7,7 +7,7 @@ public class SubscriptionResponse {
     private String name;
     private String description;
     private BigDecimal price;
-    private Long period;
+    private Integer period; //
 
     public SubscriptionResponse(Long id, String name, String description, BigDecimal price, Integer period) {
         this.id = id;
@@ -21,5 +21,5 @@ public class SubscriptionResponse {
     public String getName() { return name; }
     public String getDescription() { return description; }
     public BigDecimal getPrice() { return price; }
-    public Long getPeriod() { return period; }
+    public Integer getPeriod() { return period; }
 }

@@ -1,5 +1,6 @@
 package com.example.nomodel.subscription.application.controller;
 
+import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
 import com.example.nomodel.subscription.application.dto.response.MemberSubscriptionResponse;
 import com.example.nomodel.subscription.application.dto.response.SubscriptionResponse;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/members/me/subscription")
+@RequestMapping("/subscriptions")
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
@@ -20,8 +21,8 @@ public class SubscriptionController {
     }
 
     @GetMapping("/plans")
-    public List<SubscriptionResponse> getPlans() {
-        return subscriptionService.getPlans();
+    public ApiUtils.ApiResult<List<SubscriptionResponse>> getPlans() {
+        return ApiUtils.success(subscriptionService.getPlans());
     }
 
     @PostMapping
