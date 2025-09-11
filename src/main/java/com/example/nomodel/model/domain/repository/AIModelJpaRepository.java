@@ -115,7 +115,7 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
      * 소유자 정보도 함께 조회하여 N+1 문제 해결
      */
     @Query("""
-        SELECT m as model, s as statistics, mem.email.value as ownerEmail
+        SELECT m as model, s as statistics, mem.username as ownerName
         FROM AIModel m
         LEFT JOIN ModelStatistics s ON s.model.id = m.id
         LEFT JOIN Member mem ON mem.id = m.ownerId

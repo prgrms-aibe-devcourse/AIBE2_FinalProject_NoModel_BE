@@ -153,8 +153,8 @@ public class ElasticsearchIndexService {
                     Long modelId = model.getId();
                     
                     // JOIN으로 가져온 데이터 사용
-                    String ownerName = projection.getOwnerEmail() != null ? 
-                            projection.getOwnerEmail() : 
+                    String ownerName = projection.getOwnerName() != null ? 
+                            projection.getOwnerName() : 
                             (model.getOwnType() != null ? model.getOwnType().name() : "ADMIN");
                     
                     ModelStatistics stats = projection.getStatistics();

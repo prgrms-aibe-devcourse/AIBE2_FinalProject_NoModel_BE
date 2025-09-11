@@ -10,5 +10,5 @@ import com.example.nomodel.model.domain.model.ModelStatistics;
 public interface ModelWithStatisticsProjection {
     AIModel getModel();
     ModelStatistics getStatistics();
-    String getOwnerEmail();
+    String getOwnerName();
 }
