@@ -3,7 +3,12 @@ package com.example.nomodel.model.application.service;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.OwnType;
+import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
+import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.review.domain.repository.ReviewRepository;
+import com.example.nomodel.review.domain.model.ReviewStatus;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +39,15 @@ class AIModelSearchServiceTest {
     
     @Mock
     private ElasticsearchClient elasticsearchClient;
+    
+    @Mock
+    private ModelStatisticsJpaRepository modelStatisticsRepository;
+    
+    @Mock
+    private MemberJpaRepository memberRepository;
+    
+    @Mock
+    private ReviewRepository reviewRepository;
 
     @Mock
     private AIModel aiModel;
@@ -510,6 +524,11 @@ class AIModelSearchServiceTest {
         given(aiModel.getCreatedAt()).willReturn(java.time.LocalDateTime.now());
         given(aiModel.getUpdatedAt()).willReturn(java.time.LocalDateTime.now());
         given(aiModel.getModelMetadata()).willReturn(null);
+        
+        // Mock the repository dependencies
+        given(modelStatisticsRepository.findByModelId(1L)).willReturn(Optional.empty());
+        given(reviewRepository.calculateAverageRatingByModelId(1L, ReviewStatus.ACTIVE)).willReturn(null);
+        given(reviewRepository.countByModelIdAndStatus(1L, ReviewStatus.ACTIVE)).willReturn(0L);
         
         given(searchRepository.save(any(AIModelDocument.class)))
                 .willReturn(expectedDocument);

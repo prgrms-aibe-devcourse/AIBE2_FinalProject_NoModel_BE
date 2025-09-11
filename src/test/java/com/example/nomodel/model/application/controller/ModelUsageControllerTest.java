@@ -67,8 +67,8 @@ class ModelUsageControllerTest {
             .adResultId(1L)
             .modelId(100L)
             .modelName("GPT-4")
+            .modelImageUrl("https://example.com/model1.jpg")
             .prompt("테스트 프롬프트 1")
-            .resultImageUrl("https://example.com/image1.jpg")
             .createdAt(LocalDateTime.now())
             .build();
         
@@ -76,8 +76,8 @@ class ModelUsageControllerTest {
             .adResultId(2L)
             .modelId(200L)
             .modelName("DALL-E")
+            .modelImageUrl("https://example.com/model2.jpg")
             .prompt("테스트 프롬프트 2")
-            .resultImageUrl("https://example.com/image2.jpg")
             .createdAt(LocalDateTime.now())
             .build();
         
@@ -109,7 +109,7 @@ class ModelUsageControllerTest {
             .andExpect(jsonPath("$.response.content[0].modelId").value(100))
             .andExpect(jsonPath("$.response.content[0].modelName").value("GPT-4"))
             .andExpect(jsonPath("$.response.content[0].prompt").value("테스트 프롬프트 1"))
-            .andExpect(jsonPath("$.response.content[0].resultImageUrl").value("https://example.com/image1.jpg"))
+            .andExpect(jsonPath("$.response.content[0].modelImageUrl").value("https://example.com/model1.jpg"))
             .andExpect(jsonPath("$.response.totalElements").value(2))
             .andExpect(jsonPath("$.response.pageNumber").value(0))
             .andExpect(jsonPath("$.response.pageSize").value(20))
@@ -135,8 +135,8 @@ class ModelUsageControllerTest {
             .adResultId(1L)
             .modelId(modelId)
             .modelName("GPT-4")
+            .modelImageUrl("https://example.com/specific-model.jpg")
             .prompt("특정 모델 프롬프트")
-            .resultImageUrl("https://example.com/specific-image.jpg")
             .createdAt(LocalDateTime.now())
             .build();
         
