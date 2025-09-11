@@ -30,9 +30,17 @@ public class SubscriptionDomainService {
     }
 
     public MemberSubscription createSubscription(Long memberId, SubscriptionRequest request) {
+        // 1. 이미 ACTIVE 구독이 있는지 확인
+        Optional<MemberSubscription> activeSub = memberSubscriptionRepository.findByMemberIdAndStatus(memberId, SubscriptionStatus.ACTIVE);
+        if (activeSub.isPresent()) {
+            throw new ApplicationException(ErrorCode.SUBSCRIPTION_ALREADY_EXISTS);
+        }
+
+        // 2. 구독 상품 조회
         Subscription subscription = subscriptionRepository.findById(request.getSubscriptionId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
 
+        // 3. 새 구독 생성
         MemberSubscription memberSubscription = new MemberSubscription(
                 memberId,
                 subscription,
@@ -41,6 +49,7 @@ public class SubscriptionDomainService {
 
         return memberSubscriptionRepository.save(memberSubscription);
     }
+
 
 
     public Optional<MemberSubscription> findActiveSubscription(Long memberId) {
