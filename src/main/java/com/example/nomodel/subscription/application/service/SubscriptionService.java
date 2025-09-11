@@ -53,24 +53,26 @@ public class SubscriptionService {
         );
     }
 
+    // 구독 생성
+    public MemberSubscriptionResponse createSubscription(Long memberId, SubscriptionRequest request) {
+        MemberSubscription saved = domainService.createSubscription(memberId, request);
 
-    public MemberSubscriptionResponse subscribe(Long memberId, SubscriptionRequest request) {
-        MemberSubscription sub = domainService.subscribe(
-                memberId, request.getSubscriptionId(), request.getPaidAmount()
-        );
         return new MemberSubscriptionResponse(
-                sub.getId(),
-                sub.getMemberId(),
-                sub.getSubscription().getId(),
-                sub.getStatus().name(),
-                sub.getAutoRenewal(),
-                sub.getStartedAt(),
-                sub.getExpiresAt(),
-                sub.getCancelledAt(),
-                sub.getCancellationReason() != null ? sub.getCancellationReason().name() : null,
-                sub.getPaidAmount()
+                saved.getId(),
+                saved.getMemberId(),
+                saved.getSubscription().getId(),
+                saved.getStatus().name(),
+                saved.getAutoRenewal(),
+                saved.getStartedAt(),
+                saved.getExpiresAt(),
+                saved.getCancelledAt(),
+                saved.getCancellationReason() != null ? saved.getCancellationReason().name() : null,
+                saved.getPaidAmount()
         );
     }
+
+
+
 
     public void cancel(Long memberSubscriptionId, CancellationReason reason) {
         domainService.cancel(memberSubscriptionId, reason);

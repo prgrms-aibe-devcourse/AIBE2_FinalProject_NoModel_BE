@@ -1,5 +1,8 @@
 package com.example.nomodel.subscription.domain.service;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
+import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
 import com.example.nomodel.subscription.domain.model.*;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
 import com.example.nomodel.subscription.domain.repository.SubscriptionRepository;
@@ -25,12 +28,19 @@ public class SubscriptionDomainService {
         return subscriptionRepository.findAll();
     }
 
-    public MemberSubscription subscribe(Long memberId, Long subscriptionId, BigDecimal paidAmount) {
-        Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new IllegalArgumentException("구독 플랜을 찾을 수 없습니다."));
-        MemberSubscription memberSub = new MemberSubscription(memberId, subscription, paidAmount);
-        return memberSubscriptionRepository.save(memberSub);
+    public MemberSubscription createSubscription(Long memberId, SubscriptionRequest request) {
+        Subscription subscription = subscriptionRepository.findById(request.getSubscriptionId())
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
+
+        MemberSubscription memberSubscription = new MemberSubscription(
+                memberId,
+                subscription,
+                request.getPaidAmount()
+        );
+
+        return memberSubscriptionRepository.save(memberSubscription);
     }
+
 
     public Optional<MemberSubscription> findActiveSubscription(Long memberId) {
         return memberSubscriptionRepository.findByMemberIdAndStatus(memberId, SubscriptionStatus.ACTIVE);

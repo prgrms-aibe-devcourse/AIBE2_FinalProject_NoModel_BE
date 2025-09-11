@@ -1,11 +1,13 @@
 package com.example.nomodel.subscription.application.controller;
 
+import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
 import com.example.nomodel.subscription.application.dto.response.MemberSubscriptionResponse;
 import com.example.nomodel.subscription.application.dto.response.SubscriptionResponse;
 import com.example.nomodel.subscription.application.service.SubscriptionService;
 import com.example.nomodel.subscription.domain.model.CancellationReason;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,26 +22,35 @@ public class SubscriptionController {
         this.subscriptionService = subscriptionService;
     }
 
+    // 구독 상품 목록 조회
     @GetMapping("/plans")
     public ApiUtils.ApiResult<List<SubscriptionResponse>> getPlans() {
         return ApiUtils.success(subscriptionService.getPlans());
     }
 
+    // 내 구독 조회
     @GetMapping
     public ApiUtils.ApiResult<MemberSubscriptionResponse> getMySubscription(
-            @RequestHeader("X-Member-Id") Long memberId) {
-        return ApiUtils.success(subscriptionService.getMySubscription(memberId));
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        return ApiUtils.success(subscriptionService.getMySubscription(user.getMemberId()));
     }
 
+    // 구독 생성
     @PostMapping
-    public MemberSubscriptionResponse subscribe(@RequestHeader("X-Member-Id") Long memberId,
-                                                @RequestBody SubscriptionRequest request) {
-        return subscriptionService.subscribe(memberId, request);
+    public ApiUtils.ApiResult<MemberSubscriptionResponse> createSubscription(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody SubscriptionRequest request
+    ) {
+        return ApiUtils.success(subscriptionService.createSubscription(user.getMemberId(), request));
     }
 
+    // 구독 해지
     @DeleteMapping("/{memberSubscriptionId}")
-    public void cancel(@PathVariable Long memberSubscriptionId,
-                       @RequestParam CancellationReason reason) {
+    public void cancel(
+            @PathVariable Long memberSubscriptionId,
+            @RequestParam CancellationReason reason
+    ) {
         subscriptionService.cancel(memberSubscriptionId, reason);
     }
 }
