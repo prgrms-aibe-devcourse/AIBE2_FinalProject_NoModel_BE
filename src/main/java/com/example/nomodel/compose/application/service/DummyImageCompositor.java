@@ -1,4 +1,4 @@
-package com.example.nomodel.compose.application.service.provider;
+package com.example.nomodel.compose.application.service;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;

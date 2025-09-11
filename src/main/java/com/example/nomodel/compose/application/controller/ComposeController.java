@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/generate")
+@RequestMapping("/generate/compose")
 public class ComposeController {
 
     private final GenerationJobService jobService;

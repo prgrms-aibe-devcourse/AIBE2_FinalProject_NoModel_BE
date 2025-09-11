@@ -1,4 +1,4 @@
-package com.example.nomodel.compose.application.service.provider;
+package com.example.nomodel.compose.application.service;
 
 public interface ImageCompositor {
     /**
