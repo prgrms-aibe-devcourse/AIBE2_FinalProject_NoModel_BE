@@ -46,11 +46,12 @@ public class SubscriptionController {
     }
 
     // 구독 해지
-    @DeleteMapping("/{memberSubscriptionId}")
-    public void cancel(
-            @PathVariable Long memberSubscriptionId,
-            @RequestParam CancellationReason reason
+    @DeleteMapping
+    public ApiUtils.ApiResult<MemberSubscriptionResponse> cancelMySubscription(
+            @RequestParam CancellationReason reason,
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        subscriptionService.cancel(memberSubscriptionId, reason);
+        MemberSubscriptionResponse response = subscriptionService.cancelMySubscription(user.getMemberId(), reason);
+        return ApiUtils.success(response);
     }
 }

@@ -3,6 +3,7 @@ package com.example.nomodel.subscription.domain.service;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
+import com.example.nomodel.subscription.application.dto.response.MemberSubscriptionResponse;
 import com.example.nomodel.subscription.domain.model.*;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
 import com.example.nomodel.subscription.domain.repository.SubscriptionRepository;
@@ -46,10 +47,12 @@ public class SubscriptionDomainService {
         return memberSubscriptionRepository.findByMemberIdAndStatus(memberId, SubscriptionStatus.ACTIVE);
     }
 
-    public void cancel(Long memberSubscriptionId, CancellationReason reason) {
-        MemberSubscription memberSub = memberSubscriptionRepository.findById(memberSubscriptionId)
-                .orElseThrow(() -> new IllegalArgumentException("구독 내역을 찾을 수 없습니다."));
-        memberSub.cancel(reason);
-        memberSubscriptionRepository.save(memberSub);
+    public MemberSubscription cancelActiveSubscription(Long memberId, CancellationReason reason) {
+        MemberSubscription subscription = memberSubscriptionRepository.findByMemberIdAndStatus(memberId, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
+
+        subscription.cancel(reason);
+        return memberSubscriptionRepository.save(subscription);
     }
 }
+

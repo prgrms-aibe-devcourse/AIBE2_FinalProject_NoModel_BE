@@ -71,10 +71,21 @@ public class SubscriptionService {
         );
     }
 
+    public MemberSubscriptionResponse cancelMySubscription(Long memberId, CancellationReason reason) {
+        MemberSubscription cancelled = domainService.cancelActiveSubscription(memberId, reason);
 
-
-
-    public void cancel(Long memberSubscriptionId, CancellationReason reason) {
-        domainService.cancel(memberSubscriptionId, reason);
+        return new MemberSubscriptionResponse(
+                cancelled.getId(),
+                cancelled.getMemberId(),
+                cancelled.getSubscription().getId(),
+                cancelled.getStatus().name(),
+                cancelled.getAutoRenewal(),
+                cancelled.getStartedAt(),
+                cancelled.getExpiresAt(),
+                cancelled.getCancelledAt(),
+                cancelled.getCancellationReason() != null ? cancelled.getCancellationReason().name() : null,
+                cancelled.getPaidAmount()
+        );
     }
+
 }
