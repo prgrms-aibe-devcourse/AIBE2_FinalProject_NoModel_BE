@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,7 +42,8 @@ public class StableDiffusionController {
             @RequestParam(defaultValue = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark") 
             String negativePrompt,
             @RequestParam(defaultValue = "0") Long relationId,
-            @RequestParam(defaultValue = "MODEL") String relationType) {
+            @RequestParam(defaultValue = "MODEL") String relationType,
+            @RequestParam(required = false) Long inputFileId) {
         
         try {
             log.info("GET: Stable Diffusion image generation");
@@ -55,6 +57,7 @@ public class StableDiffusionController {
             options.put("negative_prompt", negativePrompt);
             options.put("relationId", relationId);
             options.put("relationType", relationType);
+            options.put("inputFileId", inputFileId);
 
             // 파일 ID를 받아서 실제 바이트 데이터 로드
             Long fileId = stableDiffusionImageGenerator.generate(mode, prompt, options);
@@ -91,6 +94,7 @@ public class StableDiffusionController {
             options.put("negative_prompt", request.getNegativePrompt());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
+            options.put("inputFileId", request.getInputFileId());
 
             // 파일 ID를 받아서 실제 바이트 데이터 로드
             Long fileId = stableDiffusionImageGenerator.generate(request.getMode(), request.getPrompt(), options);
@@ -111,12 +115,14 @@ public class StableDiffusionController {
     }
 
     /**
-     * 이미지 생성 후 파일 ID만 반환 (Firebase 저장)
+     * 이미지 생성 후 Job 응답 형태로 반환 (Firebase 저장)
+     * 
+     * POST /api/generate/stable-diffusion/generate-file
      */
     @PostMapping("/generate-file")
-    public ResponseEntity<GenerateFileResponse> generateImageFile(@RequestBody GenerateRequest request) {
+    public ResponseEntity<StableDiffusionImageGenerator.GenerationJobResponse> generateImageFile(@RequestBody GenerateRequest request) {
         try {
-            log.info("POST: Stable Diffusion image generation (file ID return)");
+            log.info("POST: Stable Diffusion image generation (job response)");
             log.info("Request: {}", request);
 
             Map<String, Object> options = new HashMap<>();
@@ -127,15 +133,31 @@ public class StableDiffusionController {
             options.put("negative_prompt", request.getNegativePrompt());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
+            options.put("inputFileId", request.getInputFileId());
 
-            Long fileId = stableDiffusionImageGenerator.generate(request.getMode(), request.getPrompt(), options);
+            StableDiffusionImageGenerator.GenerationJobResponse jobResponse = 
+                stableDiffusionImageGenerator.generateWithJobResponse(request.getMode(), request.getPrompt(), options);
 
-            return ResponseEntity.ok(new GenerateFileResponse(fileId, "Image generated successfully"));
+            return ResponseEntity.ok(jobResponse);
 
         } catch (Exception e) {
             log.error("Error generating image: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(new GenerateFileResponse(null, "Error: " + e.getMessage()));
+            
+            // 에러 발생 시 실패 응답 반환
+            StableDiffusionImageGenerator.GenerationJobResponse errorResponse = 
+                StableDiffusionImageGenerator.GenerationJobResponse.builder()
+                    .jobId(java.util.UUID.randomUUID().toString())
+                    .status("FAILED")
+                    .inputFileId(request.getInputFileId())
+                    .resultFileId(null)
+                    .resultFileUrl(null)
+                    .inputFileUrl(null)
+                    .errorMessage(e.getMessage())
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+                    
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -179,14 +201,17 @@ public class StableDiffusionController {
         private String negativePrompt = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark";
         private Long relationId = 0L;
         private String relationType = "MODEL";
+        private Long inputFileId; // 입력 파일 ID 추가
     }
 
     /**
-     * 파일 생성 응답 DTO
+     * 파일 생성 응답 DTO (기존 호환성을 위해 유지)
+     * @deprecated generateWithJobResponse 사용 권장
      */
     @lombok.Data
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
+    @Deprecated
     public static class GenerateFileResponse {
         private Long fileId;
         private String message;

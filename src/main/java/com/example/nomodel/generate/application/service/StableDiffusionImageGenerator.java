@@ -19,8 +19,10 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -117,6 +119,57 @@ public class StableDiffusionImageGenerator {
     }
 
     /**
+     * Job 형태로 이미지 생성 결과 반환
+     * @param mode 생성 모드
+     * @param prompt 프롬프트
+     * @param opts 추가 옵션
+     * @return Job 응답 객체
+     */
+    public GenerationJobResponse generateWithJobResponse(GenerationMode mode, String prompt, Map<String, Object> opts) {
+        String jobId = UUID.randomUUID().toString();
+        LocalDateTime now = LocalDateTime.now();
+        
+        try {
+            log.info("Starting image generation job: {}", jobId);
+            
+            // 이미지 생성 및 저장
+            Long resultFileId = generate(mode, prompt, opts);
+            
+            // Firebase에서 다운로드 URL 가져오기
+            String resultFileUrl = fileService.getMeta(resultFileId).getFileUrl();
+            
+            // 성공 응답 생성
+            return GenerationJobResponse.builder()
+                    .jobId(jobId)
+                    .status("SUCCEEDED")
+                    .inputFileId(getInputFileId(opts))
+                    .resultFileId(resultFileId)
+                    .resultFileUrl(resultFileUrl)
+                    .inputFileUrl(getInputFileUrl(opts))
+                    .errorMessage(null)
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("Image generation job failed: {}", e.getMessage(), e);
+            
+            // 실패 응답 생성
+            return GenerationJobResponse.builder()
+                    .jobId(jobId)
+                    .status("FAILED")
+                    .inputFileId(getInputFileId(opts))
+                    .resultFileId(null)
+                    .resultFileUrl(null)
+                    .inputFileUrl(getInputFileUrl(opts))
+                    .errorMessage(e.getMessage())
+                    .createdAt(now)
+                    .updatedAt(now)
+                    .build();
+        }
+    }
+
+    /**
      * GenerationMode와 옵션을 기반으로 Stable Diffusion API 요청 객체 생성
      */
     private StableDiffusionRequest buildRequest(GenerationMode mode, String prompt, Map<String, Object> opts) {
@@ -198,5 +251,50 @@ public class StableDiffusionImageGenerator {
         }
         // 기본값으로 MODEL 반환 (또는 GENERATE 타입을 RelationType에 추가해야 함)
         return RelationType.MODEL;
+    }
+
+    /**
+     * 옵션에서 입력 파일 ID를 추출
+     */
+    private Long getInputFileId(Map<String, Object> opts) {
+        Object inputFileId = opts.get("inputFileId");
+        if (inputFileId instanceof Number) {
+            return ((Number) inputFileId).longValue();
+        }
+        return null;
+    }
+
+    /**
+     * 옵션에서 입력 파일 URL을 추출하거나 생성
+     */
+    private String getInputFileUrl(Map<String, Object> opts) {
+        Long inputFileId = getInputFileId(opts);
+        if (inputFileId != null) {
+            try {
+                return fileService.getMeta(inputFileId).getFileUrl();
+            } catch (Exception e) {
+                log.warn("Failed to get input file URL for fileId: {}", inputFileId);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Job 응답 DTO
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class GenerationJobResponse {
+        private String jobId;
+        private String status;
+        private Long inputFileId;
+        private Long resultFileId;
+        private String resultFileUrl;
+        private String inputFileUrl;
+        private String errorMessage;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
     }
 }
