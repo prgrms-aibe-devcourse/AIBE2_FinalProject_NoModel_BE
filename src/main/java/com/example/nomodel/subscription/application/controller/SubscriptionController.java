@@ -25,6 +25,12 @@ public class SubscriptionController {
         return ApiUtils.success(subscriptionService.getPlans());
     }
 
+    @GetMapping
+    public ApiUtils.ApiResult<MemberSubscriptionResponse> getMySubscription(
+            @RequestHeader("X-Member-Id") Long memberId) {
+        return ApiUtils.success(subscriptionService.getMySubscription(memberId));
+    }
+
     @PostMapping
     public MemberSubscriptionResponse subscribe(@RequestHeader("X-Member-Id") Long memberId,
                                                 @RequestBody SubscriptionRequest request) {

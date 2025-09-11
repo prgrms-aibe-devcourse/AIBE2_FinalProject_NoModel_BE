@@ -65,8 +65,19 @@ public enum ErrorCode {
     // 포인트 관련 에러
     POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
     POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
-    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance.")
+    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
+
+    // 구독 관련 에러
+    SUBSCRIPTION_NOT_FOUND("SUB001", HttpStatus.NOT_FOUND, "Subscription not found"),
+    SUBSCRIPTION_ALREADY_EXISTS("SUB002", HttpStatus.CONFLICT, "Subscription already exists"),
+    SUBSCRIPTION_PLAN_NOT_FOUND("SUB003", HttpStatus.NOT_FOUND, "Subscription plan not found"),
+    SUBSCRIPTION_EXPIRED("SUB004", HttpStatus.BAD_REQUEST, "Subscription has expired"),
+    SUBSCRIPTION_ALREADY_CANCELLED("SUB005", HttpStatus.CONFLICT, "Subscription is already cancelled"),
+    SUBSCRIPTION_RENEWAL_NOT_ALLOWED("SUB006", HttpStatus.BAD_REQUEST, "Subscription renewal not allowed for the current status"),
+    SUBSCRIPTION_PAYMENT_FAILED("SUB007", HttpStatus.INTERNAL_SERVER_ERROR, "Subscription payment failed"),
+    SUBSCRIPTION_INVALID_REQUEST("SUB008", HttpStatus.BAD_REQUEST, "Invalid subscription request")
     ;
+
 
     private final String errorCode;
     private final HttpStatus status;

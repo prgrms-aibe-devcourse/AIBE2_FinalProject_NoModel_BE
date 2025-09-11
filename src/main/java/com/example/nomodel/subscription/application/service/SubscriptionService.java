@@ -1,5 +1,7 @@
 package com.example.nomodel.subscription.application.service;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
 import com.example.nomodel.subscription.application.dto.response.MemberSubscriptionResponse;
 import com.example.nomodel.subscription.application.dto.response.SubscriptionResponse;
@@ -32,6 +34,25 @@ public class SubscriptionService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public MemberSubscriptionResponse getMySubscription(Long memberId) {
+        MemberSubscription sub = domainService.findActiveSubscription(memberId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
+
+        return new MemberSubscriptionResponse(
+                sub.getId(),
+                sub.getMemberId(),
+                sub.getSubscription().getId(),
+                sub.getStatus().name(),
+                sub.getAutoRenewal(),
+                sub.getStartedAt(),
+                sub.getExpiresAt(),
+                sub.getCancelledAt(),
+                sub.getCancellationReason() != null ? sub.getCancellationReason().name() : null,
+                sub.getPaidAmount()
+        );
+    }
+
 
     public MemberSubscriptionResponse subscribe(Long memberId, SubscriptionRequest request) {
         MemberSubscription sub = domainService.subscribe(

@@ -1,8 +1,16 @@
 package com.example.nomodel.subscription.application.dto.response;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import javax.annotation.security.DenyAll;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 public class MemberSubscriptionResponse {
     private Long id;
     private Long memberId;
@@ -15,20 +23,4 @@ public class MemberSubscriptionResponse {
     private String cancellationReason;
     private BigDecimal paidAmount;
 
-    public MemberSubscriptionResponse(Long id, Long memberId, Long subscriptionId, String status,
-                                      Boolean autoRenewal, LocalDateTime startedAt, LocalDateTime expiresAt,
-                                      LocalDateTime cancelledAt, String cancellationReason, BigDecimal paidAmount) {
-        this.id = id;
-        this.memberId = memberId;
-        this.subscriptionId = subscriptionId;
-        this.status = status;
-        this.autoRenewal = autoRenewal;
-        this.startedAt = startedAt;
-        this.expiresAt = expiresAt;
-        this.cancelledAt = cancelledAt;
-        this.cancellationReason = cancellationReason;
-        this.paidAmount = paidAmount;
-    }
-
-    // getter...
 }

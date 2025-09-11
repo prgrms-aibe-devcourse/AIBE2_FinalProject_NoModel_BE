@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SubscriptionDomainService {
@@ -31,8 +32,8 @@ public class SubscriptionDomainService {
         return memberSubscriptionRepository.save(memberSub);
     }
 
-    public List<MemberSubscription> getMemberSubscriptions(Long memberId) {
-        return memberSubscriptionRepository.findByMemberId(memberId);
+    public Optional<MemberSubscription> findActiveSubscription(Long memberId) {
+        return memberSubscriptionRepository.findByMemberIdAndStatus(memberId, SubscriptionStatus.ACTIVE);
     }
 
     public void cancel(Long memberSubscriptionId, CancellationReason reason) {
