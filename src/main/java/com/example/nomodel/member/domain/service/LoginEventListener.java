@@ -16,8 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Slf4j
 @Component
@@ -35,15 +33,14 @@ public class LoginEventListener {
         Member member = memberRepository.findById(userDetails.getMemberId())
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
         
-        HttpServletRequest request = getHttpServletRequest();
-        String ipAddress = extractIpAddress(request);
+        String ipAddress = extractIpFromAuthentication(event.getAuthentication());
         String hashedIp = loginSecurityDomainService.hashIpAddress(ipAddress);
         
-        // 부가 기능들 (Redis 실패 기록 삭제, 이상 패턴 감지)
+        // 보안 관련 처리 (실패 기록 삭제, 이상 패턴 감지)
         loginSecurityDomainService.clearLoginFailures(ipAddress);
         loginSecurityDomainService.detectAnomalousLogin(member.getId(), hashedIp);
         
-        // 핵심 기능 (실패 시 예외 전파)
+        // 로그인 성공 이력 저장
         LoginHistory loginHistory = LoginHistory.createSuccessHistory(member, hashedIp);
         loginHistoryRepository.save(loginHistory);
         
@@ -53,57 +50,50 @@ public class LoginEventListener {
     @Async
     @EventListener
     public void handleAuthenticationFailure(AuthenticationFailureBadCredentialsEvent event) {
-        HttpServletRequest request = getHttpServletRequest();
-        String ipAddress = extractIpAddress(request);
+        String ipAddress = extractIpFromAuthentication(event.getAuthentication());
         String hashedIp = loginSecurityDomainService.hashIpAddress(ipAddress);
+        String username = event.getAuthentication().getName();
         
-        // Redis 기반 실패 카운트 증가
+        // 보안 관련 처리 (실패 카운트 증가)
         loginSecurityDomainService.recordLoginFailure(ipAddress);
         
-        // 로그인 실패 이력 저장 (핵심 기능)
-        String username = event.getAuthentication().getName(); // 사용자가 입력한 이메일
-        String failureReason = "Invalid credentials for: " + username;
+        // 로그인 실패 이력 저장
+        LoginHistory loginHistory = LoginHistory.createFailureHistory(hashedIp, 
+                "Invalid credentials for: " + username);
         
-        LoginHistory loginHistory = LoginHistory.createFailureHistory(hashedIp, failureReason);
+        // 이메일이 유효한 회원과 연결 시도
+        associateFailureWithMember(loginHistory, username);
         
-        // 입력된 이메일이 실제 회원과 연결 시도 (선택적)
+        loginHistoryRepository.save(loginHistory);
+        log.info("Login failure recorded for username: {}", username);
+    }
+    
+    /**
+     * Authentication 객체에서 IP 주소 추출
+     * @param authentication 인증 객체
+     * @return IP 주소
+     */
+    private String extractIpFromAuthentication(org.springframework.security.core.Authentication authentication) {
+        String ipAddress = (String) authentication.getDetails();
+        if (ipAddress == null) {
+            // fallback: HTTP 요청에서 직접 추출
+            HttpServletRequest request = loginSecurityDomainService.getHttpServletRequest();
+            ipAddress = loginSecurityDomainService.extractIpAddress(request);
+        }
+        return ipAddress;
+    }
+    
+    /**
+     * 로그인 실패 이력을 회원과 연결
+     * @param loginHistory 로그인 이력
+     * @param username 사용자명 (이메일)
+     */
+    private void associateFailureWithMember(LoginHistory loginHistory, String username) {
         try {
             Email email = new Email(username);
             memberRepository.findByEmail(email).ifPresent(loginHistory::setMember);
         } catch (Exception e) {
             log.debug("Could not associate login failure with member: {}", username);
         }
-        
-        loginHistoryRepository.save(loginHistory);
-        
-        log.info("Login failure recorded for username: {}", username);
-    }
-
-    private HttpServletRequest getHttpServletRequest() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-            return attributes.getRequest();
-        } catch (Exception e) {
-            log.warn("Could not get HTTP request from context");
-            return null;
-        }
-    }
-
-    private String extractIpAddress(HttpServletRequest request) {
-        if (request == null) {
-            return "Unknown";
-        }
-        
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
-        return request.getRemoteAddr();
     }
 }

@@ -5,11 +5,14 @@ import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.member.domain.model.LoginHistory;
 import com.example.nomodel.member.domain.model.LoginStatus;
 import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -27,7 +30,7 @@ public class LoginSecurityDomainService {
     private final StringRedisTemplate redisTemplate;
     
     private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int CHECK_MINUTES = 5;
+    private static final int CHECK_MINUTES = 1;
     private static final String FAILURE_KEY_PREFIX = "login_failures:";
     private static final String BLOCK_HISTORY_PREFIX = "block_history:";
 
@@ -67,18 +70,6 @@ public class LoginSecurityDomainService {
         return failureCount >= MAX_FAILED_ATTEMPTS;
     }
     
-    /**
-     * IP 차단 확인 후 예외 발생
-     * @param ipAddress 확인할 IP 주소
-     * @throws ApplicationException IP가 차단된 경우
-     */
-    public void validateIpNotBlocked(String ipAddress) {
-        if (isIpBlocked(ipAddress)) {
-            String hashedIp = hashIpAddress(ipAddress);
-            log.warn("Blocked IP attempted access: {}", hashedIp);
-            throw new ApplicationException(ErrorCode.IP_BLOCKED);
-        }
-    }
 
     /**
      * 특정 회원의 비정상적인 로그인 패턴 감지 및 로깅
@@ -178,6 +169,67 @@ public class LoginSecurityDomainService {
         redisTemplate.delete(failureKey);   // 실패 카운트 삭제
         redisTemplate.delete(historyKey);   // 차단 이력도 삭제
         log.info("IP blocking completely reset for: {}", hashedIp);
+    }
+
+    // ============= 공통 유틸리티 메서드 =============
+
+    /**
+     * 현재 요청에서 HTTP 요청 객체 추출
+     * @return HttpServletRequest 또는 null
+     */
+    public HttpServletRequest getHttpServletRequest() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+            return attributes.getRequest();
+        } catch (Exception e) {
+            log.debug("Could not get HTTP request from context");
+            return null;
+        }
+    }
+
+    /**
+     * HTTP 요청에서 클라이언트 IP 주소 추출
+     * @param request HTTP 요청 객체
+     * @return 클라이언트 IP 주소
+     */
+    public String extractIpAddress(HttpServletRequest request) {
+        if (request == null) {
+            return "Unknown";
+        }
+        
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+        
+        return request.getRemoteAddr();
+    }
+
+    /**
+     * 현재 요청에서 클라이언트 IP 주소 추출 (편의 메서드)
+     * @return 클라이언트 IP 주소
+     */
+    public String getCurrentClientIp() {
+        HttpServletRequest request = getHttpServletRequest();
+        return extractIpAddress(request);
+    }
+
+    /**
+     * 현재 IP가 차단되었는지 확인하고 예외 발생
+     * @throws ApplicationException IP가 차단된 경우 TOO_MANY_LOGIN_ATTEMPTS 예외
+     */
+    public void validateCurrentIpNotBlocked() {
+        String clientIp = getCurrentClientIp();
+        if (isIpBlocked(clientIp)) {
+            String hashedIp = hashIpAddress(clientIp);
+            log.warn("Blocked IP attempted login: {}", hashedIp);
+            throw new ApplicationException(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
+        }
     }
 
     // ============= 내부 로직 (Private Methods) =============
