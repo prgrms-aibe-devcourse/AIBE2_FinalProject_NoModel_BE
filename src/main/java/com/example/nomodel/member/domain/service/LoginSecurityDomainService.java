@@ -30,7 +30,9 @@ public class LoginSecurityDomainService {
     private final StringRedisTemplate redisTemplate;
     
     private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int CHECK_MINUTES = 1;
+    private static final int CHECK_MINUTES = 5;
+    private static final long BASE_BLOCK_MINUTES = 1L;
+    private static final long MAX_BLOCK_MINUTES = 1440L; // 24시간
     private static final String FAILURE_KEY_PREFIX = "login_failures:";
     private static final String BLOCK_HISTORY_PREFIX = "block_history:";
 
@@ -240,9 +242,8 @@ public class LoginSecurityDomainService {
      * @return 차단 시간 (분)
      */
     private long calculateBlockDuration(int blockCount) {
-        // 1번째: 60분, 2번째: 120분, 3번째: 240분, 4번째: 480분...
-        long baseMinutes = 60L;
+        // 1번째: 1분, 2번째: 2분, 3번째: 4분, 4번째: 8분...
         long multiplier = (long) Math.pow(2, blockCount - 1); // 1, 2, 4, 8, 16...
-        return Math.min(baseMinutes * multiplier, 1440L); // 최대 24시간
+        return Math.min(BASE_BLOCK_MINUTES * multiplier, MAX_BLOCK_MINUTES);
     }
 }
