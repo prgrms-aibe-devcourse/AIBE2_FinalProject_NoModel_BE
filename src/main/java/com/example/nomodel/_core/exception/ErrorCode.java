@@ -66,7 +66,11 @@ public enum ErrorCode {
     POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
     POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
     POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
-    DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted")
+    DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted"),
+
+    // 보안 관련 에러
+    SECURITY_ALGORITHM_NOT_AVAILABLE("SA001", HttpStatus.INTERNAL_SERVER_ERROR, "Security algorithm not available"),
+    IP_BLOCKED("IB001", HttpStatus.TOO_MANY_REQUESTS, "IP address is temporarily blocked due to suspicious activity")
     ;
 
     private final String errorCode;
