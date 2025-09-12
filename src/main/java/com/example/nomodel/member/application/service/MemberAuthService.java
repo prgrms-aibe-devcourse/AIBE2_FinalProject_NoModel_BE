@@ -7,6 +7,7 @@ import com.example.nomodel.member.application.dto.request.LoginRequestDto;
 import com.example.nomodel.member.application.dto.request.SignUpRequestDto;
 import com.example.nomodel.member.application.dto.response.AuthTokenDTO;
 import com.example.nomodel.member.domain.model.*;
+import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.member.domain.repository.RefreshTokenRedisRepository;
 import com.example.nomodel.member.domain.service.LoginSecurityDomainService;
@@ -30,6 +31,7 @@ public class MemberAuthService {
     private final MemberJpaRepository memberJpaRepository;
     private final MemberDomainService memberDomainService;
     private final LoginSecurityDomainService loginSecurityDomainService;
+    private final LoginHistoryRepository loginHistoryRepository;
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTTokenProvider jwtTokenProvider;
@@ -101,15 +103,28 @@ public class MemberAuthService {
         Authentication authentication = authenticationManagerBuilder.getObject()
                 .authenticate(authenticationToken);
 
-        // JWT 토큰 생성
+        // 최초 로그인 여부 확인 (성공한 로그인 이력이 있는지 체크)
+        boolean isFirstLogin = checkIsFirstLogin(member.getId());
+
+        // JWT 토큰 생성 (최초 로그인 여부 포함)
         AuthTokenDTO authTokenDTO = jwtTokenProvider.generateToken(
-                email, member.getId(), authentication.getAuthorities());
+                email, member.getId(), authentication.getAuthorities(), isFirstLogin);
 
         // 리프레시 토큰을 Redis에 저장
         saveRefreshToken(member.getId(), authentication.getAuthorities(), authTokenDTO.refreshToken());
 
-        log.info("로그인 성공: email={}, memberId={}", email, member.getId());
+        log.info("로그인 성공: email={}, memberId={}, isFirstLogin={}", email, member.getId(), isFirstLogin);
         return authTokenDTO;
+    }
+
+    /**
+     * 최초 로그인 여부 확인
+     * @param memberId 회원 ID
+     * @return 최초 로그인 여부 (true: 최초 로그인, false: 이미 로그인 이력 있음)
+     */
+    private boolean checkIsFirstLogin(Long memberId) {
+        // 해당 회원의 성공한 로그인 이력이 있는지 확인
+        return !loginHistoryRepository.existsByMemberIdAndLoginStatus(memberId, LoginStatus.SUCCESS);
     }
     
     /**

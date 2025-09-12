@@ -39,6 +39,7 @@ public class JWTTokenProvider {
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
     private static final String AUTHORITIES_KEY = "auth";
     private static final String MEMBER_ID_KEY = "memberId";
+    private static final String IS_FIRST_LOGIN_KEY = "isFirstLogin";
     private static final String BEARER_TYPE = "Bearer";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
@@ -69,6 +70,10 @@ public class JWTTokenProvider {
     }
 
     public AuthTokenDTO generateToken(String email, Long memberId, Collection<? extends GrantedAuthority> grantedAuthorities) {
+        return generateToken(email, memberId, grantedAuthorities, null);
+    }
+
+    public AuthTokenDTO generateToken(String email, Long memberId, Collection<? extends GrantedAuthority> grantedAuthorities, Boolean isFirstLogin) {
         // 권한 확인
         String authorities = grantedAuthorities.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -84,6 +89,8 @@ public class JWTTokenProvider {
                 // 권한 주입
                 .claim(AUTHORITIES_KEY, authorities)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
+                // 최초 로그인 여부 추가 (null이 아닌 경우만)
+                .claim(IS_FIRST_LOGIN_KEY, isFirstLogin != null ? isFirstLogin : false)
                 // 토큰 발행 시간 정보
                 .setIssuedAt(now)
                 // 만료시간 주입
