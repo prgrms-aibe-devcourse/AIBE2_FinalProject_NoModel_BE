@@ -7,8 +7,10 @@ import com.example.nomodel.member.application.dto.request.LoginRequestDto;
 import com.example.nomodel.member.application.dto.request.SignUpRequestDto;
 import com.example.nomodel.member.application.dto.response.AuthTokenDTO;
 import com.example.nomodel.member.domain.model.*;
+import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.member.domain.repository.RefreshTokenRedisRepository;
+import com.example.nomodel.member.domain.service.LoginSecurityDomainService;
 import com.example.nomodel.member.domain.service.MemberDomainService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +43,12 @@ class MemberAuthServiceTest {
     
     @Mock
     private MemberDomainService memberDomainService;
+    
+    @Mock
+    private LoginSecurityDomainService loginSecurityDomainService;
+    
+    @Mock
+    private LoginHistoryRepository loginHistoryRepository;
     
     @Mock
     private RefreshTokenRedisRepository refreshTokenRedisRepository;
@@ -89,21 +97,21 @@ class MemberAuthServiceTest {
     }
 
     @Test
-    @DisplayName("로그인 성공")
-    void login_Success() {
+    @DisplayName("로그인 성공 - 최초 로그인")
+    void login_FirstLogin_Success() {
         // given
         LoginRequestDto requestDto = new LoginRequestDto("test@example.com", "password123");
         
         AuthTokenDTO expectedTokenDto = new AuthTokenDTO("Bearer", "access-token", 3600000L, "refresh-token", 604800000L);
         
         given(memberJpaRepository.findByEmail(any(Email.class))).willReturn(Optional.of(member));
-        given(member.validatePassword(requestDto.password(), passwordEncoder)).willReturn(true);
-        given(member.isActive()).willReturn(true);
         given(member.getId()).willReturn(1L);
         given(authenticationManagerBuilder.getObject()).willReturn(authenticationManager);
         given(authenticationManager.authenticate(any())).willReturn(authentication);
         given(authentication.getAuthorities()).willReturn((Collection)List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        given(jwtTokenProvider.generateToken(anyString(), any(Long.class), any())).willReturn(expectedTokenDto);
+        given(loginSecurityDomainService.getCurrentClientIp()).willReturn("192.168.1.1");
+        given(loginHistoryRepository.existsByMemberIdAndLoginStatus(eq(1L), eq(LoginStatus.SUCCESS))).willReturn(false); // 최초 로그인
+        given(jwtTokenProvider.generateToken(anyString(), any(Long.class), any(), eq(true))).willReturn(expectedTokenDto);
 
         // when
         AuthTokenDTO result = memberAuthService.login(requestDto);
@@ -112,7 +120,41 @@ class MemberAuthServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.grantType()).isEqualTo("Bearer");
         
+        then(loginSecurityDomainService).should().validateCurrentIpNotBlocked();
         then(memberJpaRepository).should().findByEmail(any(Email.class));
+        then(loginHistoryRepository).should().existsByMemberIdAndLoginStatus(eq(1L), eq(LoginStatus.SUCCESS));
+        then(jwtTokenProvider).should().generateToken(anyString(), eq(1L), any(), eq(true));
+        then(refreshTokenRedisRepository).should().save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("로그인 성공 - 재방문 로그인")
+    void login_ReturningLogin_Success() {
+        // given
+        LoginRequestDto requestDto = new LoginRequestDto("test@example.com", "password123");
+        
+        AuthTokenDTO expectedTokenDto = new AuthTokenDTO("Bearer", "access-token", 3600000L, "refresh-token", 604800000L);
+        
+        given(memberJpaRepository.findByEmail(any(Email.class))).willReturn(Optional.of(member));
+        given(member.getId()).willReturn(1L);
+        given(authenticationManagerBuilder.getObject()).willReturn(authenticationManager);
+        given(authenticationManager.authenticate(any())).willReturn(authentication);
+        given(authentication.getAuthorities()).willReturn((Collection)List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        given(loginSecurityDomainService.getCurrentClientIp()).willReturn("192.168.1.1");
+        given(loginHistoryRepository.existsByMemberIdAndLoginStatus(eq(1L), eq(LoginStatus.SUCCESS))).willReturn(true); // 이전 로그인 이력 있음
+        given(jwtTokenProvider.generateToken(anyString(), any(Long.class), any(), eq(false))).willReturn(expectedTokenDto);
+
+        // when
+        AuthTokenDTO result = memberAuthService.login(requestDto);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.grantType()).isEqualTo("Bearer");
+        
+        then(loginSecurityDomainService).should().validateCurrentIpNotBlocked();
+        then(memberJpaRepository).should().findByEmail(any(Email.class));
+        then(loginHistoryRepository).should().existsByMemberIdAndLoginStatus(eq(1L), eq(LoginStatus.SUCCESS));
+        then(jwtTokenProvider).should().generateToken(anyString(), eq(1L), any(), eq(false));
         then(refreshTokenRedisRepository).should().save(any(RefreshToken.class));
     }
 
@@ -128,37 +170,25 @@ class MemberAuthServiceTest {
         assertThatThrownBy(() -> memberAuthService.login(requestDto))
                 .isInstanceOf(ApplicationException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_FOUND);
+                
+        then(loginSecurityDomainService).should().validateCurrentIpNotBlocked();
     }
 
     @Test
-    @DisplayName("로그인 실패 - 잘못된 비밀번호")
-    void login_InvalidPassword() {
-        // given
-        LoginRequestDto requestDto = new LoginRequestDto("test@example.com", "wrongPassword");
-        
-        given(memberJpaRepository.findByEmail(any(Email.class))).willReturn(Optional.of(member));
-        given(member.validatePassword(requestDto.password(), passwordEncoder)).willReturn(false);
-
-        // when & then
-        assertThatThrownBy(() -> memberAuthService.login(requestDto))
-                .isInstanceOf(ApplicationException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_PASSWORD);
-    }
-
-    @Test
-    @DisplayName("로그인 실패 - 비활성 회원")
-    void login_MemberNotActive() {
+    @DisplayName("로그인 실패 - IP 차단")
+    void login_IpBlocked() {
         // given
         LoginRequestDto requestDto = new LoginRequestDto("test@example.com", "password123");
         
-        given(memberJpaRepository.findByEmail(any(Email.class))).willReturn(Optional.of(member));
-        given(member.validatePassword(requestDto.password(), passwordEncoder)).willReturn(true);
-        given(member.isActive()).willReturn(false);
+        willThrow(new ApplicationException(ErrorCode.TOO_MANY_LOGIN_ATTEMPTS))
+                .given(loginSecurityDomainService).validateCurrentIpNotBlocked();
 
         // when & then
         assertThatThrownBy(() -> memberAuthService.login(requestDto))
                 .isInstanceOf(ApplicationException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_NOT_ACTIVE);
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TOO_MANY_LOGIN_ATTEMPTS);
+                
+        then(loginSecurityDomainService).should().validateCurrentIpNotBlocked();
     }
 
     @Test

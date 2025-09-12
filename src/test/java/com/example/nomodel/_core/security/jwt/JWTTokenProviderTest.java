@@ -96,6 +96,48 @@ class JWTTokenProviderTest {
         assertThat(claims.getSubject()).isEqualTo(String.valueOf(memberId));
         assertThat(claims.get("auth")).isEqualTo("ROLE_USER");
         assertThat(claims.get("type")).isEqualTo("access");
+        assertThat(claims.get("isFirstLogin")).isEqualTo(false); // 기본값 false
+    }
+
+    @Test
+    @DisplayName("토큰 생성 - 최초 로그인 여부 포함")
+    void generateToken_WithIsFirstLogin_Success() {
+        // given
+        String email = "test@example.com";
+        Long memberId = 1L;
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        Boolean isFirstLogin = true;
+
+        // when
+        AuthTokenDTO result = jwtTokenProvider.generateToken(email, memberId, authorities, isFirstLogin);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.accessToken()).isNotBlank();
+        
+        // 토큰 파싱하여 isFirstLogin 클레임 검증
+        Claims claims = jwtTokenProvider.parseClaims(result.accessToken());
+        assertThat(claims.getSubject()).isEqualTo(String.valueOf(memberId));
+        assertThat(claims.get("auth")).isEqualTo("ROLE_USER");
+        assertThat(claims.get("type")).isEqualTo("access");
+        assertThat(claims.get("isFirstLogin")).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("토큰 생성 - 최초 로그인 false")
+    void generateToken_WithIsFirstLoginFalse_Success() {
+        // given
+        String email = "test@example.com";
+        Long memberId = 1L;
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        Boolean isFirstLogin = false;
+
+        // when
+        AuthTokenDTO result = jwtTokenProvider.generateToken(email, memberId, authorities, isFirstLogin);
+
+        // then
+        Claims claims = jwtTokenProvider.parseClaims(result.accessToken());
+        assertThat(claims.get("isFirstLogin")).isEqualTo(false);
     }
 
     @Test
