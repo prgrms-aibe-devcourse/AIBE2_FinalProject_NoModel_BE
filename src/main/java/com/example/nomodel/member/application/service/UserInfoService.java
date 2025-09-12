@@ -1,14 +1,14 @@
 package com.example.nomodel.member.application.service;
 
 import com.example.nomodel.member.domain.model.Member;
-import com.example.nomodel.member.domain.model.Role;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.member.application.dto.response.UserInfoResponse;
+import com.example.nomodel._core.security.jwt.JWTTokenProvider;
+import jakarta.servlet.http.HttpServletRequest;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
 import com.example.nomodel.point.domain.model.MemberPointBalance;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
-import com.example.nomodel.subscription.domain.model.MemberSubscription;
 import com.example.nomodel.subscription.domain.model.PlanType;
 import com.example.nomodel.subscription.domain.model.SubscriptionStatus;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
@@ -29,13 +29,15 @@ public class UserInfoService {
     private final MemberPointBalanceRepository memberPointBalanceRepository;
     private final AIModelJpaRepository aiModelRepository;
     private final AdResultJpaRepository adResultRepository;
+    private final JWTTokenProvider jwtTokenProvider;
 
     /**
      * 사용자 정보 조회
      * @param memberId 회원 ID
+     * @param request HTTP 요청 (JWT 토큰 추출용)
      * @return 사용자 정보 응답
      */
-    public UserInfoResponse getUserInfo(Long memberId) {
+    public UserInfoResponse getUserInfo(Long memberId, HttpServletRequest request) {
         // 회원 정보 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
@@ -54,6 +56,9 @@ public class UserInfoService {
 
         // 프로젝트 수 조회
         Long projectCount = getProjectCount(memberId);
+        
+        // 최초 로그인 여부 확인 (JWT 토큰에서 추출)
+        Boolean isFirstLogin = jwtTokenProvider.extractIsFirstLogin(request);
 
         return new UserInfoResponse(
                 member.getId(),
@@ -64,7 +69,8 @@ public class UserInfoService {
                 points,
                 role,
                 modelCount,
-                projectCount
+                projectCount,
+                isFirstLogin
         );
     }
 
