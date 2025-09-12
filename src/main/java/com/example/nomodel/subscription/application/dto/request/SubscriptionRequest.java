@@ -12,10 +12,12 @@ public class SubscriptionRequest {
     private Long subscriptionId;
     private BigDecimal paidAmount;
     private Long paymentMethodId;
+    private String customerUid;
 
     public SubscriptionRequest(Long subscriptionId, Long paymentMethodId, Long couponId, BigDecimal paidAmount) {
         this.subscriptionId = subscriptionId;
         this.paymentMethodId = paymentMethodId;
         this.paidAmount = paidAmount;
+        this.customerUid = customerUid;
     }
 }

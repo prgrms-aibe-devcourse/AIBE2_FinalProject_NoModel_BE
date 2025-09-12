@@ -44,7 +44,8 @@ public class SubscriptionDomainService {
         MemberSubscription memberSubscription = new MemberSubscription(
                 memberId,
                 subscription,
-                request.getPaidAmount()
+                request.getPaidAmount(),
+                request.getCustomerUid()
         );
 
         return memberSubscriptionRepository.save(memberSubscription);
