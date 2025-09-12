@@ -1,12 +1,9 @@
 package com.example.nomodel.report.application.controller;
 
 import com.example.nomodel._core.config.RestDocsConfiguration;
-import com.example.nomodel._core.config.SecurityConfig;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.security.CustomUserDetails;
-import com.example.nomodel._core.security.CustomUserDetailsService;
-import com.example.nomodel._core.security.jwt.JWTTokenProvider;
 import com.example.nomodel.report.application.dto.request.ModelReportRequest;
 import com.example.nomodel.report.application.dto.response.ModelReportResponse;
 import com.example.nomodel.report.application.service.ModelReportService;
@@ -33,7 +30,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import static org.springframework.restdocs.headers.HeaderDocumentation.*;
+import static com.example.nomodel._core.restdocs.RestDocsConfig.*;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.*;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
@@ -46,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = ModelReportController.class)
 @AutoConfigureMockMvc
 @AutoConfigureRestDocs
-@Import({RestDocsConfiguration.class, SecurityConfig.class})
+@Import(RestDocsConfiguration.class)
 @DisplayName("ModelReportController 단위 테스트")
 class ModelReportControllerTest {
 
@@ -60,14 +57,14 @@ class ModelReportControllerTest {
     private ModelReportService modelReportService;
 
     @MockitoBean
-    private CustomUserDetailsService customUserDetailsService;
+    private com.example.nomodel._core.security.CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
-    private JWTTokenProvider jwtTokenProvider;
+    private com.example.nomodel._core.security.jwt.JWTTokenProvider jwtTokenProvider;
 
     @Test
-    @DisplayName("모델 신고 성공")
     @WithMockUser
+    @DisplayName("모델 신고 성공")
     void createModelReport_Success() throws Exception {
         // given
         Long modelId = 1L;
@@ -94,7 +91,8 @@ class ModelReportControllerTest {
         mockMvc.perform(post("/reports/models/{modelId}", modelId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                        .with(user(createCustomUserDetails(1L))))
+                        .with(user(createCustomUserDetails(1L)))
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -147,8 +145,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("모델 신고 실패 - 유효성 검증 오류")
     @WithMockUser
+    @DisplayName("모델 신고 실패 - 유효성 검증 오류")
     void createModelReport_ValidationError() throws Exception {
         // given - 빈 신고 사유
         Long modelId = 1L;
@@ -158,7 +156,8 @@ class ModelReportControllerTest {
         mockMvc.perform(post("/reports/models/{modelId}", modelId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                        .with(user(createCustomUserDetails(1L))))
+                        .with(user(createCustomUserDetails(1L)))
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
@@ -171,8 +170,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("모델 신고 실패 - 중복 신고")
     @WithMockUser
+    @DisplayName("모델 신고 실패 - 중복 신고")
     void createModelReport_DuplicateReport() throws Exception {
         // given
         Long modelId = 1L;
@@ -185,7 +184,8 @@ class ModelReportControllerTest {
         mockMvc.perform(post("/reports/models/{modelId}", modelId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
-                        .with(user(createCustomUserDetails(1L))))
+                        .with(user(createCustomUserDetails(1L)))
+                        .with(csrf()))
                 .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success").value(false))
@@ -196,8 +196,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("내 모델 신고 목록 조회 성공")
     @WithMockUser
+    @DisplayName("내 모델 신고 목록 조회 성공")
     void getMyModelReports_Success() throws Exception {
         // given
         List<ModelReportResponse> reports = Arrays.asList(
@@ -277,8 +277,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("특정 신고 상세 조회 성공")
     @WithMockUser
+    @DisplayName("특정 신고 상세 조회 성공")
     void getModelReport_Success() throws Exception {
         // given
         Long reportId = 1L;
@@ -346,8 +346,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("특정 신고 상세 조회 실패 - 권한 없음")
     @WithMockUser
+    @DisplayName("특정 신고 상세 조회 실패 - 권한 없음")
     void getModelReport_AccessDenied() throws Exception {
         // given
         Long reportId = 1L;
@@ -367,8 +367,8 @@ class ModelReportControllerTest {
     }
 
     @Test
-    @DisplayName("특정 신고 상세 조회 실패 - 신고 없음")
     @WithMockUser
+    @DisplayName("특정 신고 상세 조회 실패 - 신고 없음")
     void getModelReport_NotFound() throws Exception {
         // given
         Long reportId = 999L;

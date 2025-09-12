@@ -125,6 +125,7 @@ class AdResultControllerIntegrationTest {
                         ),
                         responseFields(
                                 fieldWithPath("success").description("API 성공 여부"),
+                                fieldWithPath("error").description("오류 정보 (성공 시 null)"),
                                 fieldWithPath("response.content").description("결과물 목록"),
                                 fieldWithPath("response.content[].id").description("결과물 ID"),
                                 fieldWithPath("response.content[].modelId").description("사용한 모델 ID"),
@@ -136,13 +137,27 @@ class AdResultControllerIntegrationTest {
                                 fieldWithPath("response.content[].createdAt").description("생성 일시"),
                                 fieldWithPath("response.content[].updatedAt").description("수정 일시"),
                                 fieldWithPath("response.pageable").description("페이지 정보"),
+                                fieldWithPath("response.pageable.pageNumber").description("현재 페이지 번호"),
+                                fieldWithPath("response.pageable.pageSize").description("페이지 크기"),
+                                fieldWithPath("response.pageable.sort").description("정렬 정보"),
+                                fieldWithPath("response.pageable.sort.empty").description("정렬 정보 존재 여부"),
+                                fieldWithPath("response.pageable.sort.unsorted").description("정렬되지 않음 여부"),
+                                fieldWithPath("response.pageable.sort.sorted").description("정렬됨 여부"),
+                                fieldWithPath("response.pageable.offset").description("오프셋"),
+                                fieldWithPath("response.pageable.unpaged").description("페이징되지 않음 여부"),
+                                fieldWithPath("response.pageable.paged").description("페이징됨 여부"),
                                 fieldWithPath("response.totalElements").description("전체 요소 수"),
                                 fieldWithPath("response.totalPages").description("전체 페이지 수"),
                                 fieldWithPath("response.size").description("페이지 크기"),
                                 fieldWithPath("response.number").description("현재 페이지 번호"),
                                 fieldWithPath("response.first").description("첫 번째 페이지 여부"),
                                 fieldWithPath("response.last").description("마지막 페이지 여부"),
-                                fieldWithPath("response.empty").description("빈 페이지 여부")
+                                fieldWithPath("response.empty").description("빈 페이지 여부"),
+                                fieldWithPath("response.sort").description("정렬 정보"),
+                                fieldWithPath("response.sort.empty").description("정렬 정보 존재 여부"),
+                                fieldWithPath("response.sort.unsorted").description("정렬되지 않음 여부"),
+                                fieldWithPath("response.sort.sorted").description("정렬됨 여부"),
+                                fieldWithPath("response.numberOfElements").description("현재 페이지 요소 수")
                         )
                 ));
     }
@@ -166,6 +181,7 @@ class AdResultControllerIntegrationTest {
                         ),
                         responseFields(
                                 fieldWithPath("success").description("API 성공 여부"),
+                                fieldWithPath("error").description("오류 정보 (성공 시 null)"),
                                 fieldWithPath("response.id").description("결과물 ID"),
                                 fieldWithPath("response.modelId").description("사용한 모델 ID"),
                                 fieldWithPath("response.memberId").description("회원 ID"),
@@ -194,6 +210,7 @@ class AdResultControllerIntegrationTest {
                         ),
                         responseFields(
                                 fieldWithPath("success").description("API 성공 여부"),
+                                fieldWithPath("error").description("오류 정보 (성공 시 null)"),
                                 fieldWithPath("response.totalProjects").description("총 프로젝트 개수")
                         )
                 ));
@@ -218,6 +235,7 @@ class AdResultControllerIntegrationTest {
                         ),
                         responseFields(
                                 fieldWithPath("success").description("API 성공 여부"),
+                                fieldWithPath("error").description("오류 정보 (성공 시 null)"),
                                 fieldWithPath("response.averageRating").description("평균 평점")
                         )
                 ));
@@ -247,6 +265,7 @@ class AdResultControllerIntegrationTest {
                         ),
                         responseFields(
                                 fieldWithPath("success").description("API 성공 여부"),
+                                fieldWithPath("error").description("오류 정보 (성공 시 null)"),
                                 fieldWithPath("response").description("성공 메시지")
                         )
                 ));

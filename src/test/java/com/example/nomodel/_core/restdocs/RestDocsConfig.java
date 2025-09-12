@@ -89,7 +89,7 @@ public class RestDocsConfig {
             fieldWithPath("response.content[].modelId").type(JsonFieldType.NUMBER).description("모델 ID"),
             fieldWithPath("response.content[].modelName").type(JsonFieldType.STRING).description("모델명"),
             fieldWithPath("response.content[].prompt").type(JsonFieldType.STRING).description("입력 프롬프트"),
-            fieldWithPath("response.content[].resultImageUrl").type(JsonFieldType.STRING).description("결과 이미지 URL").optional(),
+            fieldWithPath("response.content[].modelImageUrl").type(JsonFieldType.STRING).description("모델 이미지 URL").optional(),
             fieldWithPath("response.content[].createdAt").type(JsonFieldType.STRING).description("생성일시")
         };
     }

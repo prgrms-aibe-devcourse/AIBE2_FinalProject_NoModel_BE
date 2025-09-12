@@ -10,6 +10,8 @@ import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
 import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.review.domain.repository.ReviewRepository;
+import com.example.nomodel.review.domain.model.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -49,6 +51,7 @@ public class AIModelIndexBatchJob {
     private final AIModelSearchRepository searchRepository;
     private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final MemberJpaRepository memberRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * AIModel 인덱싱 Job 정의
@@ -102,15 +105,23 @@ public class AIModelIndexBatchJob {
 
     /**
      * AIModel을 AIModelDocument로 변환하는 Processor
-     * ModelStatistics에서 viewCount를 포함하여 문서 생성
+     * 모든 통계 데이터(사용량, 조회수, 평점, 리뷰수)를 포함하여 완전한 문서 생성
      */
     @Bean
     public ItemProcessor<AIModel, AIModelDocument> aiModelProcessor() {
         return aiModel -> {
             try {
                 String ownerName = getOwnerName(aiModel);
+                Long usageCount = getUsageCount(aiModel);
                 Long viewCount = getViewCount(aiModel);
-                return AIModelDocument.from(aiModel, ownerName, viewCount);
+                Double rating = getAverageRating(aiModel);
+                Long reviewCount = getReviewCount(aiModel);
+                
+                log.debug("배치 처리 - modelId: {}, usageCount: {}, viewCount: {}, rating: {}, reviewCount: {}", 
+                         aiModel.getId(), usageCount, viewCount, rating, reviewCount);
+                
+                return AIModelDocument.from(
+                    aiModel, ownerName, usageCount, viewCount, rating, reviewCount);
                 
             } catch (Exception e) {
                 log.error("AIModel 변환 실패: modelId={}", aiModel.getId(), e);
@@ -145,6 +156,16 @@ public class AIModelIndexBatchJob {
     }
 
     /**
+     * 모델의 사용량 조회
+     * ModelStatistics에서 usageCount를 가져오며, 없으면 0 반환
+     */
+    private Long getUsageCount(AIModel aiModel) {
+        return modelStatisticsRepository.findByModelId(aiModel.getId())
+                .map(ModelStatistics::getUsageCount)
+                .orElse(0L);
+    }
+
+    /**
      * 모델의 조회수 조회
      * ModelStatistics에서 viewCount를 가져오며, 없으면 0 반환
      */
@@ -152,5 +173,21 @@ public class AIModelIndexBatchJob {
         return modelStatisticsRepository.findByModelId(aiModel.getId())
                 .map(ModelStatistics::getViewCount)
                 .orElse(0L);
+    }
+
+    /**
+     * 모델의 평점 조회
+     * ReviewRepository에서 ACTIVE 상태 리뷰들의 평균 평점 계산
+     */
+    private Double getAverageRating(AIModel aiModel) {
+        return reviewRepository.calculateAverageRatingByModelId(aiModel.getId(), ReviewStatus.ACTIVE);
+    }
+
+    /**
+     * 모델의 리뷰 수 조회
+     * ReviewRepository에서 ACTIVE 상태 리뷰 개수 반환
+     */
+    private Long getReviewCount(AIModel aiModel) {
+        return reviewRepository.countByModelIdAndStatus(aiModel.getId(), ReviewStatus.ACTIVE);
     }
 }

@@ -2,17 +2,17 @@
 -- 모든 도메인의 다양한 시나리오를 커버하는 완전한 테스트 데이터셋
 
 -- ===== 1. MEMBER (회원) 도메인 =====
-INSERT INTO member (id, username, email, password, role, status, created_at, updated_at, created_by, updated_by) VALUES
+INSERT INTO member_tb (member_id, username, email, password, role, status, created_at, updated_at) VALUES
 -- 기본 사용자들
-(1, 'normalUser', 'normal@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-01 10:00:00', '2024-01-01 10:00:00', 'SYSTEM', 'SYSTEM'),
-(2, 'premiumUser', 'premium@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-02 10:00:00', '2024-01-02 10:00:00', 'SYSTEM', 'SYSTEM'),
-(3, 'adminUser', 'admin@test.com', '$2a$10$testPasswordHash', 'ADMIN', 'ACTIVE', '2024-01-03 10:00:00', '2024-01-03 10:00:00', 'SYSTEM', 'SYSTEM'),
-(4, 'suspendedUser', 'suspended@test.com', '$2a$10$testPasswordHash', 'USER', 'SUSPENDED', '2024-01-04 10:00:00', '2024-01-04 10:00:00', 'SYSTEM', 'SYSTEM'),
+(1, 'normalUser', 'normal@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-01 10:00:00', '2024-01-01 10:00:00'),
+(2, 'premiumUser', 'premium@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-02 10:00:00', '2024-01-02 10:00:00'),
+(3, 'adminUser', 'admin@test.com', '$2a$10$testPasswordHash', 'ADMIN', 'ACTIVE', '2024-01-03 10:00:00', '2024-01-03 10:00:00'),
+(4, 'suspendedUser', 'suspended@test.com', '$2a$10$testPasswordHash', 'USER', 'SUSPENDED', '2024-01-04 10:00:00', '2024-01-04 10:00:00'),
 -- 다양한 활동 패턴 사용자들
-(5, 'activeCreator', 'creator@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-05 10:00:00', '2024-01-05 10:00:00', 'SYSTEM', 'SYSTEM'),
-(6, 'regularBuyer', 'buyer@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-06 10:00:00', '2024-01-06 10:00:00', 'SYSTEM', 'SYSTEM'),
-(7, 'reviewer', 'reviewer@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-07 10:00:00', '2024-01-07 10:00:00', 'SYSTEM', 'SYSTEM'),
-(8, 'inactiveUser', 'inactive@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-08 10:00:00', '2024-01-08 10:00:00', 'SYSTEM', 'SYSTEM');
+(5, 'activeCreator', 'creator@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-05 10:00:00', '2024-01-05 10:00:00'),
+(6, 'regularBuyer', 'buyer@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-06 10:00:00', '2024-01-06 10:00:00'),
+(7, 'reviewer', 'reviewer@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-07 10:00:00', '2024-01-07 10:00:00'),
+(8, 'inactiveUser', 'inactive@test.com', '$2a$10$testPasswordHash', 'USER', 'ACTIVE', '2024-01-08 10:00:00', '2024-01-08 10:00:00');
 
 -- ===== 2. SUBSCRIPTION (구독) 도메인 =====
 INSERT INTO subscription (id, plan_type, plan_name, price, description, duration_months, created_at, updated_at, created_by, updated_by) VALUES
@@ -63,41 +63,48 @@ INSERT INTO coupon (id, coupon_code, coupon_name, discount_type, discount_value,
 (4, 'EXPIRED2023', '만료된 쿠폰', 'PERCENTAGE', 15.00, 10.00, 30.00, 200, 180, '2023-12-01 00:00:00', '2023-12-31 23:59:59', 'EXPIRED', '2023-12-01 00:00:00', '2023-12-01 00:00:00', 'SYSTEM', 'SYSTEM');
 
 -- ===== 5. AI_MODEL (AI 모델) 도메인 =====
-INSERT INTO ai_model (id, model_name, own_type, owner_id, price, is_public, view_count, download_count, 
+INSERT INTO ai_model_tb (model_id, model_name, own_type, owner_id, price, is_public, 
                       seed, prompt, negative_prompt, width, height, steps, sampler_index, n_iter, batch_size,
-                      created_at, updated_at, created_by, updated_by) VALUES
+                      created_at, updated_at) VALUES
 -- 공개 모델들
-(1, 'Anime Style V2', 'USER', 5, 15.00, true, 1250, 89, 
+(1, 'Anime Style V2', 'USER', 5, 15.00, true, 
  1234567, 'anime style, high quality, detailed', 'blurry, low quality', 512, 512, 20, 'EULER_A', 1, 1,
- '2024-01-05 11:00:00', '2024-01-05 11:00:00', 'activeCreator', 'activeCreator'),
-(2, 'Realistic Portrait', 'USER', 5, 25.00, true, 980, 67, 
+ '2024-01-05 11:00:00', '2024-01-05 11:00:00'),
+(2, 'Realistic Portrait', 'USER', 5, 25.00, true, 
  2345678, 'realistic portrait, professional photography', 'cartoon, anime', 768, 768, 25, 'DPM_PLUS_PLUS_2M', 1, 1,
- '2024-01-06 14:00:00', '2024-01-06 14:00:00', 'activeCreator', 'activeCreator'),
-(3, 'Fantasy Landscape', 'USER', 2, 20.00, true, 756, 45, 
+ '2024-01-06 14:00:00', '2024-01-06 14:00:00'),
+(3, 'Fantasy Landscape', 'USER', 2, 20.00, true, 
  3456789, 'fantasy landscape, magical, ethereal', 'modern, urban', 1024, 512, 30, 'LMS_KARRAS', 1, 1,
- '2024-01-07 09:30:00', '2024-01-07 09:30:00', 'premiumUser', 'premiumUser'),
+ '2024-01-07 09:30:00', '2024-01-07 09:30:00'),
 -- 비공개 모델들  
-(4, 'Private Experimental', 'USER', 5, 50.00, false, 12, 2, 
+(4, 'Private Experimental', 'USER', 5, 50.00, false, 
  4567890, 'experimental style, work in progress', 'finished, commercial', 512, 512, 15, 'HEUN', 1, 1,
- '2024-01-08 16:20:00', '2024-01-08 16:20:00', 'activeCreator', 'activeCreator'),
+ '2024-01-08 16:20:00', '2024-01-08 16:20:00'),
 -- 시스템 모델들
-(5, 'Default Base Model', 'SYSTEM', null, 0.00, true, 5000, 1200, 
+(5, 'Default Base Model', 'SYSTEM', null, 0.00, true, 
  1111111, 'high quality, detailed', 'low quality, blurry', 512, 512, 20, 'EULER_A', 1, 1,
- '2024-01-01 00:00:00', '2024-01-01 00:00:00', 'SYSTEM', 'SYSTEM'),
-(6, 'Premium Base Model', 'SYSTEM', null, 0.00, true, 3500, 800, 
+ '2024-01-01 00:00:00', '2024-01-01 00:00:00'),
+(6, 'Premium Base Model', 'SYSTEM', null, 0.00, true, 
  2222222, 'premium quality, ultra detailed', 'low quality, artifacts', 768, 768, 30, 'DPM_PLUS_PLUS_2M_KARRAS', 1, 1,
- '2024-01-01 00:00:00', '2024-01-01 00:00:00', 'SYSTEM', 'SYSTEM');
+ '2024-01-01 00:00:00', '2024-01-01 00:00:00');
 
 -- ===== 6. FILE (파일) 도메인 =====
-INSERT INTO file (id, original_name, stored_name, file_path, file_size, file_type, relation_type, relation_id, created_at, updated_at, created_by, updated_by) VALUES
+INSERT INTO file_tb (file_id, original_name, stored_name, file_path, file_size, file_type, relation_type, relation_id, created_at, updated_at) VALUES
 -- AI 모델 관련 파일들
-(1, 'anime_v2_preview.jpg', 'model_1_preview_20240105.jpg', '/uploads/models/previews/', 245760, 'IMAGE', 'MODEL_PREVIEW', 1, '2024-01-05 11:05:00', '2024-01-05 11:05:00', 'activeCreator', 'activeCreator'),
-(2, 'anime_v2_sample1.png', 'model_1_sample1_20240105.png', '/uploads/models/samples/', 1024000, 'IMAGE', 'MODEL_SAMPLE', 1, '2024-01-05 11:10:00', '2024-01-05 11:10:00', 'activeCreator', 'activeCreator'),
-(3, 'anime_v2_sample2.png', 'model_1_sample2_20240105.png', '/uploads/models/samples/', 987654, 'IMAGE', 'MODEL_SAMPLE', 1, '2024-01-05 11:15:00', '2024-01-05 11:15:00', 'activeCreator', 'activeCreator'),
-(4, 'realistic_preview.jpg', 'model_2_preview_20240106.jpg', '/uploads/models/previews/', 356789, 'IMAGE', 'MODEL_PREVIEW', 2, '2024-01-06 14:05:00', '2024-01-06 14:05:00', 'activeCreator', 'activeCreator'),
+(1, 'anime_v2_preview.jpg', 'model_1_preview_20240105.jpg', '/uploads/models/previews/', 245760, 'IMAGE', 'MODEL_PREVIEW', 1, '2024-01-05 11:05:00', '2024-01-05 11:05:00'),
+(2, 'anime_v2_sample1.png', 'model_1_sample1_20240105.png', '/uploads/models/samples/', 1024000, 'IMAGE', 'MODEL_SAMPLE', 1, '2024-01-05 11:10:00', '2024-01-05 11:10:00'),
+(3, 'anime_v2_sample2.png', 'model_1_sample2_20240105.png', '/uploads/models/samples/', 987654, 'IMAGE', 'MODEL_SAMPLE', 1, '2024-01-05 11:15:00', '2024-01-05 11:15:00'),
+(4, 'realistic_preview.jpg', 'model_2_preview_20240106.jpg', '/uploads/models/previews/', 356789, 'IMAGE', 'MODEL_PREVIEW', 2, '2024-01-06 14:05:00', '2024-01-06 14:05:00'),
 -- 프로필 이미지들
-(5, 'profile_pic.jpg', 'member_5_profile_20240105.jpg', '/uploads/profiles/', 128000, 'IMAGE', 'MEMBER_PROFILE', 5, '2024-01-05 10:30:00', '2024-01-05 10:30:00', 'activeCreator', 'activeCreator'),
-(6, 'admin_avatar.png', 'member_3_profile_20240103.png', '/uploads/profiles/', 95000, 'IMAGE', 'MEMBER_PROFILE', 3, '2024-01-03 10:30:00', '2024-01-03 10:30:00', 'adminUser', 'adminUser');
+(5, 'profile_pic.jpg', 'member_5_profile_20240105.jpg', '/uploads/profiles/', 128000, 'IMAGE', 'MEMBER_PROFILE', 5, '2024-01-05 10:30:00', '2024-01-05 10:30:00'),
+(6, 'admin_avatar.png', 'member_3_profile_20240103.png', '/uploads/profiles/', 95000, 'IMAGE', 'MEMBER_PROFILE', 3, '2024-01-03 10:30:00', '2024-01-03 10:30:00'),
+-- AdResult 결과물 이미지들
+(7, 'result_1.jpg', 'ad_result_1_20240105.jpg', '/uploads/ad-results/', 512000, 'IMAGE', 'AD_RESULT', 1, '2024-01-05 12:05:00', '2024-01-05 12:05:00'),
+(8, 'result_2.jpg', 'ad_result_2_20240105.jpg', '/uploads/ad-results/', 768000, 'IMAGE', 'AD_RESULT', 2, '2024-01-05 13:35:00', '2024-01-05 13:35:00'),
+(9, 'result_4.jpg', 'ad_result_4_20240107.jpg', '/uploads/ad-results/', 445000, 'IMAGE', 'AD_RESULT', 4, '2024-01-07 10:20:00', '2024-01-07 10:20:00'),
+(10, 'result_5.jpg', 'ad_result_5_20240107.jpg', '/uploads/ad-results/', 890000, 'IMAGE', 'AD_RESULT', 5, '2024-01-07 14:25:00', '2024-01-07 14:25:00'),
+(11, 'result_9.jpg', 'ad_result_9_20240111.jpg', '/uploads/ad-results/', 623000, 'IMAGE', 'AD_RESULT', 9, '2024-01-11 09:35:00', '2024-01-11 09:35:00'),
+(12, 'result_10.jpg', 'ad_result_10_20240111.jpg', '/uploads/ad-results/', 1024000, 'IMAGE', 'AD_RESULT', 10, '2024-01-11 15:45:00', '2024-01-11 15:45:00');
 
 -- ===== 7. REVIEW (리뷰) 도메인 =====
 INSERT INTO model_review (id, model_id, reviewer_id, rating, review_title, review_content, status, created_at, updated_at, created_by, updated_by) VALUES
@@ -107,21 +114,51 @@ INSERT INTO model_review (id, model_id, reviewer_id, rating, review_title, revie
 (4, 3, 7, 3, '평범한 수준', '나쁘지 않지만 특별함이 부족해요. 가격 대비 조금 아쉽네요.', 'ACTIVE', '2024-01-11 16:45:00', '2024-01-11 16:45:00', 'reviewer', 'reviewer'),
 (5, 1, 1, 5, '정말 추천해요!', '초보자도 쉽게 사용할 수 있고 결과물이 만족스럽습니다.', 'ACTIVE', '2024-01-12 11:30:00', '2024-01-12 11:30:00', 'normalUser', 'normalUser');
 
--- ===== 8. REPORT (신고) 도메인 =====
-INSERT INTO report (id, target_type, target_id, reporter_id, report_reason, report_description, status, created_at, updated_at, created_by, updated_by) VALUES
-(1, 'MODEL', 4, 6, '부적절한 콘텐츠', '이 모델이 부적절한 내용을 생성하는 것 같습니다.', 'PENDING', '2024-01-13 14:30:00', '2024-01-13 14:30:00', 'regularBuyer', 'regularBuyer'),
-(2, 'REVIEW', 4, 2, '스팸/광고', '리뷰 내용이 광고성 게시물처럼 보입니다.', 'REVIEWED', '2024-01-14 09:45:00', '2024-01-15 10:30:00', 'premiumUser', 'adminUser'),
-(3, 'MODEL', 1, 8, '저작권 침해', '이 모델이 기존 작품을 무단으로 사용한 것 같습니다.', 'REJECTED', '2024-01-15 16:20:00', '2024-01-16 09:15:00', 'inactiveUser', 'adminUser');
+-- ===== 8. AD_RESULT (광고 결과) 도메인 =====
+INSERT INTO ad_result_tb (ad_result_id, model_id, member_id, prompt, ad_result_name, member_rating, result_image_url, created_at, updated_at) VALUES
+-- activeCreator(ID: 5)가 생성한 결과물들 - Anime Style V2 모델 사용
+(1, 1, 5, 'cute anime girl, school uniform, cherry blossoms', 'Spring School Girl', 4.8, '/results/images/result_1_20240105.jpg', '2024-01-05 12:00:00', '2024-01-05 12:00:00'),
+(2, 1, 5, 'anime warrior, fantasy armor, glowing sword', 'Fantasy Warrior', 4.9, '/results/images/result_2_20240105.jpg', '2024-01-05 13:30:00', '2024-01-05 13:30:00'),
+(3, 1, 5, 'magical forest, fairy tale, soft lighting', 'Enchanted Forest', null, '/results/images/result_3_20240105.jpg', '2024-01-05 15:45:00', '2024-01-05 15:45:00'),
+
+-- premiumUser(ID: 2)의 결과물들 - 다양한 모델 사용
+(4, 2, 2, 'professional businessman portrait, suit, confident', 'Business Portrait', 4.5, '/results/images/result_4_20240107.jpg', '2024-01-07 10:15:00', '2024-01-07 10:15:00'),
+(5, 3, 2, 'mountain landscape, sunset, dramatic clouds', 'Mountain Sunset', 4.7, '/results/images/result_5_20240107.jpg', '2024-01-07 14:20:00', '2024-01-07 14:20:00'),
+(6, 1, 2, 'anime cat girl, maid outfit, kawaii style', 'Kawaii Maid', 4.2, '/results/images/result_6_20240108.jpg', '2024-01-08 16:30:00', '2024-01-08 16:30:00'),
+
+-- normalUser(ID: 1)의 결과물들 - 기본 모델 위주
+(7, 5, 1, 'simple portrait, natural lighting, smile', 'Natural Portrait', 4.0, '/results/images/result_7_20240109.jpg', '2024-01-09 11:45:00', '2024-01-09 11:45:00'),
+(8, 1, 1, 'anime style boy, casual clothes, friendly', 'Casual Boy', 4.3, '/results/images/result_8_20240110.jpg', '2024-01-10 13:20:00', '2024-01-10 13:20:00'),
+
+-- regularBuyer(ID: 6)의 결과물들 - 프리미엄 모델 위주
+(9, 2, 6, 'elegant woman portrait, studio lighting', 'Elegant Portrait', 4.6, '/results/images/result_9_20240111.jpg', '2024-01-11 09:30:00', '2024-01-11 09:30:00'),
+(10, 6, 6, 'ultra detailed landscape, photorealistic', 'Ultra Landscape', 4.9, '/results/images/result_10_20240111.jpg', '2024-01-11 15:40:00', '2024-01-11 15:40:00'),
+
+-- reviewer(ID: 7)의 결과물들 - 테스트 목적
+(11, 3, 7, 'fantasy castle, magical atmosphere', 'Magic Castle', 3.8, '/results/images/result_11_20240112.jpg', '2024-01-12 10:25:00', '2024-01-12 10:25:00'),
+(12, 1, 7, 'anime girl, summer dress, beach scene', 'Summer Beach', null, '/results/images/result_12_20240112.jpg', '2024-01-12 14:15:00', '2024-01-12 14:15:00'),
+
+-- 최근 활동들 - 다양한 사용자의 최신 결과물
+(13, 2, 5, 'realistic self-portrait, professional headshot', 'Pro Headshot', 4.7, '/results/images/result_13_20240114.jpg', '2024-01-14 11:20:00', '2024-01-14 11:20:00'),
+(14, 1, 6, 'anime couple, romantic scene, sunset', 'Romantic Anime', 4.4, '/results/images/result_14_20240115.jpg', '2024-01-15 16:50:00', '2024-01-15 16:50:00'),
+(15, 4, 5, 'experimental art style, abstract concept', 'Abstract Experiment', 3.9, '/results/images/result_15_20240116.jpg', '2024-01-16 12:30:00', '2024-01-16 12:30:00');
+
+-- ===== 9. REPORT (신고) 도메인 =====
+INSERT INTO report_tb (report_id, target_type, target_id, reporter_id, report_reason, report_description, status, created_at, updated_at) VALUES
+(1, 'MODEL', 4, 6, '부적절한 콘텐츠', '이 모델이 부적절한 내용을 생성하는 것 같습니다.', 'PENDING', '2024-01-13 14:30:00', '2024-01-13 14:30:00'),
+(2, 'REVIEW', 4, 2, '스팸/광고', '리뷰 내용이 광고성 게시물처럼 보입니다.', 'REVIEWED', '2024-01-14 09:45:00', '2024-01-15 10:30:00'),
+(3, 'MODEL', 1, 8, '저작권 침해', '이 모델이 기존 작품을 무단으로 사용한 것 같습니다.', 'REJECTED', '2024-01-15 16:20:00', '2024-01-16 09:15:00');
 
 -- AUTO_INCREMENT 시퀀스 조정
-ALTER TABLE member AUTO_INCREMENT = 10;
+ALTER TABLE member_tb AUTO_INCREMENT = 10;
 ALTER TABLE subscription AUTO_INCREMENT = 10;
 ALTER TABLE member_subscription AUTO_INCREMENT = 10;
 ALTER TABLE point_policy AUTO_INCREMENT = 10;
 ALTER TABLE member_point_balance AUTO_INCREMENT = 10;
 ALTER TABLE point_transaction AUTO_INCREMENT = 10;
 ALTER TABLE coupon AUTO_INCREMENT = 10;
-ALTER TABLE ai_model AUTO_INCREMENT = 10;
-ALTER TABLE file AUTO_INCREMENT = 10;
+ALTER TABLE ai_model_tb AUTO_INCREMENT = 10;
+ALTER TABLE file_tb AUTO_INCREMENT = 15;
 ALTER TABLE model_review AUTO_INCREMENT = 10;
-ALTER TABLE report AUTO_INCREMENT = 10;
+ALTER TABLE ad_result_tb AUTO_INCREMENT = 20;
+ALTER TABLE report_tb AUTO_INCREMENT = 10;

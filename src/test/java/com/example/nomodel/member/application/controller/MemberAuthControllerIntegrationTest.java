@@ -182,7 +182,7 @@ class MemberAuthControllerIntegrationTest {
         memberJpaRepository.save(member);
 
         // when & then
-        LoginRequestDto loginRequest = new LoginRequestDto("suspended@example.com", "password123");
+        LoginRequestDto loginRequest = new LoginRequestDto("suspended@example.com", "suspendedPassword");
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

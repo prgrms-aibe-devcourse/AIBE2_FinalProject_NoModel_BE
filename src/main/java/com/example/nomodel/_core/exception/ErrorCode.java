@@ -9,7 +9,6 @@ public enum ErrorCode {
     INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     INTERNAL_SERVER_ERROR("ISE001", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     INVALID_REQUEST("IRE001", HttpStatus.BAD_REQUEST, "Invalid request"),
-    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
     MODEL_NOT_FOUND("MONF001", HttpStatus.NOT_FOUND, "Model not found"),
