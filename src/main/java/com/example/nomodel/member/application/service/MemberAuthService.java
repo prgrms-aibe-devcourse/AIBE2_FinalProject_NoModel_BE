@@ -60,28 +60,19 @@ public class MemberAuthService {
 
     /**
      * 로그인
+     * Spring Security AuthenticationManager를 사용하여 인증 이벤트 발생
      * 
      * @param requestDto 로그인 요청 DTO (이메일, 비밀번호)
      * @return JWT 토큰 정보 (액세스 토큰, 리프레시 토큰)
      */
     @Transactional
     public AuthTokenDTO login(LoginRequestDto requestDto) {
-        // 1. 이메일로 회원 조회
+        // Member 조회 (토큰 생성 시 memberId 필요)
         Email email = Email.of(requestDto.email());
         Member member = memberJpaRepository.findByEmail(email)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 2. 비밀번호 검증
-        if (!member.validatePassword(requestDto.password(), passwordEncoder)) {
-            throw new ApplicationException(ErrorCode.INVALID_PASSWORD);
-        }
-
-        // 3. 회원 상태 확인
-        if (!member.isActive()) {
-            throw new ApplicationException(ErrorCode.MEMBER_NOT_ACTIVE);
-        }
-
-        // 4. 토큰 발급
+        // Spring Security 인증 및 토큰 생성 - 인증 실패 시 자동으로 예외 발생
         return generateAuthTokens(member, requestDto.email(), requestDto.password());
     }
 

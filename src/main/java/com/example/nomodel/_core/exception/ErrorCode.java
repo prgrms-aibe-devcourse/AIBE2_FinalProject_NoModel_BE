@@ -70,7 +70,8 @@ public enum ErrorCode {
 
     // 보안 관련 에러
     SECURITY_ALGORITHM_NOT_AVAILABLE("SA001", HttpStatus.INTERNAL_SERVER_ERROR, "Security algorithm not available"),
-    IP_BLOCKED("IB001", HttpStatus.TOO_MANY_REQUESTS, "IP address is temporarily blocked due to suspicious activity")
+    IP_BLOCKED("IB001", HttpStatus.TOO_MANY_REQUESTS, "IP address is temporarily blocked due to suspicious activity"),
+    TOO_MANY_LOGIN_ATTEMPTS("TML001", HttpStatus.TOO_MANY_REQUESTS, "Too many failed login attempts")
     ;
 
     private final String errorCode;

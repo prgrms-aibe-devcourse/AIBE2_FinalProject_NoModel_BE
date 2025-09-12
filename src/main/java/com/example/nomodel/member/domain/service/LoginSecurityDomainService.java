@@ -27,8 +27,9 @@ public class LoginSecurityDomainService {
     private final StringRedisTemplate redisTemplate;
     
     private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int CHECK_MINUTES = 30;
-    private static final String REDIS_KEY_PREFIX = "login_failures:";
+    private static final int CHECK_MINUTES = 5;
+    private static final String FAILURE_KEY_PREFIX = "login_failures:";
+    private static final String BLOCK_HISTORY_PREFIX = "block_history:";
 
     /**
      * IP 주소를 해시화
@@ -55,7 +56,7 @@ public class LoginSecurityDomainService {
      */
     public boolean isIpBlocked(String ipAddress) {
         String hashedIp = hashIpAddress(ipAddress);
-        String failureKey = REDIS_KEY_PREFIX + hashedIp;
+        String failureKey = FAILURE_KEY_PREFIX + hashedIp;
         String failureCountStr = redisTemplate.opsForValue().get(failureKey);
         
         if (failureCountStr == null) {
@@ -108,15 +109,14 @@ public class LoginSecurityDomainService {
         }
     }
 
-    // ============= Redis 기반 IP 차단 관리 =============
-
     /**
-     * 로그인 실패 시 Redis에 실패 카운트 증가
+     * 로그인 실패 시 Redis에 실패 카운트 증가 및 점진적 차단
      * @param ipAddress 실패한 IP 주소
      */
     public void recordLoginFailure(String ipAddress) {
         String hashedIp = hashIpAddress(ipAddress);
-        String failureKey = REDIS_KEY_PREFIX + hashedIp;
+        String failureKey = FAILURE_KEY_PREFIX + hashedIp;
+        String historyKey = BLOCK_HISTORY_PREFIX + hashedIp;
         
         // 실패 횟수 증가
         Long failureCountObj = redisTemplate.opsForValue().increment(failureKey);
@@ -127,19 +127,70 @@ public class LoginSecurityDomainService {
             redisTemplate.expire(failureKey, Duration.ofMinutes(CHECK_MINUTES));
         }
         
-        // 최대 실패 횟수 도달 시 로그
+        // 최대 실패 횟수 도달 시 점진적 차단 적용
         if (failureCount >= MAX_FAILED_ATTEMPTS) {
-            log.warn("IP blocked due to {} failed attempts: {}", failureCount, hashedIp);
+            // 이전 차단 횟수 조회
+            String blockCountStr = redisTemplate.opsForValue().get(historyKey);
+            int previousBlocks = blockCountStr != null ? Integer.parseInt(blockCountStr) : 0;
+            int totalBlocks = previousBlocks + 1;
+            
+            // 점진적 차단 시간 계산
+            long blockMinutes = calculateBlockDuration(totalBlocks);
+            
+            // 차단 이력 저장 (24시간 TTL)
+            redisTemplate.opsForValue().set(historyKey, String.valueOf(totalBlocks), 
+                                           Duration.ofHours(24));
+            
+            // 실패 키 TTL을 차단 시간으로 연장
+            redisTemplate.expire(failureKey, Duration.ofMinutes(blockMinutes));
+            
+            log.warn("IP blocked for {} minutes (block #{}) due to {} failed attempts: {}", 
+                    blockMinutes, totalBlocks, failureCount, hashedIp);
         }
     }
 
     /**
-     * 로그인 성공 시 Redis 에서 실패 기록 삭제
+     * 로그인 성공 시 실패 기록과 차단 이력 삭제
      * @param ipAddress 성공한 IP 주소
      */
     public void clearLoginFailures(String ipAddress) {
         String hashedIp = hashIpAddress(ipAddress);
-        String failureKey = REDIS_KEY_PREFIX + hashedIp;
+        String failureKey = FAILURE_KEY_PREFIX + hashedIp;
+        String historyKey = BLOCK_HISTORY_PREFIX + hashedIp;
+        
+        // 실패 카운트 삭제
         redisTemplate.delete(failureKey);
+        // 로그인 성공 시 차단 이력도 초기화 (관대한 정책)
+        redisTemplate.delete(historyKey);
+        
+        log.debug("Login failure count and block history cleared for IP: {}", hashedIp);
+    }
+    
+    /**
+     * 관리자용 완전 초기화 (차단 이력도 삭제)
+     * @param ipAddress 초기화할 IP 주소
+     */
+    public void resetIpBlocking(String ipAddress) {
+        String hashedIp = hashIpAddress(ipAddress);
+        String failureKey = FAILURE_KEY_PREFIX + hashedIp;
+        String historyKey = BLOCK_HISTORY_PREFIX + hashedIp;
+        
+        redisTemplate.delete(failureKey);   // 실패 카운트 삭제
+        redisTemplate.delete(historyKey);   // 차단 이력도 삭제
+        log.info("IP blocking completely reset for: {}", hashedIp);
+    }
+
+    // ============= 내부 로직 (Private Methods) =============
+
+    /**
+     * 점진적 차단 시간 계산
+     * @param blockCount 차단 횟수
+     * @return 차단 시간 (분)
+     */
+    private long calculateBlockDuration(int blockCount) {
+        // 1번째: 60분, 2번째: 120분, 3번째: 240분, 4번째: 480분...
+        long baseMinutes = 60L;
+        long multiplier = (long) Math.pow(2, blockCount - 1); // 1, 2, 4, 8, 16...
+        return Math.min(baseMinutes * multiplier, 1440L); // 최대 24시간
     }
 }
