@@ -46,8 +46,8 @@ public interface PointTransactionRepository extends JpaRepository<PointTransacti
            select new com.example.nomodel.statistics.application.dto.response.MonthlyCount(
                     cast(year(pt.createdAt) as integer), cast(month(pt.createdAt) as integer), cast(sum(pt.pointAmount) as long))
              from PointTransaction pt
-            where (:from is null or pt.createdAt >= :from)
-              and (:to   is null or pt.createdAt <  :to)
+            where (pt.createdAt >= :from)
+              and (pt.createdAt <  :to)
          group by cast(year(pt.createdAt) as integer), cast(month(pt.createdAt) as integer)
          order by cast(year(pt.createdAt) as integer), cast(month(pt.createdAt) as integer)
            """)

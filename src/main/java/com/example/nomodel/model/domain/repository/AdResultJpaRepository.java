@@ -39,8 +39,8 @@ public interface AdResultJpaRepository extends JpaRepository<AdResult, Long> {
            select new com.example.nomodel.statistics.application.dto.response.MonthlyCount(
                       month(a.createdAt), count(a))
              from AdResult a
-            where (:from is null or a.createdAt >= :from)
-              and (:to   is null or a.createdAt <  :to)
+            where (a.createdAt >= :from)
+              and (a.createdAt <  :to)
          group by year(a.createdAt), month(a.createdAt)
          order by year(a.createdAt), month(a.createdAt)
            """)
