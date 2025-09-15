@@ -39,7 +39,6 @@ public class JWTTokenProvider {
     private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
     private static final String AUTHORITIES_KEY = "auth";
     private static final String MEMBER_ID_KEY = "memberId";
-    private static final String IS_FIRST_LOGIN_KEY = "isFirstLogin";
     private static final String BEARER_TYPE = "Bearer";
     private static final String TYPE_ACCESS = "access";
     private static final String TYPE_REFRESH = "refresh";
@@ -62,10 +61,6 @@ public class JWTTokenProvider {
     }
 
     public AuthTokenDTO generateToken(String email, Long memberId, Collection<? extends GrantedAuthority> grantedAuthorities) {
-        return generateToken(email, memberId, grantedAuthorities, null);
-    }
-
-    public AuthTokenDTO generateToken(String email, Long memberId, Collection<? extends GrantedAuthority> grantedAuthorities, Boolean isFirstLogin) {
         // 권한 확인
         String authorities = grantedAuthorities.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -81,8 +76,6 @@ public class JWTTokenProvider {
                 // 권한 주입
                 .claim(AUTHORITIES_KEY, authorities)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
-                // 최초 로그인 여부 추가 (null이 아닌 경우만)
-                .claim(IS_FIRST_LOGIN_KEY, isFirstLogin != null ? isFirstLogin : false)
                 // 토큰 발행 시간 정보
                 .setIssuedAt(now)
                 // 만료시간 주입
@@ -208,32 +201,4 @@ public class JWTTokenProvider {
         return resolveTokenFromCookies(request, REFRESH_TOKEN_COOKIE_NAME);
     }
 
-    /**
-     * JWT 토큰에서 최초 로그인 여부 추출
-     * @param request HTTP 요청
-     * @return 최초 로그인 여부 (토큰이 없거나 파싱 실패 시 false)
-     */
-    public Boolean extractIsFirstLogin(HttpServletRequest request) {
-        try {
-            // 요청에서 토큰 추출
-            String token = resolveToken(request);
-            if (token == null) {
-                return false; // 토큰이 없으면 false 반환
-            }
-
-            // 토큰 파싱하여 클레임 추출
-            Claims claims = parseClaims(token);
-            Object isFirstLoginClaim = claims.get(IS_FIRST_LOGIN_KEY);
-            
-            if (isFirstLoginClaim instanceof Boolean) {
-                return (Boolean) isFirstLoginClaim;
-            }
-            
-            return false; // 클레임이 없거나 타입이 맞지 않으면 false
-        } catch (Exception e) {
-            // 토큰 파싱 실패 시 기본값 false 반환
-            log.debug("JWT 토큰에서 최초 로그인 여부 추출 실패", e);
-            return false;
-        }
-    }
 }

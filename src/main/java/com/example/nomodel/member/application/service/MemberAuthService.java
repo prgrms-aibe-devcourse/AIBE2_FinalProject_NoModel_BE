@@ -7,7 +7,7 @@ import com.example.nomodel.member.application.dto.request.LoginRequestDto;
 import com.example.nomodel.member.application.dto.request.SignUpRequestDto;
 import com.example.nomodel.member.application.dto.response.AuthTokenDTO;
 import com.example.nomodel.member.domain.model.*;
-import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
+import com.example.nomodel.member.domain.repository.FirstLoginRedisRepository;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.member.domain.repository.RefreshTokenRedisRepository;
 import com.example.nomodel.member.domain.service.LoginSecurityDomainService;
@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +30,7 @@ public class MemberAuthService {
     private final MemberJpaRepository memberJpaRepository;
     private final MemberDomainService memberDomainService;
     private final LoginSecurityDomainService loginSecurityDomainService;
-    private final LoginHistoryRepository loginHistoryRepository;
+    private final FirstLoginRedisRepository firstLoginRedisRepository;
     private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final PasswordEncoder passwordEncoder;
     private final JWTTokenProvider jwtTokenProvider;
@@ -60,7 +59,12 @@ public class MemberAuthService {
         
         // 4. Domain 객체 생성 및 저장
         Member member = Member.createMember(requestDto.username(), email, password);
-        memberJpaRepository.save(member);
+        Member savedMember = memberJpaRepository.save(member);
+        
+        // 5. 회원가입 시 최초 로그인 상태 저장 (Redis에 true로 저장)
+        firstLoginRedisRepository.setFirstLoginStatus(savedMember.getId(), true);
+        
+        log.info("회원가입 성공: email={}, memberId={}, 최초 로그인 상태 저장됨", email.getValue(), savedMember.getId());
     }
 
     /**
@@ -103,30 +107,17 @@ public class MemberAuthService {
         Authentication authentication = authenticationManagerBuilder.getObject()
                 .authenticate(authenticationToken);
 
-        // 최초 로그인 여부 확인 (성공한 로그인 이력이 있는지 체크)
-        boolean isFirstLogin = checkIsFirstLogin(member.getId());
-
-        // JWT 토큰 생성 (최초 로그인 여부 포함)
+        // JWT 토큰 생성
         AuthTokenDTO authTokenDTO = jwtTokenProvider.generateToken(
-                email, member.getId(), authentication.getAuthorities(), isFirstLogin);
+                email, member.getId(), authentication.getAuthorities());
 
         // 리프레시 토큰을 Redis에 저장
         saveRefreshToken(member.getId(), authentication.getAuthorities(), authTokenDTO.refreshToken());
 
-        log.info("로그인 성공: email={}, memberId={}, isFirstLogin={}", email, member.getId(), isFirstLogin);
+        log.info("로그인 성공: email={}, memberId={}", email, member.getId());
         return authTokenDTO;
     }
 
-    /**
-     * 최초 로그인 여부 확인
-     * @param memberId 회원 ID
-     * @return 최초 로그인 여부 (true: 최초 로그인, false: 이미 로그인 이력 있음)
-     */
-    private boolean checkIsFirstLogin(Long memberId) {
-        // 해당 회원의 성공한 로그인 이력이 있는지 확인
-        return !loginHistoryRepository.existsByMemberIdAndLoginStatus(memberId, LoginStatus.SUCCESS);
-    }
-    
     /**
      * 리프레시 토큰을 Redis에 저장
      */
