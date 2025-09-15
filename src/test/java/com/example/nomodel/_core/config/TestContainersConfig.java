@@ -6,7 +6,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.containers.wait.strategy.Wait;
+import java.time.Duration;
 
 /**
  * TestContainers 설정 클래스
@@ -40,7 +43,35 @@ public class TestContainersConfig {
                 .withReuse(true);
     }
 
-    // ElasticSearch는 대부분의 통합 테스트에서 불필요하므로 제거
-    // 필요한 경우 별도 테스트 클래스에서 @MockBean ElasticsearchOperations 사용
+    /**
+     * Elasticsearch TestContainer 설정
+     * 프로젝트 환경과 동일한 버전 사용 (8.18.1)
+     * 보안 ON (기본) + 적절한 헬스체크 설정
+     */
+    @Bean
+    @ServiceConnection
+    public ElasticsearchContainer elasticsearchContainer() {
+        return new ElasticsearchContainer(
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:8.18.1"))
+                // 단일 노드 모드
+                .withEnv("discovery.type", "single-node")
+                // 보안 OFF → HTTP 모드
+                .withEnv("xpack.security.enabled", "false")
+                .withEnv("xpack.security.http.ssl.enabled", "false")
+                .withEnv("xpack.security.transport.ssl.enabled", "false")
+                // 메모리 세팅
+                .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
+                // HTTP 헬스체크 - 더 관대한 설정
+                .waitingFor(
+                        Wait.forHttp("/_cluster/health?wait_for_status=yellow&timeout=120s")
+                                .forPort(9200)
+                                .withStartupTimeout(Duration.ofMinutes(5))
+                )
+                .withStartupTimeout(Duration.ofMinutes(5))
+                // 컨테이너 로깅 활성화
+                .withLogConsumer(outputFrame ->
+                    System.out.println("ES Container: " + outputFrame.getUtf8String().trim()))
+                .withReuse(true);
+    }
 
 }

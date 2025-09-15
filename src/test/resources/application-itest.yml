@@ -49,7 +49,8 @@ server:
 # 로깅 설정 (통합 테스트용)
 logging:
   level:
-    org.testcontainers: INFO
-    com.github.dockerjava: WARN
+    org.testcontainers: DEBUG
+    com.github.dockerjava: INFO
     com.example.nomodel: DEBUG
     org.springframework.security: DEBUG
+    ROOT: INFO
