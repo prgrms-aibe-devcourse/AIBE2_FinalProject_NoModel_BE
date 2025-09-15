@@ -5,7 +5,16 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "point_transaction")
+@Table(
+        name = "point_transaction",
+        indexes = {
+                @Index(name = "idx_point_transaction_created_at", columnList = "created_at")
+        }
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_tx_member_ref_type_ref_id_type",
+                columnNames = {"member_id","referer_type","referer_id","transaction_type"}
+        )
+)
 public class PointTransaction {
 
     @Id

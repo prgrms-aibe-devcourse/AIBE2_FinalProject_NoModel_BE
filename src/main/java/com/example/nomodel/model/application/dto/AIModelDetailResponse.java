@@ -27,7 +27,7 @@ public class AIModelDetailResponse {
     private BigDecimal price;
     private Double avgRating;
     private Long reviewCount;
-    private Long downloadCount;
+    private Long usageCount;
     private Long viewCount;
     
     // 파일 정보
@@ -70,8 +70,8 @@ public class AIModelDetailResponse {
                 .price(model.getPrice())
                 .avgRating(document != null ? document.getRating() : 0.0)
                 .reviewCount(document != null ? document.getReviewCount() : 0L)
-                .downloadCount(document != null ? document.getUsageCount() : 0L) // 다운로드를 사용량으로 대체
-                .viewCount(document != null ? document.getUsageCount() : 0L) // 임시로 같은 값 사용
+                .usageCount(document != null ? document.getUsageCount() : 0L) // 사용량
+                .viewCount(document != null ? document.getViewCount() : 0L) // 올바른 viewCount 사용
                 .files(files.stream().map(FileInfo::from).toList())
                 .reviews(reviews != null ? reviews : List.of())
                 .createdAt(model.getCreatedAt())

@@ -40,8 +40,8 @@ FROM member_tb;
 -- 4. 포인트 거래 내역 (1000개)
 INSERT INTO point_transaction (member_id, transaction_type, direction, point_amount, balance_before, balance_after, referer_type, referer_id, created_at)
 SELECT 
-    (FLOOR(1 + (RAND() * 605))) as member_id,
-    CASE ROW_NUMBER() OVER () % 8
+    ((n - 1) % 605) + 1 as member_id,
+    CASE n % 8
         WHEN 0 THEN 'REWARD'
         WHEN 1 THEN 'PURCHASE'
         WHEN 2 THEN 'BONUS'
@@ -52,16 +52,16 @@ SELECT
         ELSE 'EXPIRY'
     END as transaction_type,
     CASE 
-        WHEN ROW_NUMBER() OVER () % 8 IN (0, 2, 3, 5) THEN 'CREDIT'
+        WHEN n % 8 IN (0, 2, 3, 5) THEN 'CREDIT'
         ELSE 'DEBIT'
     END as direction,
     CASE 
-        WHEN ROW_NUMBER() OVER () % 8 IN (0, 2, 3, 5) THEN FLOOR(10 + (RAND() * 500))
-        ELSE FLOOR(10 + (RAND() * 1000))
+        WHEN n % 8 IN (0, 2, 3, 5) THEN FLOOR(10 + ((n * 7) % 500))
+        ELSE FLOOR(10 + ((n * 11) % 1000))
     END as point_amount,
-    FLOOR(RAND() * 30000) as balance_before,
-    FLOOR(RAND() * 30000) as balance_after,
-    CASE ROW_NUMBER() OVER () % 8
+    FLOOR((n * 123) % 30000) as balance_before,
+    FLOOR((n * 456) % 30000) as balance_after,
+    CASE n % 8
         WHEN 0 THEN 'SYSTEM'
         WHEN 1 THEN 'ORDER'
         WHEN 2 THEN 'EVENT'
@@ -71,8 +71,8 @@ SELECT
         WHEN 6 THEN 'MANUAL'
         ELSE 'SYSTEM'
     END as referer_type,
-    FLOOR(1 + (RAND() * 1000)) as referer_id,
-    DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 365) DAY) as created_at
+    n as referer_id,
+    DATE_SUB(NOW(), INTERVAL (n % 365) DAY) as created_at
 FROM (
     SELECT ROW_NUMBER() OVER () as n
     FROM information_schema.columns a
@@ -134,7 +134,7 @@ INSERT INTO discount_policy (name, discount_type, discount_value, is_active, max
 ('플래시 세일', 'PERCENTAGE', 50.00, 0, 1, 0, '2023-12-15', '2023-12-16');
 
 -- 7. 모델 리뷰 데이터 (100개)
-INSERT INTO model_review (model_id, reviewer_id, value, content, status, created_at)
+INSERT INTO model_review (model_id, reviewer_id, rating_value, content, status, created_at)
 WITH RECURSIVE seq(n) AS (
     SELECT 1 
     UNION ALL 
@@ -143,7 +143,7 @@ WITH RECURSIVE seq(n) AS (
 SELECT 
     (SELECT model_id FROM ai_model_tb WHERE is_public = b'1' ORDER BY RAND() LIMIT 1) as model_id,
     (FLOOR(2 + (RAND() * 604))) as reviewer_id,
-    (FLOOR(1 + (RAND() * 5))) as value,
+    (FLOOR(1 + (RAND() * 5))) as rating_value,
     CASE FLOOR(1 + (RAND() * 10))
         WHEN 1 THEN '정말 훌륭한 모델입니다! 결과물의 품질이 매우 뛰어나고 사용하기도 편합니다.'
         WHEN 2 THEN '기대했던 것보다 좋은 결과를 얻을 수 있었습니다. 추천합니다.'
@@ -160,7 +160,43 @@ SELECT
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at
 FROM seq;
 
--- 8. 파일 데이터 (50개)
+-- 8. AdResult 데이터 - 기본 사용자들 확정적 데이터
+INSERT INTO ad_result_tb (model_id, member_id, prompt, ad_result_name, member_rating, result_image_url, created_at, updated_at) VALUES
+-- 관리자 (ID: 1) - 시스템 테스트용 데이터
+(1, 1, 'system test prompt for admin', 'Admin Test Result', 5.0, '/results/admin/test_result_001.jpg', '2023-01-15 10:00:00', '2023-01-15 10:30:00'),
+(2, 1, 'quality assurance testing', 'QA Test Image', 4.5, '/results/admin/qa_result_002.jpg', '2023-01-20 14:00:00', '2023-01-20 14:15:00'),
+
+-- 테스트유저 (ID: 2) - 기본 사용자 테스트 데이터
+(1, 2, 'beautiful landscape with mountains', 'Mountain Vista', 4.2, '/results/test/mountain_vista_001.jpg', '2023-01-16 09:30:00', '2023-01-16 10:00:00'),
+(3, 2, 'anime character with blue hair', 'Blue Hair Anime Girl', 4.8, '/results/test/anime_blue_hair_002.jpg', '2023-01-18 15:20:00', '2023-01-18 15:45:00'),
+(2, 2, 'cyberpunk city at night', 'Neon City Dreams', 3.9, '/results/test/cyberpunk_city_003.jpg', '2023-01-25 20:15:00', '2023-01-25 20:30:00'),
+(4, 2, 'watercolor painting of flowers', 'Flower Garden', NULL, '/results/test/watercolor_flowers_004.jpg', '2023-02-01 11:10:00', '2023-02-01 11:25:00'),
+
+-- 프리미엄유저 (ID: 3) - 고급 기능 사용 데이터
+(5, 3, 'portrait of a fantasy warrior', 'Epic Warrior Portrait', 4.7, '/results/premium/warrior_portrait_001.jpg', '2023-02-02 16:45:00', '2023-02-02 17:00:00'),
+(1, 3, 'abstract art with geometric shapes', 'Geometric Dreams', 4.1, '/results/premium/geometric_art_002.jpg', '2023-02-05 13:20:00', '2023-02-05 13:35:00'),
+(6, 3, 'realistic photo of a cat', 'Cute Cat Photo', 4.9, '/results/premium/realistic_cat_003.jpg', '2023-02-10 10:30:00', '2023-02-10 10:45:00'),
+(3, 3, 'sci-fi spaceship design', 'Futuristic Spaceship', 4.3, '/results/premium/spaceship_design_004.jpg', '2023-02-15 19:10:00', '2023-02-15 19:25:00'),
+(2, 3, 'traditional japanese garden', 'Zen Garden', 4.6, '/results/premium/japanese_garden_005.jpg', '2023-02-20 08:45:00', '2023-02-20 09:00:00'),
+
+-- 비즈니스유저 (ID: 4) - 상업적 용도 데이터
+(4, 4, 'professional business portrait', 'Executive Portrait', 4.4, '/results/business/executive_001.jpg', '2023-03-02 14:30:00', '2023-03-02 14:45:00'),
+(7, 4, 'modern office interior design', 'Office Space Design', 4.2, '/results/business/office_interior_002.jpg', '2023-03-05 11:15:00', '2023-03-05 11:30:00'),
+(1, 4, 'corporate logo design concept', 'Logo Concept', NULL, '/results/business/logo_concept_003.jpg', '2023-03-10 16:20:00', '2023-03-10 16:35:00'),
+(5, 4, 'marketing banner design', 'Marketing Banner', 4.1, '/results/business/marketing_banner_004.jpg', '2023-03-15 12:50:00', '2023-03-15 13:05:00'),
+
+-- 정지된유저 (ID: 5) - 정지 전 데이터 (정지 후에는 생성되지 않음)
+(2, 5, 'simple test image', 'Test Before Suspension', 3.2, '/results/suspended/test_image_001.jpg', '2023-03-28 10:00:00', '2023-03-28 10:15:00'),
+(1, 5, 'last attempt before suspension', 'Final Creation', 2.8, NULL, '2023-03-30 15:30:00', '2023-03-30 15:45:00'),
+
+-- 추가 랜덤 데이터 (ID 6-605 범위)
+(1, 6, 'creative digital art composition', 'Digital Art Mix', 4.0, '/results/random/digital_art_001.jpg', '2023-04-01 12:00:00', '2023-04-01 12:15:00'),
+(3, 7, 'fantasy forest landscape', 'Enchanted Forest', 4.5, '/results/random/fantasy_forest_002.jpg', '2023-04-02 14:30:00', '2023-04-02 14:45:00'),
+(2, 8, 'vintage car illustration', 'Classic Car', 3.8, '/results/random/vintage_car_003.jpg', '2023-04-03 16:20:00', '2023-04-03 16:35:00'),
+(4, 9, 'space exploration scene', 'Space Explorer', 4.3, '/results/random/space_scene_004.jpg', '2023-04-04 09:45:00', '2023-04-04 10:00:00'),
+(5, 10, 'underwater coral reef', 'Ocean Depths', 4.7, '/results/random/coral_reef_005.jpg', '2023-04-05 11:30:00', '2023-04-05 11:45:00');
+
+-- 9. 파일 데이터 (50개)
 INSERT INTO file_tb (file_name, file_type, file_url, content_type, relation_type, relation_id, is_primary, created_at, updated_at)
 SELECT 
     CONCAT(
@@ -182,7 +218,7 @@ SELECT
             ELSE '.gif'
         END
     ) as file_name,
-    CASE WHEN ROW_NUMBER() OVER () % 2 = 0 THEN 'PREVIEW' ELSE 'THUMBNAIL' END as file_type,
+    'ORIGINAL' as file_type,
     -- Firebase Storage URLs을 사용 (실제 업로드된 이미지)
     CASE ROW_NUMBER() OVER () % 5
         WHEN 0 THEN 'https://storage.googleapis.com/download/storage/v1/b/nomodel-fdaae.firebasestorage.app/o/testImage_be8eb30c-ce18-438f-b485-593a6ef2dcfe?generation=1756904909282705&alt=media'
@@ -197,18 +233,16 @@ SELECT
         WHEN 2 THEN 'image/webp'
         ELSE 'image/gif'
     END as content_type,
-    CASE ROW_NUMBER() OVER () % 4
+    CASE ROW_NUMBER() OVER () % 5
         WHEN 0 THEN 'MODEL'
         WHEN 1 THEN 'REVIEW'
         WHEN 2 THEN 'PROFILE'
-        ELSE 'AD'
+        WHEN 3 THEN 'AD'
+        ELSE 'AD_RESULT'
     END as relation_type,
     FLOOR(1 + (RAND() * 1000)) as relation_id,
     -- 각 relation_id의 첫 번째 파일을 대표 이미지로 설정 (약 20% 확률)
-    CASE WHEN ROW_NUMBER() OVER (PARTITION BY FLOOR(1 + (RAND() * 1000)) ORDER BY RAND()) = 1 
-         AND RAND() < 0.2 THEN TRUE 
-         ELSE FALSE 
-    END as is_primary,
+    CASE WHEN RAND() < 0.2 THEN TRUE ELSE FALSE END as is_primary,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 180) DAY) as created_at,
     DATE_SUB(NOW(), INTERVAL FLOOR(RAND() * 30) DAY) as updated_at
 FROM (
@@ -222,8 +256,8 @@ INSERT INTO report_tb (target_type, target_id, report_status, reason_detail, adm
 SELECT 
     CASE WHEN ROW_NUMBER() OVER () % 2 = 0 THEN 'MODEL' ELSE 'REVIEW' END as target_type,
     CASE 
-        WHEN ROW_NUMBER() OVER () % 2 = 0 THEN (SELECT model_id FROM ai_model_tb WHERE is_public = 1 ORDER BY RAND() LIMIT 1)
-        ELSE (SELECT id FROM model_review ORDER BY RAND() LIMIT 1)
+        WHEN ROW_NUMBER() OVER () % 2 = 0 THEN COALESCE((SELECT model_id FROM ai_model_tb WHERE is_public = 1 ORDER BY RAND() LIMIT 1), 1)
+        ELSE COALESCE((SELECT id FROM model_review ORDER BY RAND() LIMIT 1), 1)
     END as target_id,
     CASE ROW_NUMBER() OVER () % 4
         WHEN 0 THEN 'PENDING'

@@ -24,36 +24,4 @@ public class PointDomainService {
         return balanceRepository.findById(memberId)
                 .orElse(new MemberPointBalance(memberId));
     }
-
-    public PointTransaction addPoints(Long memberId, BigDecimal amount, TransactionType type, RefererType refererType, Long refererId) {
-        MemberPointBalance balance = getBalance(memberId);
-        BigDecimal before = balance.getAvailablePoints();
-        balance.addPoints(amount);
-        MemberPointBalance saved = balanceRepository.save(balance);
-
-        PointTransaction tx = new PointTransaction(
-                memberId, TransactionDirection.CREDIT, type,
-                amount, before, saved.getAvailablePoints(),
-                refererType, refererId
-        );
-        return transactionRepository.save(tx);
-    }
-
-    public PointTransaction usePoints(Long memberId, BigDecimal amount, TransactionType type, RefererType refererType, Long refererId) {
-        MemberPointBalance balance = getBalance(memberId);
-        BigDecimal before = balance.getAvailablePoints();
-        balance.subtractPoints(amount);
-        MemberPointBalance saved = balanceRepository.save(balance);
-
-        PointTransaction tx = new PointTransaction(
-                memberId, TransactionDirection.DEBIT, type,
-                amount, before, saved.getAvailablePoints(),
-                refererType, refererId
-        );
-        return transactionRepository.save(tx);
-    }
-
-    public List<PointTransaction> getTransactions(Long memberId) {
-        return transactionRepository.findByMemberId(memberId);
-    }
 }

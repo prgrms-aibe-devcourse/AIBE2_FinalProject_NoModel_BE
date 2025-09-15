@@ -32,11 +32,11 @@ SELECT '4단계: 모델 통계 데이터 생성 중... (500개)' as status, NOW(
 SOURCE 04_model_statistics.sql;
 
 -- 5단계: 구독 상품 데이터 생성
-SELECT '5단계: 구독 상품 데이터 생성 중... (10개)' as status, NOW() as timestamp;
+SELECT '5단계: 구독 상품 데이터 생성 중... (3개)' as status, NOW() as timestamp;
 SOURCE 05_subscriptions.sql;
 
--- 6단계: 구독 상품만 생성 (회원 구독은 7단계에서)
-SELECT '6단계: 구독 상품 생성 완료 (10개)' as status, NOW() as timestamp;
+-- 6단계: 회원 구독 데이터 생성
+SELECT '6단계: 회원 구독 데이터 생성 중... (100개)' as status, NOW() as timestamp;
 SOURCE 06_member_subscriptions.sql;
 
 -- 7단계: 나머지 테이블 데이터 생성

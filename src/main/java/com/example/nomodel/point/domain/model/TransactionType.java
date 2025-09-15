@@ -8,5 +8,7 @@ public enum TransactionType {
     REFUND,
     MODEL_USAGE,
     WITHDRAWAL,
-    EXPIRY
+    EXPIRY,
+    CHARGE,
+    USE
 }

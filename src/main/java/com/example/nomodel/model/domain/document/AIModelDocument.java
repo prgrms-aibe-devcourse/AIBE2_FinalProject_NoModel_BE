@@ -113,14 +113,14 @@ public class AIModelDocument {
     private LocalDateTime updatedAt;
 
     @Builder
-    private AIModelDocument(Long modelId, String modelName, String prompt,
+    private AIModelDocument(Long modelId, String modelName, java.util.List<String> suggest, String prompt,
                            String[] tags, String ownType, Long ownerId, String ownerName,
                            BigDecimal price, Boolean isPublic,
                            Long usageCount, Long viewCount, Double rating, Long reviewCount,
                            LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.modelId = modelId;
         this.modelName = modelName;
-        this.suggest = buildSuggestions(modelName); // 자동완성용 (다중 입력 방식)
+        this.suggest = suggest != null ? suggest : buildSuggestions(modelName); // 자동완성용 (다중 입력 방식)
         this.prompt = prompt;
         this.tags = tags;
         this.ownType = ownType;
@@ -137,12 +137,22 @@ public class AIModelDocument {
     }
 
     /**
-     * AIModel 엔티티로부터 AIModelDocument 생성
+     * AIModel 엔티티와 모든 통계 정보로부터 완전한 AIModelDocument 생성
+     * 
+     * @param aiModel AI 모델 엔티티
+     * @param ownerName 소유자 이름
+     * @param usageCount 사용량 (null이면 0)
+     * @param viewCount 조회수 (null이면 0) 
+     * @param rating 평점 (null이면 0.0)
+     * @param reviewCount 리뷰 수 (null이면 0)
      */
-    public static AIModelDocument from(AIModel aiModel, String ownerName) {
+    public static AIModelDocument from(AIModel aiModel, String ownerName, 
+                                     Long usageCount, Long viewCount, 
+                                     Double rating, Long reviewCount) {
         return AIModelDocument.builder()
                 .modelId(aiModel.getId())
                 .modelName(aiModel.getModelName())
+                .suggest(buildSuggestions(aiModel.getModelName()))
                 .prompt(extractPrompt(aiModel))
                 .tags(extractTags(aiModel))
                 .ownType(aiModel.getOwnType().name())
@@ -150,30 +160,16 @@ public class AIModelDocument {
                 .ownerName(ownerName)
                 .price(aiModel.getPrice())
                 .isPublic(aiModel.isPublic())
+                .usageCount(usageCount != null ? usageCount : 0L)
+                .viewCount(viewCount != null ? viewCount : 0L)
+                .rating(rating != null ? rating : 0.0)
+                .reviewCount(reviewCount != null ? reviewCount : 0L)
                 .createdAt(aiModel.getCreatedAt())
                 .updatedAt(aiModel.getUpdatedAt())
                 .build();
     }
 
-    /**
-     * AIModel 엔티티와 통계 정보로부터 AIModelDocument 생성
-     */
-    public static AIModelDocument from(AIModel aiModel, String ownerName, Long viewCount) {
-        return AIModelDocument.builder()
-                .modelId(aiModel.getId())
-                .modelName(aiModel.getModelName())
-                .prompt(extractPrompt(aiModel))
-                .tags(extractTags(aiModel))
-                .ownType(aiModel.getOwnType().name())
-                .ownerId(aiModel.getOwnerId())
-                .ownerName(ownerName)
-                .price(aiModel.getPrice())
-                .isPublic(aiModel.isPublic())
-                .viewCount(viewCount)
-                .createdAt(aiModel.getCreatedAt())
-                .updatedAt(aiModel.getUpdatedAt())
-                .build();
-    }
+
 
     /**
      * 사용량 증가

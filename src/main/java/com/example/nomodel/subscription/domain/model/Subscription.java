@@ -12,23 +12,18 @@ public class Subscription {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private PlanType planType;   // BASIC, STANDARD, PREMIUM, ENTERPRISE
-
-    private String name;         // 예: Basic Plan
-    private String description;  // 플랜 설명
-    private Integer period;      // 구독 기간 (일 단위, 예: 30일)
-    private Integer dailyLimit;  // 하루 사용 제한 (-1 = 무제한)
-    private BigDecimal price;    // 가격 (KRW 기준)
-
-    private Integer selfMadeModelNum; // 자체 제작 모델 허용 개수 (ERD에 있던 필드)
+    @Column(name = "plan_type", nullable = false)
+    private PlanType planType;
+    private String description;
+    private BigDecimal price;
+    private Long period; // 일 단위
+    private Integer dailyLimit;
+    private Integer selfMadeModelNum;
 
     protected Subscription() {}
 
-    public Subscription(PlanType planType, String name, String description,
-                        Integer period, Integer dailyLimit, BigDecimal price,
-                        Integer selfMadeModelNum) {
+    public Subscription(PlanType planType, String description, BigDecimal price, Long period) {
         this.planType = planType;
-        this.name = name;
         this.description = description;
         this.period = period;
         this.dailyLimit = dailyLimit;
@@ -39,7 +34,6 @@ public class Subscription {
     // getter
     public Long getId() { return id; }
     public PlanType getPlanType() { return planType; }
-    public String getName() { return name; }
     public String getDescription() { return description; }
     public Integer getPeriod() { return period; }
     public Integer getDailyLimit() { return dailyLimit; }
