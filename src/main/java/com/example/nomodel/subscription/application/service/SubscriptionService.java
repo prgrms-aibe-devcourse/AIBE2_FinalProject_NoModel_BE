@@ -1,5 +1,7 @@
 package com.example.nomodel.subscription.application.service;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.subscription.application.dto.request.SubscriptionRequest;
 import com.example.nomodel.subscription.application.dto.response.MemberSubscriptionResponse;
 import com.example.nomodel.subscription.application.dto.response.SubscriptionResponse;
@@ -24,15 +26,19 @@ public class SubscriptionService {
     public List<SubscriptionResponse> getPlans() {
         return domainService.getAllPlans().stream()
                 .map(s -> new SubscriptionResponse(
-                        s.getId(), s.getPlanType().getValue(), s.getDescription(), s.getPrice(), s.getPeriod()
+                        s.getId(),
+                        s.getPlanType(),
+                        s.getDescription(),
+                        s.getPrice(),
+                        s.getPeriod()
                 ))
                 .collect(Collectors.toList());
     }
 
-    public MemberSubscriptionResponse subscribe(Long memberId, SubscriptionRequest request) {
-        MemberSubscription sub = domainService.subscribe(
-                memberId, request.getSubscriptionId(), request.getPaidAmount()
-        );
+    public MemberSubscriptionResponse getMySubscription(Long memberId) {
+        MemberSubscription sub = domainService.findActiveSubscription(memberId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
+
         return new MemberSubscriptionResponse(
                 sub.getId(),
                 sub.getMemberId(),
@@ -47,7 +53,39 @@ public class SubscriptionService {
         );
     }
 
-    public void cancel(Long memberSubscriptionId, CancellationReason reason) {
-        domainService.cancel(memberSubscriptionId, reason);
+    // 구독 생성
+    public MemberSubscriptionResponse createSubscription(Long memberId, SubscriptionRequest request) {
+        MemberSubscription saved = domainService.createSubscription(memberId, request);
+
+        return new MemberSubscriptionResponse(
+                saved.getId(),
+                saved.getMemberId(),
+                saved.getSubscription().getId(),
+                saved.getStatus().name(),
+                saved.getAutoRenewal(),
+                saved.getStartedAt(),
+                saved.getExpiresAt(),
+                saved.getCancelledAt(),
+                saved.getCancellationReason() != null ? saved.getCancellationReason().name() : null,
+                saved.getPaidAmount()
+        );
     }
+
+    public MemberSubscriptionResponse cancelMySubscription(Long memberId, CancellationReason reason) {
+        MemberSubscription cancelled = domainService.cancelActiveSubscription(memberId, reason);
+
+        return new MemberSubscriptionResponse(
+                cancelled.getId(),
+                cancelled.getMemberId(),
+                cancelled.getSubscription().getId(),
+                cancelled.getStatus().name(),
+                cancelled.getAutoRenewal(),
+                cancelled.getStartedAt(),
+                cancelled.getExpiresAt(),
+                cancelled.getCancelledAt(),
+                cancelled.getCancellationReason() != null ? cancelled.getCancellationReason().name() : null,
+                cancelled.getPaidAmount()
+        );
+    }
+
 }
