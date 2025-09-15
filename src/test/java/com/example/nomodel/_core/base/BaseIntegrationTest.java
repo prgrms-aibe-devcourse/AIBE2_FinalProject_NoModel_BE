@@ -1,6 +1,7 @@
 package com.example.nomodel._core.base;
 
 import com.example.nomodel._core.config.TestContainersConfig;
+import com.example.nomodel._core.config.TestFirebaseConfig;
 import com.example.nomodel._core.config.TestOAuth2Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -38,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("itest")
-@Import({TestContainersConfig.class, TestOAuth2Config.class})
+@Import({TestContainersConfig.class, TestFirebaseConfig.class, TestOAuth2Config.class})
 @Transactional
 public abstract class BaseIntegrationTest {
 
