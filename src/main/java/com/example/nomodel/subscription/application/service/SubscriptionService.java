@@ -36,21 +36,20 @@ public class SubscriptionService {
     }
 
     public MemberSubscriptionResponse getMySubscription(Long memberId) {
-        MemberSubscription sub = domainService.findActiveSubscription(memberId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.SUBSCRIPTION_NOT_FOUND));
-
-        return new MemberSubscriptionResponse(
-                sub.getId(),
-                sub.getMemberId(),
-                sub.getSubscription().getId(),
-                sub.getStatus().name(),
-                sub.getAutoRenewal(),
-                sub.getStartedAt(),
-                sub.getExpiresAt(),
-                sub.getCancelledAt(),
-                sub.getCancellationReason() != null ? sub.getCancellationReason().name() : null,
-                sub.getPaidAmount()
-        );
+        return domainService.findActiveSubscription(memberId)
+                .map(sub -> new MemberSubscriptionResponse(
+                        sub.getId(),
+                        sub.getMemberId(),
+                        sub.getSubscription().getId(),
+                        sub.getStatus().name(),
+                        sub.getAutoRenewal(),
+                        sub.getStartedAt(),
+                        sub.getExpiresAt(),
+                        sub.getCancelledAt(),
+                        sub.getCancellationReason() != null ? sub.getCancellationReason().name() : null,
+                        sub.getPaidAmount()
+                ))
+                .orElse(MemberSubscriptionResponse.empty());
     }
 
     // 구독 생성
