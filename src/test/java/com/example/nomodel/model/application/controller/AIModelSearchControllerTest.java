@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.controller;
 
-import com.example.nomodel._core.base.BaseWebMvcTest;
+import com.example.nomodel._core.base.BaseUnitTest;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = AIModelSearchController.class)
 @DisplayName("AIModelSearchController 단위 테스트")
-class AIModelSearchControllerTest extends BaseWebMvcTest {
+class AIModelSearchControllerTest extends BaseUnitTest {
 
     @Autowired
     private ObjectMapper objectMapper;

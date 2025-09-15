@@ -1,6 +1,6 @@
 package com.example.nomodel.member.application.controller;
 
-import com.example.nomodel._core.base.BaseWebMvcTest;
+import com.example.nomodel._core.base.BaseUnitTest;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.member.application.dto.request.LoginRequestDto;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = MemberAuthController.class)
 @DisplayName("MemberAuthController 단위 테스트")
-class MemberAuthControllerTest extends BaseWebMvcTest {
+class MemberAuthControllerTest extends BaseUnitTest {
 
     @Autowired
     private ObjectMapper objectMapper;

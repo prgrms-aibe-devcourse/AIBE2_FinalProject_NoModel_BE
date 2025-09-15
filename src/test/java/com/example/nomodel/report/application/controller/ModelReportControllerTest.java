@@ -1,6 +1,6 @@
 package com.example.nomodel.report.application.controller;
 
-import com.example.nomodel._core.base.BaseWebMvcTest;
+import com.example.nomodel._core.base.BaseUnitTest;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel._core.security.CustomUserDetails;
@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ModelReportController.class)
 @DisplayName("ModelReportController 단위 테스트")
-class ModelReportControllerTest extends BaseWebMvcTest {
+class ModelReportControllerTest extends BaseUnitTest {
 
     @Autowired
     private ObjectMapper objectMapper;

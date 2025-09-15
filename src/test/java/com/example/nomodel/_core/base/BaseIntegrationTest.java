@@ -2,9 +2,12 @@ package com.example.nomodel._core.base;
 
 import com.example.nomodel._core.config.TestContainersConfig;
 import com.example.nomodel._core.config.TestOAuth2Config;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -33,9 +36,12 @@ import org.springframework.transaction.annotation.Transactional;
  * ```
  */
 @SpringBootTest
+@AutoConfigureMockMvc
 @ActiveProfiles("itest")
 @Import({TestContainersConfig.class, TestOAuth2Config.class})
 @Transactional
 public abstract class BaseIntegrationTest {
-    // 공통 테스트 설정 및 유틸리티 메서드들을 여기에 추가할 수 있습니다.
+
+    @Autowired
+    protected MockMvc mockMvc;
 }
