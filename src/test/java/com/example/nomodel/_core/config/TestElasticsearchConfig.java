@@ -1,7 +1,11 @@
 package com.example.nomodel._core.config;
 
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -15,12 +19,26 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 @Profile("test")
 public class TestElasticsearchConfig {
 
-    @MockitoBean
-    private AIModelSearchRepository aiModelSearchRepository;
+    @Bean
+    @Primary
+    public AIModelSearchRepository aiModelSearchRepository() {
+        return Mockito.mock(AIModelSearchRepository.class);
+    }
 
-    @MockitoBean
-    private ElasticsearchOperations elasticsearchOperations;
+    // 핵심: 테스트용 ElasticsearchTemplate Mock
+    @Bean @Primary
+    public ElasticsearchTemplate elasticsearchTemplate() {
+        return Mockito.mock(ElasticsearchTemplate.class);
+    }
 
-    @MockitoBean
-    private ElasticsearchClient elasticsearchClient;
+    // 같은 Mock 인스턴스를 ElasticsearchOperations 타입으로도 노출
+    @Bean @Primary
+    public ElasticsearchOperations elasticsearchOperations(ElasticsearchTemplate template) {
+        return template; // ElasticsearchTemplate은 ElasticsearchOperations를 구현
+    }
+
+    @Bean @Primary
+    public ElasticsearchClient elasticsearchClient() {
+        return Mockito.mock(ElasticsearchClient.class);
+    }
 }

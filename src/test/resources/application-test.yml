@@ -21,14 +21,14 @@ spring:
     init:
       mode: always
 
-  # ElasticSearch, Redis 자동 설정 비활성화 (단위 테스트에서는 Mock 사용)
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  # Repository scanning 비활성화 (메인 설정이 @Profile("!test")로 제외됨)
+  data:
+    elasticsearch:
+      repositories:
+        enabled: false
+    redis:
+      repositories:
+        enabled: false
       
   # Firebase 설정 (테스트용)
   servlet:

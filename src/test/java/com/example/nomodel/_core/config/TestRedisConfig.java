@@ -2,7 +2,10 @@ package com.example.nomodel._core.config;
 
 import com.example.nomodel.member.domain.repository.FirstLoginRedisRepository;
 import com.example.nomodel.member.domain.repository.RefreshTokenRedisRepository;
+import org.mockito.Mockito;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,18 +27,29 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Profile("test")
 public class TestRedisConfig {
 
-    @MockitoBean
-    private RedisConnectionFactory redisConnectionFactory;
+    @Bean @Primary
+    public RedisConnectionFactory redisConnectionFactory() {
+        return Mockito.mock(RedisConnectionFactory.class);
+    }
 
-    @MockitoBean
-    private RedisTemplate<String, Object> redisTemplate;
+    @Bean @Primary
+    public RedisTemplate<String, Object> redisTemplate() {
+        return Mockito.mock(RedisTemplate.class);
+    }
 
-    @MockitoBean
-    private StringRedisTemplate stringRedisTemplate;
+    @Bean @Primary
+    public StringRedisTemplate stringRedisTemplate() {
+        return Mockito.mock(StringRedisTemplate.class);
+    }
 
-    @MockitoBean
-    private RefreshTokenRedisRepository refreshTokenRedisRepository;
+    @Bean @Primary
+    public RefreshTokenRedisRepository refreshTokenRedisRepository() {
+        return Mockito.mock(RefreshTokenRedisRepository.class);
+    }
 
-    @MockitoBean
-    private FirstLoginRedisRepository firstLoginRedisRepository;
+    @Bean
+    @Primary
+    public FirstLoginRedisRepository firstLoginRedisRepository() {
+        return Mockito.mock(FirstLoginRedisRepository.class);
+    }
 }

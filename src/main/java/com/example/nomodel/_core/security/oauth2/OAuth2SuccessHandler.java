@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -22,6 +23,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!test")  // 테스트 환경에서는 동작하지 않도록 설정
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   
   private final MemberJpaRepository memberRepo;
