@@ -5,7 +5,6 @@ import com.example.nomodel.subscription.domain.model.MemberSubscription;
 import com.example.nomodel.subscription.domain.model.SubscriptionStatus;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,15 +18,8 @@ public class SubscriptionScheduler {
     private final MemberSubscriptionRepository memberSubscriptionRepository;
     private final PortOnePaymentService paymentService;
 
-    // yml에서 주입받기
-    @Value("${portone.kakao.subscription-channel-key}")
-    private String kakaoChannelKey;
-
-    @Value("${portone.toss.subscription-channel-key}")
-    private String tossChannelKey;
-
     /**
-     * 만료일이 지난 ACTIVE 구독 → 결제 재시도
+     * 만료일이 지난 ACTIVE 구독 → 카카오 결제 재시도
      * 매 정시마다 실행
      */
     @Scheduled(cron = "0 0 * * * *")
@@ -38,15 +30,9 @@ public class SubscriptionScheduler {
                 );
 
         for (MemberSubscription sub : expiringSubs) {
-            // TODO: 실제로는 sub.getPaymentMethodId() 로 kakao/toss 구분
-            String channelKey = (sub.getPaymentMethodId() != null && sub.getPaymentMethodId() == 1)
-                    ? kakaoChannelKey
-                    : tossChannelKey;
-
-            boolean success = paymentService.processRecurringPayment(
+            boolean success = paymentService.processKakaoRecurring(
                     sub.getCustomerUid(),
-                    sub.getSubscription().getPrice(),
-                    channelKey
+                    sub.getSubscription().getPrice()
             );
 
             if (success) {

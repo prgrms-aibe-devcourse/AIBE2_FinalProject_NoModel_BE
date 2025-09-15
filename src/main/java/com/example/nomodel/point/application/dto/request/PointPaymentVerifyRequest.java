@@ -9,5 +9,6 @@ import lombok.Setter;
 public class PointPaymentVerifyRequest {
 
     @NotBlank(message = "주문번호는 필수입니다.")
-    private String merchantUid;
+    private String impUid;      // 프론트에서 받아올 imp_uid
+    private String merchantUid;  // 필요하면 같이 사용
 }

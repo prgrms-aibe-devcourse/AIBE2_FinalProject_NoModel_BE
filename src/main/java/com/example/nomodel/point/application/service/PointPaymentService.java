@@ -1,20 +1,33 @@
 package com.example.nomodel.point.application.service;
 
+import com.example.nomodel._core.exception.ApplicationException;
+import com.example.nomodel._core.exception.ErrorCode;
+import com.example.nomodel.point.application.dto.response.PortOneTokenResponse;
+import com.example.nomodel.point.domain.repository.PointTransactionRepository;
+import com.example.nomodel.point.domain.service.PointDomainService;
+
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class PointPaymentService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final PointDomainService pointDomainService;
+    private final PointTransactionRepository transactionRepository;
 
     @Value("${portone.api-key}")
     private String apiKey;
@@ -22,16 +35,24 @@ public class PointPaymentService {
     @Value("${portone.api-secret}")
     private String apiSecret;
 
-    @Value("${portone.kakao.subscription-channel-key}")
-    private String kakaoChannelKey;
+    @Value("${portone.kakao.normal-channel-key}")
+    private String kakaoNormalChannelKey;
 
-    @Value("${portone.toss.subscription-channel-key}")
-    private String tossChannelKey;
+    private final String IAMPORT_API_BASE_URL = "https://api.iamport.kr";
+    private RestTemplate restTemplate = new RestTemplate();
+
+    @PostConstruct
+    public void init() {
+        System.out.println("⭐ PointPaymentService 초기화 완료 ⭐");
+        System.out.println("PortOne API Key: " + (apiKey != null && !apiKey.isEmpty() ? "******" : "❌ 설정되지 않음"));
+        System.out.println("PortOne API Secret: " + (apiSecret != null && !apiSecret.isEmpty() ? "******" : "❌ 설정되지 않음"));
+        System.out.println("Kakao Normal Channel Key: " + (kakaoNormalChannelKey != null && !kakaoNormalChannelKey.isEmpty() ? "******" : "❌ 설정되지 않음"));
+    }
 
     /**
      * PortOne AccessToken 발급
      */
-    private String getAccessToken() {
+    public String getAccessToken() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -41,114 +62,110 @@ public class PointPaymentService {
 
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                "https://api.iamport.kr/users/getToken", entity, Map.class
-        );
+        try {
+            ResponseEntity<PortOneTokenResponse> response = restTemplate.postForEntity(
+                    IAMPORT_API_BASE_URL + "/users/getToken", entity, PortOneTokenResponse.class);
 
-        return (String) ((Map) response.getBody().get("response")).get("access_token");
+            if (response.getStatusCode().is2xxSuccessful()
+                    && response.getBody() != null
+                    && response.getBody().getCode() == 0
+                    && response.getBody().getResponse() != null) {
+                return response.getBody().getResponse().getAccess_token();
+            } else {
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+        } catch (Exception e) {
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+        }
     }
 
     /**
-     * PortOne 일회성 결제 API 호출 (포인트 충전용)
-     * @param memberId 회원 ID
-     * @param amount 결제 금액
-     * @param channelKey 결제 채널 (카카오 / 토스)
-     * @return 결제 성공 시 merchant_uid, 실패 시 null
+     * 결제 사전 등록 (프론트엔드 결제창 호출 전)
      */
-    public String processOneTimePayment(Long memberId, BigDecimal amount, String channelKey) {
-        String token = getAccessToken();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        String merchantUid = "point_charge_" + memberId + "_" + System.currentTimeMillis();
+    public String preparePayment(BigDecimal amount) {
+        String merchantUid = "point_charge_" + UUID.randomUUID();
 
         Map<String, Object> body = new HashMap<>();
         body.put("merchant_uid", merchantUid);
         body.put("amount", amount);
-        body.put("pg", channelKey);
-        body.put("name", "포인트 충전 " + amount + "원");
-        body.put("buyer_name", "회원" + memberId);
-        body.put("buyer_email", "member" + memberId + "@nomodel.com");
+
+        String accessToken = getAccessToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
         try {
             ResponseEntity<Map> response = restTemplate.postForEntity(
-                    "https://api.iamport.kr/payments/prepare",
-                    entity,
-                    Map.class
-            );
+                    IAMPORT_API_BASE_URL + "/payments/prepare", entity, Map.class);
 
-            Map<String, Object> result = (Map<String, Object>) response.getBody().get("response");
-            if (result != null) {
-                return merchantUid;
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Integer code = (Integer) response.getBody().get("code");
+                if (code != null && code == 0) {
+                    return merchantUid;
+                }
             }
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         } catch (Exception e) {
-            // 로깅은 AOP에서 처리
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
-
-        return null;
     }
 
     /**
-     * 결제 검증
-     * @param merchantUid 주문번호
-     * @return 결제 성공 여부와 결제 정보
+     * 결제 검증 및 포인트 충전
      */
-    public PaymentVerificationResult verifyPayment(String merchantUid) {
-        String token = getAccessToken();
+    public PaymentVerificationResult verifyPayment(String impUid, String merchantUid, Long memberId) {
+        String accessToken = getAccessToken();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         try {
             ResponseEntity<Map> response = restTemplate.exchange(
-                    "https://api.iamport.kr/payments/" + merchantUid,
+                    IAMPORT_API_BASE_URL + "/payments/{imp_uid}",
                     HttpMethod.GET,
                     entity,
-                    Map.class
+                    Map.class,
+                    impUid
             );
 
-            Map<String, Object> result = (Map<String, Object>) response.getBody().get("response");
-            if (result != null) {
-                String status = (String) result.get("status");
-                BigDecimal amount = new BigDecimal(result.get("amount").toString());
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Integer code = (Integer) response.getBody().get("code");
+                if (code != null && code == 0) {
+                    Map<String, Object> paymentData = (Map<String, Object>) response.getBody().get("response");
+                    if (paymentData == null) {
+                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+                    }
 
-                return new PaymentVerificationResult(
-                    "paid".equals(status),
-                    amount,
-                    merchantUid,
-                    (String) result.get("imp_uid")
-                );
+                    String status = (String) paymentData.get("status");
+                    String responseMerchantUid = (String) paymentData.get("merchant_uid");
+                    BigDecimal amount = new BigDecimal(paymentData.get("amount").toString());
+
+                    if (!"paid".equals(status)) {
+                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+                    }
+                    if (!merchantUid.equals(responseMerchantUid)) {
+                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+                    }
+
+                    // 포인트 충전
+                    pointDomainService.chargePoints(memberId, amount, impUid).block();
+
+                    return new PaymentVerificationResult(true, amount, merchantUid, impUid);
+                }
             }
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         } catch (Exception e) {
-            // 로깅은 AOP에서 처리
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
-
-        return new PaymentVerificationResult(false, BigDecimal.ZERO, merchantUid, null);
     }
 
-    /**
-     * 카카오페이 포인트 충전 결제
-     */
-    public String processKakaoPointCharge(Long memberId, BigDecimal amount) {
-        return processOneTimePayment(memberId, amount, kakaoChannelKey);
-    }
-
-    /**
-     * 토스페이 포인트 충전 결제
-     */
-    public String processTossPointCharge(Long memberId, BigDecimal amount) {
-        return processOneTimePayment(memberId, amount, tossChannelKey);
-    }
-
-    /**
-     * 결제 검증 결과 클래스
-     */
+    // 내부 DTO
     public static class PaymentVerificationResult {
         private final boolean success;
         private final BigDecimal amount;
