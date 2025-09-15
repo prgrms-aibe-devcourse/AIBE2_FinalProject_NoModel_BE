@@ -49,21 +49,15 @@ class JWTTokenProviderTest {
     }
 
     @Test
-    @DisplayName("토큰 생성 - Authentication 객체로")
-    void generateToken_WithAuthentication_Success() {
+    @DisplayName("토큰 생성 - 3개 파라미터로")
+    void generateToken_WithThreeParameters_Success() {
         // given
-        CustomUserDetails userDetails = new CustomUserDetails(
-            1L, 
-            "test@example.com", 
-            "password", 
-            List.of(new SimpleGrantedAuthority("ROLE_USER"))
-        );
-        
-        given(authentication.getName()).willReturn("1"); // memberId가 username
-        given(authentication.getAuthorities()).willReturn((Collection)List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        String email = "test@example.com";
+        Long memberId = 1L;
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
         // when
-        AuthTokenDTO result = jwtTokenProvider.generateToken(authentication);
+        AuthTokenDTO result = jwtTokenProvider.generateToken(email, memberId, authorities);
 
         // then
         assertThat(result).isNotNull();
