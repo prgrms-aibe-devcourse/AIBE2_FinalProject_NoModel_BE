@@ -1,5 +1,6 @@
 package com.example.nomodel.model.application.controller;
 
+import com.example.nomodel._core.base.BaseWebMvcTest;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.security.CustomUserDetailsService;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
@@ -37,13 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ModelUsageController.class)
-@AutoConfigureMockMvc
-@AutoConfigureRestDocs
 @DisplayName("ModelUsageController 단위 테스트")
-class ModelUsageControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class ModelUsageControllerTest extends BaseWebMvcTest {
 
     @Autowired
     private ObjectMapper objectMapper;

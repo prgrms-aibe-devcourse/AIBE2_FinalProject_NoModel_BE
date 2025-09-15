@@ -1,7 +1,6 @@
 package com.example.nomodel.model.application.controller;
 
-import com.example.nomodel._core.config.RestDocsConfiguration;
-import com.example.nomodel._core.config.TestOAuth2Config;
+import com.example.nomodel._core.base.BaseIntegrationTest;
 import com.example.nomodel._core.fixture.TestDataFixture;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
 import com.example.nomodel.member.domain.model.Member;
@@ -39,19 +38,11 @@ import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 @AutoConfigureMockMvc
 @AutoConfigureRestDocs
-@Import({RestDocsConfiguration.class, TestOAuth2Config.class})
-@Transactional
-@EnableAutoConfiguration(exclude = {
-    ElasticsearchRestClientAutoConfiguration.class,
-    ElasticsearchDataAutoConfiguration.class,
-    ElasticsearchRepositoriesAutoConfiguration.class
-})
 @DisplayName("AdResult Controller 통합 테스트")
-class AdResultControllerIntegrationTest {
-    
+class AdResultControllerIntegrationTest extends BaseIntegrationTest {
+
     @Autowired
     private MockMvc mockMvc;
     

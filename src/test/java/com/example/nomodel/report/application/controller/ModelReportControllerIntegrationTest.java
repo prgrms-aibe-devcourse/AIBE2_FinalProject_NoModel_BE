@@ -1,5 +1,6 @@
 package com.example.nomodel.report.application.controller;
 
+import com.example.nomodel._core.base.BaseIntegrationTest;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.model.Role;
@@ -43,13 +44,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 @AutoConfigureMockMvc
 @AutoConfigureRestDocs
-@Transactional
-@Import(TestOAuth2Config.class)
 @DisplayName("ModelReportController 통합 테스트")
-class ModelReportControllerIntegrationTest {
+class ModelReportControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
