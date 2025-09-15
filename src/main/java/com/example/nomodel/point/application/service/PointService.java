@@ -143,7 +143,7 @@ public class PointService {
                 balance.getTotalPoints(),
                 balance.getTotalPoints().add(amount),
                 RefererType.CHARGE,           // 충전이므로 "CHARGE" 참조 타입
-                paymentReference != null ? paymentReference.hashCode() : null  // 결제 참조번호를 해시값으로 저장
+                paymentReference != null ? (long) paymentReference.hashCode() : null  // 결제 참조번호를 해시값으로 저장
         );
 
         transactionRepository.save(transaction);
