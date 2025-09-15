@@ -2,6 +2,7 @@ package com.example.nomodel._core.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchConfiguration;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
@@ -9,8 +10,10 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 /**
  * Elasticsearch 설정 클래스
  * Spring Data Elasticsearch와 Elasticsearch 클라이언트 설정을 담당
+ * test 프로필에서는 비활성화됨
  */
 @Configuration
+@Profile("!test")
 @EnableElasticsearchRepositories(basePackages = "com.example.nomodel.**.repository")
 public class ElasticsearchConfig extends ElasticsearchConfiguration {
 

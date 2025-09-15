@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Configuration
-@Profile("!test")
+@Profile({"!test", "!itest"})
 public class FireBaseConfig {
 
     @Value("${firebase.config.key-path}")

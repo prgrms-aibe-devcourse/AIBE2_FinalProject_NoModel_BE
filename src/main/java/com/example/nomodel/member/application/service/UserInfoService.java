@@ -1,14 +1,15 @@
 package com.example.nomodel.member.application.service;
 
 import com.example.nomodel.member.domain.model.Member;
-import com.example.nomodel.member.domain.model.Role;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.member.domain.repository.FirstLoginRedisRepository;
+import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
+import com.example.nomodel.member.domain.model.LoginStatus;
 import com.example.nomodel.member.application.dto.response.UserInfoResponse;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
 import com.example.nomodel.point.domain.model.MemberPointBalance;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
-import com.example.nomodel.subscription.domain.model.MemberSubscription;
 import com.example.nomodel.subscription.domain.model.PlanType;
 import com.example.nomodel.subscription.domain.model.SubscriptionStatus;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
@@ -29,6 +30,8 @@ public class UserInfoService {
     private final MemberPointBalanceRepository memberPointBalanceRepository;
     private final AIModelJpaRepository aiModelRepository;
     private final AdResultJpaRepository adResultRepository;
+    private final FirstLoginRedisRepository firstLoginRedisRepository;
+    private final LoginHistoryRepository loginHistoryRepository;
 
     /**
      * 사용자 정보 조회
@@ -54,6 +57,9 @@ public class UserInfoService {
 
         // 프로젝트 수 조회
         Long projectCount = getProjectCount(memberId);
+        
+        // 최초 로그인 여부 확인 (Redis 기반 하이브리드 방식)
+        Boolean isFirstLogin = checkFirstLoginStatus(memberId);
 
         return new UserInfoResponse(
                 member.getId(),
@@ -64,7 +70,8 @@ public class UserInfoService {
                 points,
                 role,
                 modelCount,
-                projectCount
+                projectCount,
+                isFirstLogin
         );
     }
 
@@ -111,5 +118,27 @@ public class UserInfoService {
      */
     private Long getProjectCount(Long memberId) {
         return adResultRepository.countByMemberId(memberId);
+    }
+
+    /**
+     * 최초 로그인 여부 확인 (하이브리드 방식)
+     * @param memberId 회원 ID
+     * @return 최초 로그인 여부 (Redis 우선, DB 백업)
+     */
+    private Boolean checkFirstLoginStatus(Long memberId) {
+        // 1. Redis 에서 먼저 확인
+        Boolean cachedResult = firstLoginRedisRepository.isFirstLogin(memberId);
+        if (cachedResult != null) {
+            // 캐시 히트 - Redis 에서 가져온 값 반환
+            return cachedResult;
+        }
+        
+        // 2. 캐시 미스 - DB 에서 조회
+        boolean isFirstLogin = !loginHistoryRepository.existsByMemberIdAndLoginStatus(memberId, LoginStatus.SUCCESS);
+        
+        // 3. 항상 false로 캐싱 (1회성 보장 - 다음부터는 최초 로그인이 아님)
+        firstLoginRedisRepository.setFirstLoginStatus(memberId, false);
+        
+        return isFirstLogin;
     }
 }

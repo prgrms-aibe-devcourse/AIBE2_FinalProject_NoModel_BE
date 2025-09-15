@@ -68,6 +68,11 @@ public enum ErrorCode {
     POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
     DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted"),
 
+    // 보안 관련 에러
+    SECURITY_ALGORITHM_NOT_AVAILABLE("SA001", HttpStatus.INTERNAL_SERVER_ERROR, "Security algorithm not available"),
+    IP_BLOCKED("IB001", HttpStatus.TOO_MANY_REQUESTS, "IP address is temporarily blocked due to suspicious activity"),
+    TOO_MANY_LOGIN_ATTEMPTS("TML001", HttpStatus.TOO_MANY_REQUESTS, "Too many failed login attempts"),
+
     // 구독 관련 에러
     SUBSCRIPTION_NOT_FOUND("SUB001", HttpStatus.NOT_FOUND, "Subscription not found"),
     SUBSCRIPTION_ALREADY_EXISTS("SUB002", HttpStatus.CONFLICT, "Subscription already exists"),
@@ -78,7 +83,6 @@ public enum ErrorCode {
     SUBSCRIPTION_PAYMENT_FAILED("SUB007", HttpStatus.INTERNAL_SERVER_ERROR, "Subscription payment failed"),
     SUBSCRIPTION_INVALID_REQUEST("SUB008", HttpStatus.BAD_REQUEST, "Invalid subscription request")
     ;
-
 
     private final String errorCode;
     private final HttpStatus status;

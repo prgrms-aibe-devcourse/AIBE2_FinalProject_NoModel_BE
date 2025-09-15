@@ -33,6 +33,9 @@ public record UserInfoResponse(
         Long modelCount,
 
         @Schema(description = "생성한 프로젝트 수", example = "12")
-        Long projectCount
+        Long projectCount,
+
+        @Schema(description = "최초 로그인 여부", example = "false")
+        Boolean isFirstLogin
 ) {
 }
