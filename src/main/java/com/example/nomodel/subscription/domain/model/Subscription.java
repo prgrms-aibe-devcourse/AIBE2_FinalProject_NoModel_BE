@@ -25,18 +25,18 @@ public class Subscription {
     public Subscription(PlanType planType, String description, BigDecimal price, Long period) {
         this.planType = planType;
         this.description = description;
-        this.price = price;
         this.period = period;
-        this.dailyLimit = 0;
-        this.selfMadeModelNum = 0;
+        this.dailyLimit = dailyLimit;
+        this.price = price;
+        this.selfMadeModelNum = selfMadeModelNum;
     }
 
     // getter
     public Long getId() { return id; }
     public PlanType getPlanType() { return planType; }
     public String getDescription() { return description; }
-    public BigDecimal getPrice() { return price; }
-    public Long getPeriod() { return period; }
+    public Integer getPeriod() { return period; }
     public Integer getDailyLimit() { return dailyLimit; }
+    public BigDecimal getPrice() { return price; }
     public Integer getSelfMadeModelNum() { return selfMadeModelNum; }
 }
