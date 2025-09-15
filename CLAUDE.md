@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a comprehensive Spring Boot 3.5.4 application built with Java 21 and Gradle. The project implements a modular monolith architecture using Spring Modulith with extensive observability, monitoring, and performance testing capabilities.
 
+**Authentication Flow**:
+- JWT-based authentication using `JWTTokenProvider` with access/refresh token pattern
+- Redis-based first login detection system (`FirstLoginRedisRepository`)
+- Custom `UserDetails` implementation with member ID for business logic
+- OAuth2 client support for social login integration
+
 ### Key Technologies
 - **Spring Boot 3.5.4** with Java 21 (Gradle 8.14.3)
 - **Spring Modulith 1.4.1** for modular monolith architecture
@@ -58,11 +64,23 @@ This is a comprehensive Spring Boot 3.5.4 application built with Java 21 and Gra
 # Run specific test class
 ./gradlew test --tests "com.example.nomodel.NoModelApplicationTests"
 
+# Run specific test method
+./gradlew test --tests "com.example.nomodel.NoModelApplicationTests.contextLoads"
+
+# Run tests matching pattern
+./gradlew test --tests "*Integration*"
+
 # Run tests with generated test reports
 ./gradlew test --continue
 
 # Test runtime classpath
 ./gradlew bootTestRun
+
+# Integration tests only
+./gradlew integrationTest
+
+# Skip tests during build
+./gradlew build -x test
 ```
 
 ### Docker Compose Services
@@ -388,6 +406,9 @@ The member module follows Domain-Driven Design with value objects:
 - **Required Imports**: Always import `RestDocsConfiguration` and `TestOAuth2Config` for integration tests
 - **Annotations**: Use `@MockitoBean` instead of deprecated `@MockBean`
 - **Test Data**: Create real test entities instead of using hardcoded IDs
+- **WebMvcTest Setup**: For unit tests, use `@AutoConfigureMockMvc(addFilters = false)` to disable security filters
+- **Integration Test Auth**: Use `@WithMockUser` with `.with(user(customUserDetails))` for authenticated requests
+- **CSRF Protection**: Add `.with(csrf())` to POST/PUT/DELETE test requests when security is enabled
 
 ### API Implementation Rules
 - **Logging**: Do NOT add manual log statements in controllers - AOP handles logging automatically

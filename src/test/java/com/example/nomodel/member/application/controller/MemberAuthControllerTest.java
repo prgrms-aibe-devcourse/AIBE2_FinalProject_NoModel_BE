@@ -1,5 +1,6 @@
 package com.example.nomodel.member.application.controller;
 
+import com.example.nomodel._core.base.BaseWebMvcTest;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.member.application.dto.request.LoginRequestDto;
@@ -32,13 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = MemberAuthController.class)
-@AutoConfigureMockMvc(addFilters = false) // Security 필터 비활성화
-@AutoConfigureRestDocs
 @DisplayName("MemberAuthController 단위 테스트")
-class MemberAuthControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class MemberAuthControllerTest extends BaseWebMvcTest {
 
     @Autowired
     private ObjectMapper objectMapper;

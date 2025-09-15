@@ -1,9 +1,9 @@
 package com.example.nomodel.model.application.controller;
 
+import com.example.nomodel._core.base.BaseIntegrationTest;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel._core.security.WithMockTestUser;
-import com.example.nomodel._core.config.TestOAuth2Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,19 +36,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test") // 테스트 프로필 사용
-@Transactional
 @WithMockTestUser
-@Import(TestOAuth2Config.class)
-@EnableAutoConfiguration(exclude = {
-    ElasticsearchRestClientAutoConfiguration.class,
-    ElasticsearchDataAutoConfiguration.class,
-    ElasticsearchRepositoriesAutoConfiguration.class
-})
 @DisplayName("AIModelSearchController 통합 테스트")
-class AIModelSearchControllerIntegrationTest {
+class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

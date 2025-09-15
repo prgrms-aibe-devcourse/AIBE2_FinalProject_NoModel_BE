@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.controller;
 
-import com.example.nomodel._core.config.RestDocsConfiguration;
+import com.example.nomodel._core.base.BaseWebMvcTest;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,14 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AIModelSearchController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@AutoConfigureRestDocs
-@ContextConfiguration(classes = RestDocsConfiguration.class)
 @DisplayName("AIModelSearchController 단위 테스트")
-class AIModelSearchControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class AIModelSearchControllerTest extends BaseWebMvcTest {
 
     @Autowired
     private ObjectMapper objectMapper;
