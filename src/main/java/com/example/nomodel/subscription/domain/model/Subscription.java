@@ -16,13 +16,13 @@ public class Subscription {
     private PlanType planType;
     private String description;
     private BigDecimal price;
-    private Long period; // 일 단위
+    private Integer period; // 일 단위
     private Integer dailyLimit;
     private Integer selfMadeModelNum;
 
     protected Subscription() {}
 
-    public Subscription(PlanType planType, String description, BigDecimal price, Long period) {
+    public Subscription(PlanType planType, String description, BigDecimal price, Integer period) {
         this.planType = planType;
         this.description = description;
         this.period = period;
