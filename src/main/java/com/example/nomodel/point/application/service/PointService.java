@@ -120,6 +120,11 @@ public class PointService {
 
     @Transactional
     public PointChargeResponse chargePoints(Long memberId, BigDecimal amount) {
+        return chargePointsWithReference(memberId, amount, null);
+    }
+
+    @Transactional
+    public PointChargeResponse chargePointsWithReference(Long memberId, BigDecimal amount, String paymentReference) {
         // 유효성 검사
         if (amount == null || amount.signum() <= 0) {
             throw new ApplicationException(ErrorCode.POINT_INVALID_AMOUNT);
@@ -137,8 +142,8 @@ public class PointService {
                 amount,
                 balance.getTotalPoints(),
                 balance.getTotalPoints().add(amount),
-                RefererType.CHARGE,           // 충전이므로 "CHARGE" 참조 타입 추가 (enum 필요)
-                null                          // 외부 결제 ID가 있으면 여기 넣기
+                RefererType.CHARGE,           // 충전이므로 "CHARGE" 참조 타입
+                paymentReference != null ? paymentReference.hashCode() : null  // 결제 참조번호를 해시값으로 저장
         );
 
         transactionRepository.save(transaction);
