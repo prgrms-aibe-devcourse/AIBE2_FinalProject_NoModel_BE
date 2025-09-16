@@ -6,6 +6,10 @@ import com.example.nomodel.compose.application.service.ImageCompositor;
 import com.example.nomodel.file.application.service.FileService;
 import com.example.nomodel.file.domain.model.FileType;
 import com.example.nomodel.file.domain.model.RelationType;
+import com.example.nomodel.generationjob.application.service.GenerationJobService;
+import com.example.nomodel.generationjob.domain.model.GenerationJob;
+import com.example.nomodel.generationjob.domain.model.GenerationMode;
+import com.example.nomodel.generationjob.domain.model.JobStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,8 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class ComposeController {
 
     private final ImageCompositor imageCompositor;
     private final FileService fileService;
+    private final GenerationJobService generationJobService;
 
     /**
      * 파일 ID를 사용한 이미지 합성
@@ -40,60 +45,85 @@ public class ComposeController {
     @PostMapping("/compose")
     public ResponseEntity<ComposeResponse> composeWithFileIds(
             @Valid @RequestBody ComposeRequest request,
-            @RequestHeader(name = "X-User-Id", required = false) Long userId) {
+            @RequestHeader(name = "X-User-Id", required = false, defaultValue = "1") Long userId) {
         
         try {
             log.info("Received composition request for product file ID: {} and model file ID: {}", 
                     request.productFileId(), request.modelFileId());
 
-            // 작업 ID 생성
-            String jobId = UUID.randomUUID().toString();
-            
-            // 비동기로 처리 시작
-            CompletableFuture.runAsync(() -> {
-                try {
-                    log.info("Starting async composition for job: {}", jobId);
-                    
-                    // FileService를 통해 이미지 바이트 가져오기
-                    byte[] productImage = fileService.loadAsBytes(request.productFileId().longValue());
-                    byte[] modelImage = fileService.loadAsBytes(request.modelFileId().longValue());
-                    
-                    log.info("Retrieved images from Firebase - Product: {} bytes, Model: {} bytes", 
-                            productImage.length, modelImage.length);
-                    
-                    // Python 스크립트를 통한 이미지 합성 실행
-                    byte[] compositeResult = imageCompositor.composite(productImage, modelImage, request.customPrompt());
-                    
-                    log.info("Image composition completed - Result: {} bytes", compositeResult.length);
-                    
-                    // 합성 결과를 Firebase에 저장
-                    Long resultFileId = fileService.saveBytes(
-                        compositeResult,
-                        "image/png",
-                        RelationType.MODEL, // 적절한 RelationType 사용
-                        0L, // 관련 ID (필요에 따라 수정)
-                        FileType.RESULT
-                    );
-                    
-                    // 결과 파일의 URL 가져오기
-                    String resultFileUrl = fileService.getMeta(resultFileId).getFileUrl();
-                    
-                    log.info("Composition completed for job: {}, resultFileId: {}, url: {}", 
-                            jobId, resultFileId, resultFileUrl);
-                    
-                    // TODO: 실제로는 Job 상태 관리 시스템에 결과를 저장해야 함
-                    // jobService.updateJobResult(jobId, resultFileId.intValue(), resultFileUrl);
-                    
-                } catch (Exception e) {
-                    log.error("Error during async composition for job: {}", jobId, e);
-                    // TODO: Job 상태를 FAILED로 업데이트
-                    // jobService.updateJobStatus(jobId, "FAILED", e.getMessage());
-                }
-            });
+            // 동기 방식으로 즉시 처리
+            GenerationJob job = GenerationJob.createComposeJob(userId, request.productFileId().longValue());
+            job.setComposeParams(request.customPrompt(), GenerationMode.SUBJECT_SCENE);
+            job.setModelId(request.modelFileId().longValue());
+            job = generationJobService.getRepo().save(job);
 
-            // 처리 중 응답 즉시 반환
-            return ResponseEntity.accepted()
-                    .body(ComposeResponse.processing(jobId));
+            String jobId = job.getId().toString();
+            
+            // 입력 파일과 모델 파일의 URL 가져오기
+            String inputFileUrl = fileService.getMeta(request.productFileId().longValue()).getFileUrl();
+            String modelFileUrl = fileService.getMeta(request.modelFileId().longValue()).getFileUrl();
+            
+            try {
+                // 동기 이미지 합성 실행
+                job.markRunning();
+                generationJobService.getRepo().save(job);
+                
+                // 제품 이미지와 모델 이미지 로드
+                byte[] productImage = fileService.loadAsBytes(request.productFileId().longValue());
+                byte[] modelImage = fileService.loadAsBytes(request.modelFileId().longValue());
+                
+                log.info("Retrieved images - Product: {} bytes, Model: {} bytes", 
+                        productImage.length, modelImage.length);
+                
+                // ImageCompositor를 사용하여 이미지 합성
+                byte[] compositeResult = imageCompositor.composite(productImage, modelImage, request.customPrompt());
+                
+                log.info("Image composition completed - Result: {} bytes", compositeResult.length);
+                
+                // 합성 결과를 Firebase에 저장 (임시로 PREVIEW 사용)
+                Long resultFileId = fileService.saveBytes(
+                    compositeResult,
+                    "image/png",
+                    RelationType.AD,
+                    request.productFileId().longValue(),
+                    FileType.PREVIEW // RESULT 대신 PREVIEW 사용 (마이그레이션 적용 전까지 임시)
+                );
+                
+                // 결과 파일 URL 가져오기
+                String resultFileUrl = fileService.getMeta(resultFileId).getFileUrl();
+                
+                // Job 성공 처리
+                job.succeed(resultFileId);
+                generationJobService.getRepo().save(job);
+                
+                log.info("Composition completed for job: {}, resultFileId: {}", jobId, resultFileId);
+
+                // 성공 응답 반환 (결과 포함)
+                return ResponseEntity.ok()
+                        .body(new ComposeResponse(
+                            jobId,
+                            "SUCCEEDED",
+                            request.productFileId(),
+                            request.modelFileId(),
+                            resultFileId.intValue(),
+                            resultFileUrl,
+                            inputFileUrl,
+                            modelFileUrl,
+                            null, // errorMessage
+                            LocalDateTime.now(),
+                            LocalDateTime.now()
+                        ));
+                        
+            } catch (Exception e) {
+                log.error("Error during image composition for job: {}", jobId, e);
+                
+                // Job 실패 처리
+                job.fail("Image composition failed: " + e.getMessage());
+                generationJobService.getRepo().save(job);
+                
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(ComposeResponse.failure(jobId, "Image composition failed: " + e.getMessage()));
+            }
 
         } catch (Exception e) {
             log.error("Error processing composition request", e);
@@ -112,7 +142,7 @@ public class ComposeController {
             @RequestParam("productImage") MultipartFile productImage,
             @RequestParam("modelImage") MultipartFile modelImage,
             @RequestParam(value = "customPrompt", required = false) String customPrompt,
-            @RequestHeader(name = "X-User-Id", required = false) Long userId) {
+            @RequestHeader(name = "X-User-Id", required = false, defaultValue = "1") Long userId) {
 
         String jobId = UUID.randomUUID().toString();
         
@@ -150,9 +180,9 @@ public class ComposeController {
             Long resultFileId = fileService.saveBytes(
                 compositeResult,
                 "image/png",
-                RelationType.MODEL,
+                RelationType.AD,
                 0L,
-                FileType.RESULT
+                FileType.PREVIEW // RESULT 대신 PREVIEW 사용
             );
             
             // 결과 파일의 URL 가져오기
@@ -182,18 +212,76 @@ public class ComposeController {
         try {
             log.info("Checking status for job: {}", jobId);
             
-            // TODO: 실제 구현에서는 작업 관리 시스템에서 상태를 조회
-            // ComposeResponse response = jobService.getJobStatus(jobId);
-            // return ResponseEntity.ok(response);
+            UUID jobUuid = UUID.fromString(jobId);
+            GenerationJob job = generationJobService.view(jobUuid);
             
-            // 예시 응답 (실제로는 Job 관리 시스템에서 가져와야 함)
-            return ResponseEntity.ok(ComposeResponse.processing(jobId));
+            // Job 상태에 따른 응답 생성
+            return ResponseEntity.ok(createResponseFromJob(job));
             
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid job ID format: {}", jobId);
+            return ResponseEntity.badRequest()
+                    .body(ComposeResponse.failure(jobId, "Invalid job ID format"));
         } catch (Exception e) {
             log.error("Error checking job status for: {}", jobId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ComposeResponse.failure(jobId, "Failed to check job status"));
         }
+    }
+
+    /**
+     * GenerationJob으로부터 ComposeResponse 생성
+     */
+    private ComposeResponse createResponseFromJob(GenerationJob job) {
+        String inputFileUrl = null;
+        String modelFileUrl = null;
+        String resultFileUrl = null;
+        
+        try {
+            // 입력 파일 URL 가져오기
+            if (job.getInputFileId() != null) {
+                inputFileUrl = fileService.getMeta(job.getInputFileId()).getFileUrl();
+            }
+            
+            // 모델 파일 URL 가져오기
+            if (job.getModelId() != null) {
+                modelFileUrl = fileService.getMeta(job.getModelId()).getFileUrl();
+            }
+            
+            // 결과 파일 URL 가져오기
+            if (job.getResultFileId() != null) {
+                resultFileUrl = fileService.getMeta(job.getResultFileId()).getFileUrl();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get file URL for job {}: {}", job.getId(), e.getMessage());
+        }
+        
+        String status = mapJobStatus(job.getStatus());
+        
+        return new ComposeResponse(
+            job.getId().toString(),
+            status,
+            job.getInputFileId() != null ? job.getInputFileId().intValue() : null,
+            job.getModelId() != null ? job.getModelId().intValue() : null,
+            job.getResultFileId() != null ? job.getResultFileId().intValue() : null,
+            resultFileUrl,
+            inputFileUrl,
+            modelFileUrl,
+            job.getErrorMessage(),
+            job.getCreatedAt(),
+            job.getUpdatedAt()
+        );
+    }
+
+    /**
+     * JobStatus를 응답 상태로 매핑
+     */
+    private String mapJobStatus(JobStatus jobStatus) {
+        return switch (jobStatus) {
+            case PENDING, RUNNING -> "PROCESSING";
+            case SUCCEEDED -> "SUCCEEDED";
+            case FAILED -> "FAILED";
+        };
     }
 
     /**
