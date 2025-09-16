@@ -54,7 +54,10 @@ public class SecurityConfig {
             "/test/**",          // 테스트 API 허용
             "/models/sync/**",   // 동기화 API 허용 (개발/테스트용)
             "/oauth2/**",
-            "/login/**"
+            "/login/**",
+            "/compose/**",
+            "/api/compose/**",
+            "/api/api/compose/**"
     };
 
     private static final String[] ADMIN_LIST = {

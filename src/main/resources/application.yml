@@ -1,3 +1,4 @@
+
 server:
   servlet:
     context-path: /api
@@ -27,3 +28,8 @@ app:
   batch:
     aimodel-index:
       enabled: true  # AIModel 인덱싱 스케줄러 활성화 (증분 처리)
+
+# Google API 설정
+google:
+  api:
+    key: ${GOOGLE_API_KEY}
