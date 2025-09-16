@@ -1,0 +1,274 @@
+{
+    "metrics": {
+        "search_error_rate": {
+            "passes": 5,
+            "fails": 0,
+            "thresholds": {
+                "rate<0.01": true
+            },
+            "value": 1
+        },
+        "iterations": {
+            "rate": 0.093309595110241,
+            "count": 3
+        },
+        "http_req_receiving": {
+            "p(95)": 219.89760829999906,
+            "avg": 76.51125652631579,
+            "min": 0.99575,
+            "med": 2.496125,
+            "max": 1261.545083
+        },
+        "data_sent": {
+            "count": 5731,
+            "rate": 178.2524298589304
+        },
+        "iteration_duration": {
+            "avg": 10711.608699666665,
+            "min": 2999.163793,
+            "med": 3388.959377,
+            "max": 25746.702929,
+            "p(95)": 23510.9285738
+        },
+        "active_search_users": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 19,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(95)": 0
+        },
+        "http_reqs": {
+            "rate": 0.5909607690315264,
+            "count": 19
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 1336.8230261578947,
+            "min": 62.043,
+            "med": 190.200625,
+            "max": 17404.495994,
+            "p(95)": 5074.432063399989
+        },
+        "search_response_time": {
+            "min": 952,
+            "med": 1413,
+            "max": 23565,
+            "p(95)": 21349.8,
+            "avg": 8643.333333333334
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "checks": {
+            "passes": 52,
+            "fails": 5,
+            "value": 0.9122807017543859
+        },
+        "data_received": {
+            "count": 73492,
+            "rate": 2285.836254613944
+        },
+        "http_req_blocked": {
+            "avg": 5.709745526315789,
+            "min": 0.009,
+            "med": 0.071084,
+            "max": 97.928417,
+            "p(95)": 14.493991699999924
+        },
+        "http_req_waiting": {
+            "min": 59.094125,
+            "med": 188.530167,
+            "max": 17300.037911,
+            "p(95)": 3926.5340053999885,
+            "avg": 1259.1778682631575
+        },
+        "http_req_connecting": {
+            "max": 14.346417,
+            "p(95)": 1.4346416999999887,
+            "avg": 0.7550745789473684,
+            "min": 0,
+            "med": 0
+        },
+        "search_request_count": {
+            "count": 3,
+            "rate": 0.093309595110241
+        },
+        "vus_max": {
+            "value": 1,
+            "min": 1,
+            "max": 1
+        },
+        "http_req_sending": {
+            "avg": 1.1339013684210526,
+            "min": 0.024083,
+            "med": 0.058125,
+            "max": 17.051042,
+            "p(95)": 3.7667791999999882
+        },
+        "http_req_duration": {
+            "med": 190.200625,
+            "max": 17404.495994,
+            "p(95)": 5074.432063399989,
+            "avg": 1336.8230261578947,
+            "min": 62.043,
+            "thresholds": {
+                "p(95)<500": true
+            }
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "Unified search status is 200": {
+                    "name": "Unified search status is 200",
+                    "path": "::Unified search status is 200",
+                    "id": "0ac50bb59342e0ea38ce0ffa12d536d2",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Unified search response time < 300ms": {
+                    "name": "Unified search response time < 300ms",
+                    "path": "::Unified search response time < 300ms",
+                    "id": "4070db048b56db088bd28cc77d081cd8",
+                    "passes": 1,
+                    "fails": 2
+                },
+                "Unified search has valid response structure": {
+                    "name": "Unified search has valid response structure",
+                    "path": "::Unified search has valid response structure",
+                    "id": "0d97cbbd90ea607e1825d47a6a6990ca",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Unified search respects price filter": {
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Unified search respects price filter",
+                    "path": "::Unified search respects price filter",
+                    "id": "0cadea0fbfae0656a93fd7e5a77101f5"
+                },
+                "Admin search status is 200": {
+                    "path": "::Admin search status is 200",
+                    "id": "d2494ac163effe0df7ad6200cabfed1d",
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Admin search status is 200"
+                },
+                "Admin search response time < 300ms": {
+                    "name": "Admin search response time < 300ms",
+                    "path": "::Admin search response time < 300ms",
+                    "id": "4fcc2d6222df0870a1d7df3dc96b13c2",
+                    "passes": 2,
+                    "fails": 1
+                },
+                "Admin search has valid response": {
+                    "fails": 0,
+                    "name": "Admin search has valid response",
+                    "path": "::Admin search has valid response",
+                    "id": "c64a927c7e27b78f9ffe25bca65e0a5b",
+                    "passes": 3
+                },
+                "User search status is 200": {
+                    "fails": 0,
+                    "name": "User search status is 200",
+                    "path": "::User search status is 200",
+                    "id": "97c37d747094a80cab4d48adf5660eb1",
+                    "passes": 3
+                },
+                "User search response time < 300ms": {
+                    "fails": 1,
+                    "name": "User search response time < 300ms",
+                    "path": "::User search response time < 300ms",
+                    "id": "2bc803d1753f1064e38f38abd179fa35",
+                    "passes": 2
+                },
+                "User search has valid response": {
+                    "name": "User search has valid response",
+                    "path": "::User search has valid response",
+                    "id": "29c78278234f5417e7281fdc517154c7",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Complex filter search status is 200": {
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Complex filter search status is 200",
+                    "path": "::Complex filter search status is 200",
+                    "id": "79267022ef0a89101a445d134d003002"
+                },
+                "Complex filter search response time < 400ms": {
+                    "name": "Complex filter search response time < 400ms",
+                    "path": "::Complex filter search response time < 400ms",
+                    "id": "37eb2a3aad9d68bbd67d94470e9c007d",
+                    "passes": 2,
+                    "fails": 1
+                },
+                "Complex filter search has results": {
+                    "name": "Complex filter search has results",
+                    "path": "::Complex filter search has results",
+                    "id": "88a4f4c68c1a080075d50199e3df0970",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Pagination search status is 200": {
+                    "name": "Pagination search status is 200",
+                    "path": "::Pagination search status is 200",
+                    "id": "006366ed420f347a41cf6158dac8b019",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Pagination search response time < 250ms": {
+                    "path": "::Pagination search response time < 250ms",
+                    "id": "20e7c9b5791ec32999f3200704a80c68",
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Pagination search response time < 250ms"
+                },
+                "Pagination has correct page info": {
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Pagination has correct page info",
+                    "path": "::Pagination has correct page info",
+                    "id": "0ede10a4bfd5700f6922022243d3603d"
+                },
+                "Sorting search status is 200": {
+                    "id": "6f999fdfb29b6627b8b9c13c72c6ccf9",
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Sorting search status is 200",
+                    "path": "::Sorting search status is 200"
+                },
+                "Sorting search response time < 300ms": {
+                    "name": "Sorting search response time < 300ms",
+                    "path": "::Sorting search response time < 300ms",
+                    "id": "d786a057896ecdd6e62d46d601e4987b",
+                    "passes": 3,
+                    "fails": 0
+                },
+                "Sorting search has content": {
+                    "path": "::Sorting search has content",
+                    "id": "149923319d54af9e631e793f6463667c",
+                    "passes": 3,
+                    "fails": 0,
+                    "name": "Sorting search has content"
+                }
+            },
+        "name": ""
+    }
+}

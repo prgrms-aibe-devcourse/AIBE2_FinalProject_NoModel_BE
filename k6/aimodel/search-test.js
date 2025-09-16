@@ -241,9 +241,18 @@ function testUnifiedSearch() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정 (HTTP 에러, 잘못된 응답 구조)
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (!data.success || !Array.isArray(data.response.content)) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 관리자 모델 검색 테스트
@@ -276,9 +285,18 @@ function testAdminModelSearch() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (!data.success || !Array.isArray(data.response.content)) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 사용자 모델 검색 테스트 (인증 필요)
@@ -316,9 +334,18 @@ function testUserModelSearch() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (!data.success || !Array.isArray(data.response.content)) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 다양한 필터 조합 테스트
@@ -355,9 +382,18 @@ function testSearchWithVariousFilters() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (!data.success) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 페이지네이션 테스트
@@ -389,9 +425,19 @@ function testPagination() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    const pageInfo = data.response;
+    if (!data.success || !pageInfo.hasOwnProperty('totalElements')) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 정렬 옵션 테스트
@@ -419,9 +465,18 @@ function testSortingOptions() {
     }
   });
 
-  if (!success) {
-    searchErrorRate.add(1);
+  // 실제 기능적 에러만 측정
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (!data.success || !Array.isArray(data.response.content)) {
+      functionalError = true;
+    }
+  } catch (e) {
+    functionalError = true;
   }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
 }
 
 // 테스트 시작 로그
