@@ -16,17 +16,14 @@ public class PortOnePaymentService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${portone.api-key}")
+    @Value("${portone.imp-key}")
     private String apiKey;
 
-    @Value("${portone.api-secret}")
+    @Value("${portone.imp-secret}")
     private String apiSecret;
 
     @Value("${portone.kakao.subscription-channel-key}")
     private String kakaoChannelKey;
-
-    @Value("${portone.toss.subscription-channel-key}")
-    private String tossChannelKey;
 
     /**
      * PortOne AccessToken 발급
@@ -49,12 +46,11 @@ public class PortOnePaymentService {
     }
 
     /**
-     * PortOne 정기결제 API 호출
+     * PortOne 정기결제 API 호출 (카카오 전용)
      * @param customerUid PortOne 빌링키
      * @param amount 결제 금액
-     * @param channelKey 결제 채널 (카카오 / 토스)
      */
-    public boolean processRecurringPayment(String customerUid, BigDecimal amount, String channelKey) {
+    public boolean processKakaoRecurring(String customerUid, BigDecimal amount) {
         String token = getAccessToken();
 
         HttpHeaders headers = new HttpHeaders();
@@ -65,7 +61,7 @@ public class PortOnePaymentService {
         body.put("customer_uid", customerUid);
         body.put("merchant_uid", "order_" + System.currentTimeMillis()); // 고유 주문번호
         body.put("amount", amount);
-        body.put("pg", channelKey);
+        body.put("pg", kakaoChannelKey);
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -77,19 +73,5 @@ public class PortOnePaymentService {
 
         Map<String, Object> result = (Map<String, Object>) response.getBody().get("response");
         return result != null && "paid".equals(result.get("status"));
-    }
-
-    /**
-     * 카카오 정기결제
-     */
-    public boolean processKakaoRecurring(String customerUid, BigDecimal amount) {
-        return processRecurringPayment(customerUid, amount, kakaoChannelKey);
-    }
-
-    /**
-     * 토스 정기결제
-     */
-    public boolean processTossRecurring(String customerUid, BigDecimal amount) {
-        return processRecurringPayment(customerUid, amount, tossChannelKey);
     }
 }

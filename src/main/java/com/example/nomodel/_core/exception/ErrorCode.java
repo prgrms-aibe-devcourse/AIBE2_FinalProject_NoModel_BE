@@ -67,6 +67,7 @@ public enum ErrorCode {
     POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
     POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
     DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted"),
+    PAYMENT_VERIFICATION_FAILED("PVF001", HttpStatus.BAD_REQUEST, "Payment verification failed."),
 
     // 보안 관련 에러
     SECURITY_ALGORITHM_NOT_AVAILABLE("SA001", HttpStatus.INTERNAL_SERVER_ERROR, "Security algorithm not available"),

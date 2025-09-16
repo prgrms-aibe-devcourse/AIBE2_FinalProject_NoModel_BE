@@ -42,4 +42,20 @@ public class MemberSubscriptionResponse {
                 .paidAmount(entity.getPaidAmount())
                 .build();
     }
+
+    // 미구독 상태를 나타내는 empty 응답
+    public static MemberSubscriptionResponse empty() {
+        return MemberSubscriptionResponse.builder()
+                .id(null)
+                .memberId(null)
+                .subscriptionId(null)
+                .status("NONE") // 또는 "UNSUBSCRIBED" 등 미구독 상태를 나타내는 값
+                .autoRenewal(false)
+                .startedAt(null)
+                .expiresAt(null)
+                .cancelledAt(null)
+                .cancellationReason(null)
+                .paidAmount(BigDecimal.ZERO)
+                .build();
+    }
 }

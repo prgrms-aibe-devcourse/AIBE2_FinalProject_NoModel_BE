@@ -20,12 +20,15 @@ public class PointChargeResponse {
     private LocalDateTime createdAt;
 
     public PointChargeResponse(PointTransaction transaction) {
-        this.id = transaction.getId();
-        this.direction = transaction.getDirection();
-        this.transactionType = transaction.getTransactionType();
-        this.pointAmount = transaction.getPointAmount();
-        this.balanceBefore = transaction.getBalanceBefore();
-        this.balanceAfter = transaction.getBalanceAfter();
-        this.createdAt = transaction.getCreatedAt();
+        if (transaction != null) {
+            this.id = transaction.getId();
+            this.direction = transaction.getDirection();
+            this.transactionType = transaction.getTransactionType();
+            this.pointAmount = transaction.getPointAmount();
+            this.balanceBefore = transaction.getBalanceBefore();
+            this.balanceAfter = transaction.getBalanceAfter();
+            this.createdAt = transaction.getCreatedAt();
+        }
+        // transaction이 null인 경우 모든 필드는 null로 유지됨
     }
 }
