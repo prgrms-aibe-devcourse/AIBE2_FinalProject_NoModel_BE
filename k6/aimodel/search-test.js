@@ -25,7 +25,7 @@ const smokeTestOptions = {
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)'],
 };
 
-// AI 모델 검색 테스트 설정
+// AI 모델 검색 테스트 설정 (기본 - 6분)
 const searchTestOptions = {
   stages: [
     { duration: '30s', target: 5 },   // 워밍업: 30초 동안 5명까지
@@ -33,6 +33,23 @@ const searchTestOptions = {
     { duration: '3m', target: 30 },   // 피크 부하: 3분 동안 30명 유지
     { duration: '1m', target: 15 },   // 부하 감소: 1분 동안 15명까지 감소
     { duration: '30s', target: 0 },   // 쿨다운: 30초 동안 0명까지
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<300', 'p(99)<500'], // 검색 API 응답 시간
+    http_req_failed: ['rate<0.02'],                 // 실패율 2% 미만
+    search_error_rate: ['rate<0.02'],               // 검색 에러율 2% 미만
+    search_response_time: ['p(95)<300'],            // 검색 응답시간 95% 300ms 미만
+  },
+  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
+};
+
+// 짧은 로드 테스트 설정 (2분)
+const shortLoadTestOptions = {
+  stages: [
+    { duration: '20s', target: 5 },   // 워밍업: 20초 동안 5명까지
+    { duration: '30s', target: 15 },  // 부하 증가: 30초 동안 15명까지
+    { duration: '50s', target: 20 },  // 피크 부하: 50초 동안 20명 유지
+    { duration: '20s', target: 0 },   // 쿨다운: 20초 동안 0명까지
   ],
   thresholds: {
     http_req_duration: ['p(95)<300', 'p(99)<500'], // 검색 API 응답 시간
@@ -80,6 +97,9 @@ let selectedOptions;
 switch (TEST_TYPE) {
   case 'smoke':
     selectedOptions = smokeTestOptions;
+    break;
+  case 'load-short':
+    selectedOptions = shortLoadTestOptions;
     break;
   case 'stress':
     selectedOptions = stressTestOptions;
@@ -149,6 +169,32 @@ function buildQueryString(params) {
   return entries.map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`).join('&');
 }
 
+// 공통 에러 처리 함수
+function recordFunctionalError(response, expectedArrayPath = 'response.content') {
+  let functionalError = response.status !== 200 || !response.body;
+  try {
+    const data = response.json();
+    if (expectedArrayPath === 'response.content') {
+      if (!data.success || !Array.isArray(data.response.content)) {
+        functionalError = true;
+      }
+    } else if (expectedArrayPath === 'response') {
+      if (!data.success) {
+        functionalError = true;
+      }
+    } else if (expectedArrayPath === 'response.totalElements') {
+      const pageInfo = data.response;
+      if (!data.success || !pageInfo.hasOwnProperty('totalElements')) {
+        functionalError = true;
+      }
+    }
+  } catch (e) {
+    functionalError = true;
+  }
+
+  searchErrorRate.add(functionalError ? 1 : 0);
+}
+
 // 통합 검색 테스트
 function testUnifiedSearch() {
   const keyword = testSearchData.keywords[Math.floor(Math.random() * testSearchData.keywords.length)];
@@ -197,17 +243,7 @@ function testUnifiedSearch() {
   });
 
   // 실제 기능적 에러만 측정 (HTTP 에러, 잘못된 응답 구조)
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    if (!data.success || !Array.isArray(data.response.content)) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response);
 }
 
 // 관리자 모델 검색 테스트
@@ -241,17 +277,7 @@ function testAdminModelSearch() {
   });
 
   // 실제 기능적 에러만 측정
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    if (!data.success || !Array.isArray(data.response.content)) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response);
 }
 
 // 사용자 모델 검색 테스트 (인증 필요)
@@ -286,17 +312,7 @@ function testUserModelSearch() {
   });
 
   // 실제 기능적 에러만 측정
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    if (!data.success || !Array.isArray(data.response.content)) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response);
 }
 
 // 다양한 필터 조합 테스트
@@ -334,17 +350,7 @@ function testSearchWithVariousFilters() {
   });
 
   // 실제 기능적 에러만 측정
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    if (!data.success) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response, 'response');
 }
 
 // 페이지네이션 테스트
@@ -377,18 +383,7 @@ function testPagination() {
   });
 
   // 실제 기능적 에러만 측정
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    const pageInfo = data.response;
-    if (!data.success || !pageInfo.hasOwnProperty('totalElements')) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response, 'response.totalElements');
 }
 
 // 정렬 옵션 테스트
@@ -417,17 +412,7 @@ function testSortingOptions() {
   });
 
   // 실제 기능적 에러만 측정
-  let functionalError = response.status !== 200 || !response.body;
-  try {
-    const data = response.json();
-    if (!data.success || !Array.isArray(data.response.content)) {
-      functionalError = true;
-    }
-  } catch (e) {
-    functionalError = true;
-  }
-
-  searchErrorRate.add(functionalError ? 1 : 0);
+  recordFunctionalError(response);
 }
 
 // 테스트 시작 로그

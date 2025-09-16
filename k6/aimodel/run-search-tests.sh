@@ -28,6 +28,7 @@ show_help() {
     echo "테스트 타입:"
     echo "  smoke     - 스모크 테스트 (기본 검색 기능 검증)"
     echo "  load      - 로드 테스트 (일반적인 검색 부하)"
+    echo "  load-short - 짧은 로드 테스트 (2분)"
     echo "  stress    - 스트레스 테스트 (높은 검색 부하)"
     echo "  spike     - 스파이크 테스트 (급격한 부하 변화)"
     echo ""
@@ -94,6 +95,34 @@ run_search_load_test() {
             -v "$(pwd)/k6:/scripts" \
             -v "$(pwd)/k6/results:/results" \
             -e TEST_TYPE=load \
+            "$K6_IMAGE" $k6_cmd \
+            /scripts/aimodel/search-test.js
+    fi
+}
+
+# AI 모델 검색 짧은 로드 테스트 실행
+run_search_load_short_test() {
+    echo -e "${YELLOW}⚡ AI 모델 검색 짧은 로드 테스트 실행 중...${NC}"
+
+    local k6_cmd="run --summary-export=/results/aimodel/search-load-short-$(date +%Y%m%d_%H%M%S).json"
+
+    if [ "$USE_INFLUXDB" = true ]; then
+        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            -e K6_INFLUXDB_USERNAME=k6 \
+            -e K6_INFLUXDB_PASSWORD=k6 \
+            -e TEST_TYPE=load-short \
+            "$K6_IMAGE" $k6_cmd \
+            /scripts/aimodel/search-test.js
+    else
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            -e TEST_TYPE=load-short \
             "$K6_IMAGE" $k6_cmd \
             /scripts/aimodel/search-test.js
     fi
@@ -208,7 +237,7 @@ while [[ $# -gt 0 ]]; do
             SHOW_RESULTS_ONLY=true
             shift
             ;;
-        smoke|load|stress|spike)
+        smoke|load|load-short|stress|spike)
             TEST_TYPE="$1"
             shift
             ;;
@@ -269,6 +298,9 @@ case $TEST_TYPE in
         ;;
     load)
         run_search_load_test
+        ;;
+    load-short)
+        run_search_load_short_test
         ;;
     stress)
         run_search_stress_test
