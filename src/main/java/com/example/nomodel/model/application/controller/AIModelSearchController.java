@@ -37,10 +37,11 @@ public class AIModelSearchController {
     @GetMapping
     public ResponseEntity<?> searchModels(
             @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.search(keyword, page, size);
+        Page<AIModelDocument> result = searchService.search(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -48,10 +49,11 @@ public class AIModelSearchController {
     @GetMapping("/admin")
     public ResponseEntity<?> getAdminModels(
             @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getAdminModels(keyword, page, size);
+        Page<AIModelDocument> result = searchService.getAdminModels(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -59,11 +61,12 @@ public class AIModelSearchController {
     @GetMapping("/my-models")
     public ResponseEntity<?> getUserModels(
             @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "사용자 ID") @RequestParam Long userId,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getUserModels(keyword, userId, page, size);
+        Page<AIModelDocument> result = searchService.getUserModels(keyword, isFree, userId, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
