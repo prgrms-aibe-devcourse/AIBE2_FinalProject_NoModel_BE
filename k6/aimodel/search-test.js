@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Counter, Rate, Trend, Gauge } from 'k6/metrics';
+import { authenticatedGet, getTestUsers } from '../utils/auth.js';
 
 // 커스텀 메트릭 정의
 const searchErrorRate = new Rate('search_error_rate');
@@ -113,58 +114,12 @@ const testSearchData = {
   pricingOptions: [true, false, null] // 무료, 유료, 전체
 };
 
-// 테스트용 사용자 계정
-const testUser = {
-  email: 'test@nomodel.com',
-  password: 'password123'
-};
-
-// 로그인해서 얻은 쿠키를 저장할 변수
-let sessionCookies = '';
-
-// 로그인 함수
-function login() {
-  const loginPayload = {
-    email: testUser.email,
-    password: testUser.password
-  };
-
-  const loginResponse = http.post(`${BASE_URL}/auth/login`, JSON.stringify(loginPayload), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (loginResponse.status === 200) {
-    // 응답 헤더에서 Set-Cookie 값들을 추출
-    const cookies = loginResponse.headers['Set-Cookie'];
-
-    if (cookies) {
-      // Set-Cookie 배열에서 쿠키 이름=값만 추출
-      const cookieValues = [];
-      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-
-      cookieArray.forEach(cookie => {
-        // 쿠키에서 이름=값 부분만 추출 (첫 번째 세미콜론 이전)
-        const cookieValue = cookie.split(';')[0].trim();
-        cookieValues.push(cookieValue);
-      });
-
-      sessionCookies = cookieValues.join('; ');
-    }
-  }
-
-  return loginResponse.status === 200;
-}
+// 테스트 사용자 가져오기
+const testUsers = getTestUsers();
 
 // 메인 테스트 함수
 export default function() {
   const startTime = Date.now();
-
-  // 세션 쿠키가 없으면 로그인 수행
-  if (!sessionCookies) {
-    login();
-  }
 
   // 현재 활성 검색 사용자 수 업데이트
   activeSearchUsers.add(1);
@@ -314,12 +269,8 @@ function testUserModelSearch() {
     params.isFree = isFree.toString();
   }
 
-  // 인증된 상태로 요청 (쿠키 포함)
-  const response = http.get(`${BASE_URL}/models/search/my-models?${buildQueryString(params)}`, {
-    headers: {
-      'Cookie': sessionCookies
-    }
-  });
+  // 인증된 요청 사용 (공통 인증 모듈)
+  const response = authenticatedGet(`${BASE_URL}/models/search/my-models?${buildQueryString(params)}`, testUsers.normal);
 
   const success = check(response, {
     'User search status is 200': (r) => r.status === 200,
