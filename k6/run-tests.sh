@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# k6 테스트 실행 스크립트
+# k6 테스트 실행 스크립트 (통합 시나리오 테스트)
 
 set -e
 
@@ -31,6 +31,9 @@ show_help() {
     echo "  stress    - 스트레스 테스트 (높은 부하)"
     echo "  spike     - 스파이크 테스트 (급격한 부하 변화)"
     echo ""
+    echo "도메인별 테스트:"
+    echo "  Use k6/aimodel/run-search-tests.sh for AI model search performance tests"
+    echo ""
     echo "옵션:"
     echo "  -h, --help          이 도움말 표시"
     echo "  -p, --prometheus    Prometheus로 메트릭 전송"
@@ -41,6 +44,7 @@ show_help() {
     echo "  $0 smoke"
     echo "  $0 load --prometheus"
     echo "  $0 stress --verbose"
+    echo "  k6/aimodel/run-search-tests.sh load --prometheus"
 }
 
 # 스모크 테스트 실행
@@ -56,7 +60,7 @@ run_smoke_test() {
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/smoke-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/smoke-test.js
+            /scripts/scenarios/smoke.js
     else
         docker run --rm -i \
             --network host \
@@ -64,7 +68,7 @@ run_smoke_test() {
             -v "$(pwd)/k6/results:/results" \
             "$K6_IMAGE" run \
             --summary-export="/results/smoke-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/smoke-test.js
+            /scripts/scenarios/smoke.js
     fi
 }
 
@@ -81,7 +85,7 @@ run_load_test() {
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/load-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     else
         docker run --rm -i \
             --network host \
@@ -89,7 +93,7 @@ run_load_test() {
             -v "$(pwd)/k6/results:/results" \
             "$K6_IMAGE" run \
             --summary-export="/results/load-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     fi
 }
 
@@ -107,7 +111,7 @@ run_stress_test() {
             --out experimental-prometheus-rw \
             --summary-export="/results/stress-test-$(date +%Y%m%d_%H%M%S).json" \
             -e TEST_TYPE=stress \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     else
         docker run --rm -i \
             --network host \
@@ -116,7 +120,7 @@ run_stress_test() {
             "$K6_IMAGE" run \
             --summary-export="/results/stress-test-$(date +%Y%m%d_%H%M%S).json" \
             -e TEST_TYPE=stress \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     fi
 }
 
@@ -134,7 +138,7 @@ run_spike_test() {
             --out experimental-prometheus-rw \
             --summary-export="/results/spike-test-$(date +%Y%m%d_%H%M%S).json" \
             -e TEST_TYPE=spike \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     else
         docker run --rm -i \
             --network host \
@@ -143,7 +147,7 @@ run_spike_test() {
             "$K6_IMAGE" run \
             --summary-export="/results/spike-test-$(date +%Y%m%d_%H%M%S).json" \
             -e TEST_TYPE=spike \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     fi
 }
 

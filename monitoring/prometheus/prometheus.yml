@@ -5,7 +5,7 @@ global:
     cluster: 'nomodel-dev'
     environment: 'development'
 
-# k6 메트릭을 위한 원격 쓰기 설정 (비활성화)
+# k6 메트릭을 위한 원격 쓰기 설정 (표준 Prometheus는 remote write receiver 아님)
 # remote_write:
 #   - url: http://localhost:9090/api/v1/write
 #     remote_timeout: 30s
