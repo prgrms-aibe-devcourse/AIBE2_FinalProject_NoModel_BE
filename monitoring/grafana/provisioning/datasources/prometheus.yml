@@ -19,3 +19,17 @@ datasources:
         - name: trace_id
           url: http://jaeger:16686/trace/$${__value.raw}
     secureJsonData: {}
+
+  - name: InfluxDB-k6
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: false
+    editable: true
+    database: k6
+    user: k6
+    jsonData:
+      httpMode: GET
+      keepCookies: []
+    secureJsonData:
+      password: k6

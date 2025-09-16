@@ -113,16 +113,58 @@ const testSearchData = {
   pricingOptions: [true, false, null] // 무료, 유료, 전체
 };
 
-// 인증 토큰 (실제 환경에서는 환경변수나 별도 설정 파일 사용)
-const authTokens = [
-  'Bearer test-token-1',
-  'Bearer test-token-2',
-  'Bearer test-token-3'
-];
+// 테스트용 사용자 계정
+const testUser = {
+  email: 'test@nomodel.com',
+  password: 'password123'
+};
+
+// 로그인해서 얻은 쿠키를 저장할 변수
+let sessionCookies = '';
+
+// 로그인 함수
+function login() {
+  const loginPayload = {
+    email: testUser.email,
+    password: testUser.password
+  };
+
+  const loginResponse = http.post(`${BASE_URL}/auth/login`, JSON.stringify(loginPayload), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (loginResponse.status === 200) {
+    // 응답 헤더에서 Set-Cookie 값들을 추출
+    const cookies = loginResponse.headers['Set-Cookie'];
+
+    if (cookies) {
+      // Set-Cookie 배열에서 쿠키 이름=값만 추출
+      const cookieValues = [];
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+
+      cookieArray.forEach(cookie => {
+        // 쿠키에서 이름=값 부분만 추출 (첫 번째 세미콜론 이전)
+        const cookieValue = cookie.split(';')[0].trim();
+        cookieValues.push(cookieValue);
+      });
+
+      sessionCookies = cookieValues.join('; ');
+    }
+  }
+
+  return loginResponse.status === 200;
+}
 
 // 메인 테스트 함수
 export default function() {
   const startTime = Date.now();
+
+  // 세션 쿠키가 없으면 로그인 수행
+  if (!sessionCookies) {
+    login();
+  }
 
   // 현재 활성 검색 사용자 수 업데이트
   activeSearchUsers.add(1);
@@ -254,15 +296,23 @@ function testUserModelSearch() {
     params.isFree = isFree.toString();
   }
 
-  // 인증 헤더 없이 요청하여 401 응답 확인
-  const response = http.get(`${BASE_URL}/models/search/my-models?${buildQueryString(params)}`);
+  // 인증된 상태로 요청 (쿠키 포함)
+  const response = http.get(`${BASE_URL}/models/search/my-models?${buildQueryString(params)}`, {
+    headers: {
+      'Cookie': sessionCookies
+    }
+  });
 
   const success = check(response, {
-    'User search status is 401 (unauthorized)': (r) => r.status === 401,
+    'User search status is 200': (r) => r.status === 200,
     'User search response time < 300ms': (r) => r.timings.duration < 300,
-    'User search returns auth error': (r) => {
-      // 인증 없이 접근시 401 응답이 정상
-      return r.status === 401;
+    'User search has valid response': (r) => {
+      try {
+        const data = r.json();
+        return data.success && Array.isArray(data.response.content);
+      } catch (e) {
+        return false;
+      }
     }
   });
 

@@ -35,7 +35,7 @@ public class Subscription {
     public Long getId() { return id; }
     public PlanType getPlanType() { return planType; }
     public String getDescription() { return description; }
-    public Integer getPeriod() { return period; }
+    public Long getPeriod() { return period; }
     public Integer getDailyLimit() { return dailyLimit; }
     public BigDecimal getPrice() { return price; }
     public Integer getSelfMadeModelNum() { return selfMadeModelNum; }
