@@ -16,10 +16,10 @@ public class PortOnePaymentService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${portone.api-key}")
+    @Value("${portone.impKey}")
     private String apiKey;
 
-    @Value("${portone.api-secret}")
+    @Value("${portone.impSecret}")
     private String apiSecret;
 
     @Value("${portone.kakao.subscription-channel-key}")

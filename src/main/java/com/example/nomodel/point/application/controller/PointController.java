@@ -61,21 +61,7 @@ public class PointController {
         );
     }
 
-    // ✅ 포인트 결제 준비 (카카오페이/토스)
-    @PostMapping("/payment/prepare")
-    public ResponseEntity<PointPaymentResponse> preparePayment(
-            @AuthenticationPrincipal CustomUserDetails user,
-            @RequestBody @Valid PointPaymentRequest request
-    ) {
-        String merchantUid = pointPaymentService.preparePayment(request.getAmount());
-        return ResponseEntity.ok(
-                PointPaymentResponse.success(
-                        merchantUid,
-                        request.getAmount(),
-                        request.getPaymentMethod().name()
-                )
-        );
-    }
+
 
     // ✅ 결제 검증 및 포인트 충전
     @PostMapping("/payment/verify")
@@ -94,4 +80,5 @@ public class PointController {
 
         return ResponseEntity.ok(chargeResponse);
     }
+
 }

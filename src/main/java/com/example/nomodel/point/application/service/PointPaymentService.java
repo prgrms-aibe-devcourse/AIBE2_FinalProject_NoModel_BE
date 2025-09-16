@@ -29,10 +29,10 @@ public class PointPaymentService {
     private final PointDomainService pointDomainService;
     private final PointTransactionRepository transactionRepository;
 
-    @Value("${portone.api-key}")
+    @Value("${portone.impKey}")
     private String apiKey;
 
-    @Value("${portone.api-secret}")
+    @Value("${portone.impSecret}")
     private String apiSecret;
 
     @Value("${portone.kakao.normal-channel-key}")
@@ -93,58 +93,6 @@ public class PointPaymentService {
         }
     }
 
-    /**
-     * 결제 사전 등록 (프론트엔드 결제창 호출 전)
-     * @param amount 결제 금액
-     * @return 생성된 merchant_uid
-     */
-    public String preparePayment(BigDecimal amount) {
-        String merchantUid = "point_charge_" + UUID.randomUUID().toString(); 
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("merchant_uid", merchantUid);
-        body.put("amount", amount);
-
-        System.out.println("💰 PortOne 결제 사전 등록 요청 시작...");
-        System.out.println("요청 본문: " + body);
-
-        String accessToken = getAccessToken(); // 동기 호출
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    IAMPORT_API_BASE_URL + "/payments/prepare", entity, Map.class);
-
-            System.out.println("응답 상태 코드: " + response.getStatusCode());
-            System.out.println("응답 헤더: " + response.getHeaders());
-            System.out.println("응답 본문: " + response.getBody()); 
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Integer code = (Integer) response.getBody().get("code");
-                if (code != null && code == 0) {
-                    System.out.println("✅ PortOne 결제 사전 등록 성공: " + merchantUid);
-                    return merchantUid;
-                } else {
-                    String msg = (String) response.getBody().get("message");
-                    System.err.println("❌ PortOne 결제 사전 등록 실패: " + msg);
-                    throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-                }
-            } else {
-                String errorMessage = "PortOne 결제 사전 등록 실패: " + response.getStatusCode();
-                System.err.println("❌ " + errorMessage);
-                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-            }
-        } catch (Exception e) {
-            System.err.println("❌ PortOne 결제 사전 등록 중 예외 발생: " + e.getMessage());
-            e.printStackTrace();
-            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-        }
-    }
 
     /**
      * PortOne API 호출로 결제 검증 및 포인트 충전
@@ -176,7 +124,7 @@ public class PointPaymentService {
 
             System.out.println("응답 상태 코드: " + response.getStatusCode());
             System.out.println("응답 헤더: " + response.getHeaders());
-            System.out.println("응답 본문: " + response.getBody()); 
+            System.out.println("응답 본문: " + response.getBody());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Integer code = (Integer) response.getBody().get("code");
