@@ -111,7 +111,22 @@ switch (TEST_TYPE) {
     selectedOptions = searchTestOptions;
 }
 
-export const options = selectedOptions;
+// InfluxDB 성능 최적화 설정
+const influxDBOptimizedOptions = {
+  ...selectedOptions,
+  ext: {
+    influxdb: {
+      // 플러시 간격을 2초로 증가하여 부하 감소
+      pushInterval: '2s',
+      // 배치 크기 증가하여 효율성 향상
+      batchSize: 5000,
+      // 동시 연결 수 제한
+      concurrentWrites: 10,
+    }
+  }
+};
+
+export const options = influxDBOptimizedOptions;
 
 // 기본 URL 설정
 const BASE_URL = 'http://host.docker.internal:8080/api';

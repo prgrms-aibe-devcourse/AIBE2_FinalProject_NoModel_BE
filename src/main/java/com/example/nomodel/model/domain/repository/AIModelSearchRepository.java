@@ -49,49 +49,52 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     @Query("""
         {
           "bool": {
-            "should": [
+            "must": [
               {
-                "match_phrase": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 10
-                  }
-                }
-              },
-              {
-                "match": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 5,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "modelName.keyword": {
-                    "value": "*?0*",
-                    "boost": 3,
-                    "case_insensitive": true
-                  }
-                }
-              },
-              {
-                "match": {
-                  "prompt": {
-                    "query": "?0",
-                    "boost": 2,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "tags.keyword": {
-                    "value": "*?0*",
-                    "boost": 1.5,
-                    "case_insensitive": true
-                  }
+                "bool": {
+                  "should": [
+                    {
+                      "match_phrase": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 10
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 5,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "prefix": {
+                        "modelName.keyword": {
+                          "value": "?0",
+                          "boost": 4
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "prompt": {
+                          "query": "?0",
+                          "boost": 2,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "terms": {
+                        "tags": ["?0"],
+                        "boost": 3
+                      }
+                    }
+                  ],
+                  "minimum_should_match": 1
                 }
               }
             ],
@@ -101,8 +104,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                   "isPublic": true
                 }
               }
-            ],
-            "minimum_should_match": 1
+            ]
           }
         }
         """)
@@ -194,49 +196,52 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     @Query("""
         {
           "bool": {
-            "should": [
+            "must": [
               {
-                "match_phrase": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 10
-                  }
-                }
-              },
-              {
-                "match": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 5,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "modelName.keyword": {
-                    "value": "*?0*",
-                    "boost": 3,
-                    "case_insensitive": true
-                  }
-                }
-              },
-              {
-                "match": {
-                  "prompt": {
-                    "query": "?0",
-                    "boost": 2,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "tags.keyword": {
-                    "value": "*?0*",
-                    "boost": 1.5,
-                    "case_insensitive": true
-                  }
+                "bool": {
+                  "should": [
+                    {
+                      "match_phrase": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 10
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 5,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "prefix": {
+                        "modelName.keyword": {
+                          "value": "?0",
+                          "boost": 4
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "prompt": {
+                          "query": "?0",
+                          "boost": 2,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "terms": {
+                        "tags": ["?0"],
+                        "boost": 3
+                      }
+                    }
+                  ],
+                  "minimum_should_match": 1
                 }
               }
             ],
@@ -251,8 +256,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                   "isPublic": true
                 }
               }
-            ],
-            "minimum_should_match": 1
+            ]
           }
         }
         """)
@@ -264,49 +268,52 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     @Query("""
         {
           "bool": {
-            "should": [
+            "must": [
               {
-                "match_phrase": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 10
-                  }
-                }
-              },
-              {
-                "match": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 5,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "modelName.keyword": {
-                    "value": "*?0*",
-                    "boost": 3,
-                    "case_insensitive": true
-                  }
-                }
-              },
-              {
-                "match": {
-                  "prompt": {
-                    "query": "?0",
-                    "boost": 2,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "tags.keyword": {
-                    "value": "*?0*",
-                    "boost": 1.5,
-                    "case_insensitive": true
-                  }
+                "bool": {
+                  "should": [
+                    {
+                      "match_phrase": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 10
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 5,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "prefix": {
+                        "modelName.keyword": {
+                          "value": "?0",
+                          "boost": 4
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "prompt": {
+                          "query": "?0",
+                          "boost": 2,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "terms": {
+                        "tags": ["?0"],
+                        "boost": 3
+                      }
+                    }
+                  ],
+                  "minimum_should_match": 1
                 }
               }
             ],
@@ -316,8 +323,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                   "ownerId": ?1
                 }
               }
-            ],
-            "minimum_should_match": 1
+            ]
           }
         }
         """)
@@ -329,49 +335,52 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     @Query("""
         {
           "bool": {
-            "should": [
+            "must": [
               {
-                "match_phrase": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 10
-                  }
-                }
-              },
-              {
-                "match": {
-                  "modelName": {
-                    "query": "?0",
-                    "boost": 5,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "modelName.keyword": {
-                    "value": "*?0*",
-                    "boost": 3,
-                    "case_insensitive": true
-                  }
-                }
-              },
-              {
-                "match": {
-                  "prompt": {
-                    "query": "?0",
-                    "boost": 2,
-                    "fuzziness": "AUTO"
-                  }
-                }
-              },
-              {
-                "wildcard": {
-                  "tags.keyword": {
-                    "value": "*?0*",
-                    "boost": 1.5,
-                    "case_insensitive": true
-                  }
+                "bool": {
+                  "should": [
+                    {
+                      "match_phrase": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 10
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "modelName": {
+                          "query": "?0",
+                          "boost": 5,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "prefix": {
+                        "modelName.keyword": {
+                          "value": "?0",
+                          "boost": 4
+                        }
+                      }
+                    },
+                    {
+                      "match": {
+                        "prompt": {
+                          "query": "?0",
+                          "boost": 2,
+                          "fuzziness": "AUTO"
+                        }
+                      }
+                    },
+                    {
+                      "terms": {
+                        "tags": ["?0"],
+                        "boost": 3
+                      }
+                    }
+                  ],
+                  "minimum_should_match": 1
                 }
               }
             ],
@@ -401,8 +410,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                   ]
                 }
               }
-            ],
-            "minimum_should_match": 1
+            ]
           }
         }
         """)
