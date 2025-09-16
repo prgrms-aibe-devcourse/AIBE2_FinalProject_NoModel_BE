@@ -187,4 +187,139 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
      */
     @Query("{\"bool\": {\"must\": [{\"multi_match\": {\"query\": \"?0\", \"fields\": [\"modelName^2\", \"prompt\"]}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}, \"highlight\": {\"fields\": {\"modelName\": {}, \"prompt\": {}}}}")
     Page<AIModelDocument> searchWithHighlight(String keyword, Pageable pageable);
+
+    /**
+     * 관리자 모델에서 키워드 검색 (ADMIN 타입 + 공개 + 키워드)
+     */
+    @Query("""
+        {
+          "bool": {
+            "should": [
+              {
+                "match_phrase": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 10
+                  }
+                }
+              },
+              {
+                "match": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 5,
+                    "fuzziness": "AUTO"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "modelName.keyword": {
+                    "value": "*?0*",
+                    "boost": 3,
+                    "case_insensitive": true
+                  }
+                }
+              },
+              {
+                "match": {
+                  "prompt": {
+                    "query": "?0",
+                    "boost": 2,
+                    "fuzziness": "AUTO"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "tags.keyword": {
+                    "value": "*?0*",
+                    "boost": 1.5,
+                    "case_insensitive": true
+                  }
+                }
+              }
+            ],
+            "filter": [
+              {
+                "term": {
+                  "ownType": "ADMIN"
+                }
+              },
+              {
+                "term": {
+                  "isPublic": true
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        }
+        """)
+    Page<AIModelDocument> searchInAdminModels(String keyword, Pageable pageable);
+
+    /**
+     * 사용자 모델에서 키워드 검색 (특정 사용자 소유 + 키워드)
+     */
+    @Query("""
+        {
+          "bool": {
+            "should": [
+              {
+                "match_phrase": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 10
+                  }
+                }
+              },
+              {
+                "match": {
+                  "modelName": {
+                    "query": "?0",
+                    "boost": 5,
+                    "fuzziness": "AUTO"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "modelName.keyword": {
+                    "value": "*?0*",
+                    "boost": 3,
+                    "case_insensitive": true
+                  }
+                }
+              },
+              {
+                "match": {
+                  "prompt": {
+                    "query": "?0",
+                    "boost": 2,
+                    "fuzziness": "AUTO"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "tags.keyword": {
+                    "value": "*?0*",
+                    "boost": 1.5,
+                    "case_insensitive": true
+                  }
+                }
+              }
+            ],
+            "filter": [
+              {
+                "term": {
+                  "ownerId": ?1
+                }
+              }
+            ],
+            "minimum_should_match": 1
+          }
+        }
+        """)
+    Page<AIModelDocument> searchInUserModels(String keyword, Long userId, Pageable pageable);
 }

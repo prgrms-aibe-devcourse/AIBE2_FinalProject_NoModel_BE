@@ -60,19 +60,37 @@ public class AIModelSearchService {
     }
 
     /**
-     * 관리자 모델 목록 조회 (공개된 ADMIN 타입 모델들)
+     * 관리자 모델 목록 조회/검색 (공개된 ADMIN 타입 모델들)
      */
-    public Page<AIModelDocument> getAdminModels(int page, int size) {
+    public Page<AIModelDocument> getAdminModels(String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return searchRepository.findByOwnTypeAndIsPublic("ADMIN", true, pageable);
+
+        // 관리자 모델 범위에서
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // 키워드 필터링 적용 (관리자 모델 + 키워드 검색)
+            pageable = PageRequest.of(page, size, Sort.by("_score").descending());
+            return searchRepository.searchInAdminModels(keyword, pageable);
+        } else {
+            // 키워드 필터링 없이 전체 관리자 모델 조회
+            return searchRepository.findByOwnTypeAndIsPublic("ADMIN", true, pageable);
+        }
     }
 
     /**
-     * 사용자 본인 모델 목록 조회 (공개/비공개 모두)
+     * 사용자 본인 모델 목록 조회/검색 (공개/비공개 모두)
      */
-    public Page<AIModelDocument> getUserModels(Long userId, int page, int size) {
+    public Page<AIModelDocument> getUserModels(String keyword, Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return searchRepository.findByOwnerId(userId, pageable);
+
+        // 사용자 모델 범위에서
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // 키워드 필터링 적용 (사용자 모델 + 키워드 검색)
+            pageable = PageRequest.of(page, size, Sort.by("_score").descending());
+            return searchRepository.searchInUserModels(keyword, userId, pageable);
+        } else {
+            // 키워드 필터링 없이 전체 사용자 모델 조회
+            return searchRepository.findByOwnerId(userId, pageable);
+        }
     }
 
     /**

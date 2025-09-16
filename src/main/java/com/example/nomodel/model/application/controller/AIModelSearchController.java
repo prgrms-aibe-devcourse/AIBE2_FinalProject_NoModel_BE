@@ -44,24 +44,26 @@ public class AIModelSearchController {
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "관리자 모델 목록 조회", description = "공개된 관리자 모델 목록 (ADMIN 타입)")
+    @Operation(summary = "관리자 모델 목록 조회/검색", description = "공개된 관리자 모델 목록 (ADMIN 타입). 키워드가 있으면 검색, 없으면 전체 조회")
     @GetMapping("/admin")
     public ResponseEntity<?> getAdminModels(
+            @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getAdminModels(page, size);
+        Page<AIModelDocument> result = searchService.getAdminModels(keyword, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "내 모델 목록 조회", description = "사용자가 생성한 모든 모델 목록")
+    @Operation(summary = "내 모델 목록 조회/검색", description = "사용자가 생성한 모델 목록. 키워드가 있으면 검색, 없으면 전체 조회")
     @GetMapping("/my-models")
     public ResponseEntity<?> getUserModels(
+            @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
             @Parameter(description = "사용자 ID") @RequestParam Long userId,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getUserModels(userId, page, size);
+        Page<AIModelDocument> result = searchService.getUserModels(keyword, userId, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
