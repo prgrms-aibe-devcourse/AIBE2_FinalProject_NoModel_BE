@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -65,20 +66,31 @@ public class PointController {
 
     // ✅ 결제 검증 및 포인트 충전
     @PostMapping("/payment/verify")
-    public ResponseEntity<PointChargeResponse> verifyPaymentAndCharge(
+    public ResponseEntity<Map<String, Object>> verifyPaymentAndCharge(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody @Valid PointPaymentVerifyRequest request
     ) {
         Long memberId = user.getMemberId();
 
-        PointPaymentService.PaymentVerificationResult verificationResult =
-                pointPaymentService.verifyPayment(request.getImpUid(), request.getMerchantUid(), memberId);
+        try {
+            PointPaymentService.PaymentVerificationResult verificationResult =
+                    pointPaymentService.verifyPayment(request.getImpUid(), request.getMerchantUid(), memberId);
 
-        // 검증 성공 시 포인트 충전
-        PointChargeResponse chargeResponse =
-                pointService.chargePoints(memberId, verificationResult.getAmount());
+            PointBalanceResponse balanceResponse = pointService.getPointBalance(memberId);
 
-        return ResponseEntity.ok(chargeResponse);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "amount", verificationResult.getAmount(),
+                    "availablePoints", balanceResponse.getAvailablePoints(),
+                    "message", "포인트 충전이 완료되었습니다."
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "결제 검증 실패: " + e.getMessage()
+            ));
+        }
     }
-
 }
+

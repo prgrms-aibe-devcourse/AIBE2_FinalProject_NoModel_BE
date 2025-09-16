@@ -15,6 +15,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -29,10 +31,10 @@ public class PointPaymentService {
     private final PointDomainService pointDomainService;
     private final PointTransactionRepository transactionRepository;
 
-    @Value("${portone.impKey}")
+    @Value("${portone.imp-key}")
     private String apiKey;
 
-    @Value("${portone.impSecret}")
+    @Value("${portone.imp-secret}")
     private String apiSecret;
 
     @Value("${portone.kakao.normal-channel-key}")
@@ -43,131 +45,171 @@ public class PointPaymentService {
 
     @PostConstruct
     public void init() {
-        System.out.println("⭐ PointPaymentService 초기화 완료 ⭐");
-        System.out.println("PortOne API Key: " + (apiKey != null && !apiKey.isEmpty() ? apiKey.substring(0, Math.min(apiKey.length(), 4)) + "..." + apiKey.substring(Math.max(0, apiKey.length() - 4)) : "❌ 설정되지 않음"));
-        System.out.println("PortOne API Secret: " + (apiSecret != null && !apiSecret.isEmpty() ? apiSecret.substring(0, Math.min(apiSecret.length(), 4)) + "..." + apiSecret.substring(Math.max(0, apiSecret.length() - 4)) : "❌ 설정되지 않음"));
-        System.out.println("Kakao Normal Channel Key: " + (kakaoNormalChannelKey != null && !kakaoNormalChannelKey.isEmpty() ? kakaoNormalChannelKey.substring(0, Math.min(kakaoNormalChannelKey.length(), 4)) + "..." + kakaoNormalChannelKey.substring(Math.max(0, kakaoNormalChannelKey.length() - 4)) : "❌ 설정되지 않음"));
+        System.out.println("==== PointPaymentService INIT CALLED ====");
+        System.out.println("apiKey=" + apiKey);
+        System.out.println("apiSecret=" + apiSecret);
+        System.out.println("kakaoNormalChannelKey=" + kakaoNormalChannelKey);
     }
 
     /**
      * PortOne AccessToken 발급
      */
-    public String getAccessToken() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, String> body = new HashMap<>();
-        body.put("imp_key", apiKey);
-        body.put("imp_secret", apiSecret);
-
-        System.out.println("🔑 PortOne 액세스 토큰 발급 요청 시작...");
-        System.out.println("요청 URL: " + IAMPORT_API_BASE_URL + "/users/getToken");
-        System.out.println("요청 헤더: " + headers);
-        System.out.println("요청 본문: " + body);
-
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+    private String getAccessToken() {
+        System.out.println("🔍 PortOne 액세스 토큰 취득 요청 시작...");
 
         try {
-            ResponseEntity<PortOneTokenResponse> response = restTemplate.postForEntity(
-                    IAMPORT_API_BASE_URL + "/users/getToken", entity, PortOneTokenResponse.class);
+            // MultiValueMap 사용 (form-urlencoded 방식)
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("imp_key", apiKey);
+            body.add("imp_secret", apiSecret);
 
-            System.out.println("응답 상태 코드: " + response.getStatusCode());
-            System.out.println("응답 헤더: " + response.getHeaders());
-            System.out.println("응답 본문: " + response.getBody());
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED); // 이 부분이 핵심
 
-            if (response.getStatusCode().is2xxSuccessful()
-                    && response.getBody() != null
-                    && response.getBody().getCode() == 0
-                    && response.getBody().getResponse() != null) {
-                System.out.println("✅ PortOne 액세스 토큰 발급 성공.");
-                return response.getBody().getResponse().getAccess_token();
-            } else {
-                String errorMessage = "PortOne 액세스 토큰 발급 실패: " + (response.getBody() != null ? response.getBody().getMessage() : "응답 본문 없음");
-                System.err.println("❌ " + errorMessage);
-                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(body, headers);
+
+            System.out.println("Content-Type을 form-urlencoded로 변경");
+            System.out.println("요청 URL: " + IAMPORT_API_BASE_URL + "/users/getToken");
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    IAMPORT_API_BASE_URL + "/users/getToken",
+                    entity,
+                    Map.class
+            );
+
+            // 나머지 로직은 동일...
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Integer code = (Integer) response.getBody().get("code");
+                if (code != null && code == 0) {
+                    Map<String, Object> responseData = (Map<String, Object>) response.getBody().get("response");
+                    if (responseData != null) {
+                        String accessToken = (String) responseData.get("access_token");
+                        System.out.println("✅ 액세스 토큰 획득 성공");
+                        return accessToken;
+                    }
+                }
             }
+
+            System.err.println("❌ 액세스 토큰 획득 실패");
+            throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+
         } catch (Exception e) {
-            System.err.println("❌ PortOne 토큰 발급 중 예외 발생: " + e.getMessage());
+            System.err.println("❌ 전체 오류: " + e.getMessage());
             e.printStackTrace();
             throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
     }
 
 
-    /**
-     * PortOne API 호출로 결제 검증 및 포인트 충전
-     * @param impUid PortOne 결제 고유번호
-     * @param merchantUid 가맹점 주문번호 (사전 등록 시 사용)
-     * @param memberId 회원 ID
-     * @return 결제 검증 성공 여부와 결제 정보
-     */
+
     public PaymentVerificationResult verifyPayment(String impUid, String merchantUid, Long memberId) {
         System.out.println("🔍 PortOne 결제 검증 요청 시작...");
         System.out.println("impUid: " + impUid + ", merchantUid: " + merchantUid);
 
-        String accessToken = getAccessToken(); // 동기 호출
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
         try {
+            // 액세스 토큰 획득 및 검증
+            String accessToken = getAccessToken();
+            if (accessToken == null || accessToken.trim().isEmpty()) {
+                System.err.println("❌ 액세스 토큰 획득 실패");
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+            System.out.println("✅ 액세스 토큰 획득 성공: " + accessToken.substring(0, 20) + "...");
+
+            // HTTP 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(accessToken);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            // PortOne API 호출
+            String apiUrl = IAMPORT_API_BASE_URL + "/payments/" + impUid;
+            System.out.println("API 호출 URL: " + apiUrl);
+
             ResponseEntity<Map> response = restTemplate.exchange(
-                    IAMPORT_API_BASE_URL + "/payments/{imp_uid}",
+                    apiUrl,
                     HttpMethod.GET,
                     entity,
-                    Map.class,
-                    impUid
+                    Map.class
             );
 
             System.out.println("응답 상태 코드: " + response.getStatusCode());
-            System.out.println("응답 헤더: " + response.getHeaders());
             System.out.println("응답 본문: " + response.getBody());
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Integer code = (Integer) response.getBody().get("code");
-                if (code != null && code == 0) {
-                    Map<String, Object> paymentData = (Map<String, Object>) response.getBody().get("response");
-                    if (paymentData == null) {
-                        System.err.println("❌ PortOne 결제 정보 없음");
-                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-                    }
-
-                    String status = (String) paymentData.get("status");
-                    String responseMerchantUid = (String) paymentData.get("merchant_uid");
-                    BigDecimal amount = new BigDecimal(paymentData.get("amount").toString());
-
-                    System.out.println("✅ PortOne 결제 상태: " + status + ", 금액: " + amount + ", merchant_uid: " + responseMerchantUid);
-
-                    // 1. 상태 및 merchant_uid 일치 여부 확인
-                    if (!"paid".equals(status)) {
-                        System.err.println("❌ 결제 상태가 'paid'가 아닙니다. 현재 상태: " + status);
-                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-                    }
-                    if (!merchantUid.equals(responseMerchantUid)) {
-                        System.err.println("❌ merchant_uid 불일치. 요청: " + merchantUid + ", 응답: " + responseMerchantUid);
-                        throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-                    }
-
-                    // 2. 포인트 충전
-                    pointDomainService.chargePoints(memberId, amount, impUid).block(); // Mono<Void>의 블로킹 호출
-
-                    return new PaymentVerificationResult(true, amount, merchantUid, impUid);
-
-                } else {
-                    String msg = (String) response.getBody().get("message");
-                    System.err.println("❌ PortOne 결제 검증 실패: " + msg);
-                    throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-                }
-            } else {
-                String errorMessage = "PortOne 결제 검증 실패: " + response.getStatusCode();
-                System.err.println("❌ " + errorMessage);
+            // 응답 검증
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                System.err.println("❌ HTTP 응답 실패: " + response.getStatusCode());
                 throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
             }
+
+            Map<String, Object> responseBody = response.getBody();
+            if (responseBody == null) {
+                System.err.println("❌ 응답 본문이 null입니다");
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            // PortOne 응답 코드 확인
+            Integer code = (Integer) responseBody.get("code");
+            if (code == null || code != 0) {
+                String message = (String) responseBody.get("message");
+                System.err.println("❌ PortOne API 오류 - 코드: " + code + ", 메시지: " + message);
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            // 결제 데이터 추출
+            Map<String, Object> paymentData = (Map<String, Object>) responseBody.get("response");
+            if (paymentData == null) {
+                System.err.println("❌ 결제 데이터가 없습니다");
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            String status = (String) paymentData.get("status");
+            String responseMerchantUid = (String) paymentData.get("merchant_uid");
+            Object amountObj = paymentData.get("amount");
+
+            System.out.println("결제 상태: " + status);
+            System.out.println("merchant_uid: " + responseMerchantUid);
+            System.out.println("결제 금액: " + amountObj);
+
+            // 결제 상태 검증
+            if (!"paid".equals(status)) {
+                System.err.println("❌ 결제 상태가 'paid'가 아닙니다. 현재 상태: " + status);
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            // merchant_uid 일치 확인
+            if (!merchantUid.equals(responseMerchantUid)) {
+                System.err.println("❌ merchant_uid 불일치. 요청: " + merchantUid + ", 응답: " + responseMerchantUid);
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            // 금액 변환
+            BigDecimal amount;
+            if (amountObj instanceof Number) {
+                amount = new BigDecimal(amountObj.toString());
+            } else {
+                System.err.println("❌ 결제 금액이 숫자가 아닙니다: " + amountObj);
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            System.out.println("✅ 결제 검증 성공 - 금액: " + amount + "원");
+
+            // 포인트 충전
+            try {
+                pointDomainService.chargePoints(memberId, amount, impUid).block();
+                System.out.println("✅ 포인트 충전 완료");
+            } catch (Exception e) {
+                System.err.println("❌ 포인트 충전 실패: " + e.getMessage());
+                throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            }
+
+            return new PaymentVerificationResult(true, amount, merchantUid, impUid);
+
+        } catch (ApplicationException e) {
+            // 이미 정의된 ApplicationException은 그대로 재던짐
+            throw e;
         } catch (Exception e) {
-            System.err.println("❌ PortOne 결제 검증 중 예외 발생: " + e.getMessage());
+            System.err.println("❌ 결제 검증 중 예외 발생: " + e.getMessage());
             e.printStackTrace();
             throw new ApplicationException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         }
