@@ -55,5 +55,12 @@ public interface ReviewRepository extends JpaRepository<ModelReview, Long> {
      */
     @Query("SELECT r.modelId, COUNT(r), AVG(r.rating.value) FROM ModelReview r WHERE r.modelId IN :modelIds AND r.status = :status GROUP BY r.modelId")
     List<Object[]> getReviewStatisticsByModelIds(@Param("modelIds") List<Long> modelIds, @Param("status") ReviewStatus status);
+
+    // ReviewRepository 인터페이스에 추가할 메서드
+
+    /**
+     * 특정 사용자가 작성한 특정 상태의 리뷰들을 최신순으로 조회
+     */
+    List<ModelReview> findByReviewerIdAndStatusOrderByCreatedAtDesc(Long reviewerId, ReviewStatus status);
 }
 

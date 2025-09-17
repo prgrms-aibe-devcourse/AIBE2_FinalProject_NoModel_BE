@@ -106,5 +106,21 @@ public class ReviewService {
 
         return ReviewResponse.from(deleted);
     }
+
+    //내가 작성한 모든 리뷰 조회
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getMyAllReviews(Long reviewerId) {
+        // ACTIVE 상태인 내가 작성한 모든 리뷰 조회 (최신순 정렬)
+        List<ModelReview> myReviews = reviewRepository.findByReviewerIdAndStatusOrderByCreatedAtDesc(
+                reviewerId,
+                ReviewStatus.ACTIVE
+        );
+
+        return myReviews.stream()
+                .map(ReviewResponse::from)
+                .collect(Collectors.toList());
+    }
+
+
 }
 
