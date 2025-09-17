@@ -37,21 +37,33 @@ show_help() {
     echo "옵션:"
     echo "  -h, --help          이 도움말 표시"
     echo "  -p, --prometheus    Prometheus로 메트릭 전송"
+    echo "  -i, --influxdb      InfluxDB로 메트릭 전송 (자동 환경 관리)"
     echo "  -v, --verbose       상세 출력"
     echo "  -r, --results       결과만 표시"
     echo ""
     echo "예시:"
     echo "  $0 smoke"
     echo "  $0 load --prometheus"
+    echo "  $0 load --influxdb      # InfluxDB 자동 시작/종료"
     echo "  $0 stress --verbose"
-    echo "  k6/aimodel/run-search-tests.sh load --prometheus"
+    echo "  k6/aimodel/run-search-tests.sh load --influxdb"
 }
 
 # 스모크 테스트 실행
 run_smoke_test() {
     echo -e "${BLUE}📋 스모크 테스트 실행 중...${NC}"
-    
-    if [ "$USE_PROMETHEUS" = true ]; then
+
+    if [ "$USE_INFLUXDB" = true ]; then
+        setup_influxdb
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            "$K6_IMAGE" run \
+            --out influxdb=http://localhost:8086/k6 \
+            --summary-export="/results/smoke-test-$(date +%Y%m%d_%H%M%S).json" \
+            /scripts/scenarios/smoke.js
+    elif [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
             -v "$(pwd)/k6:/scripts" \
@@ -75,8 +87,18 @@ run_smoke_test() {
 # 로드 테스트 실행
 run_load_test() {
     echo -e "${YELLOW}⚡ 로드 테스트 실행 중...${NC}"
-    
-    if [ "$USE_PROMETHEUS" = true ]; then
+
+    if [ "$USE_INFLUXDB" = true ]; then
+        setup_influxdb
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            "$K6_IMAGE" run \
+            --out influxdb=http://localhost:8086/k6 \
+            --summary-export="/results/load-test-$(date +%Y%m%d_%H%M%S).json" \
+            /scripts/scenarios/load.js
+    elif [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
             -v "$(pwd)/k6:/scripts" \
@@ -100,8 +122,19 @@ run_load_test() {
 # 스트레스 테스트 실행
 run_stress_test() {
     echo -e "${RED}🔥 스트레스 테스트 실행 중...${NC}"
-    
-    if [ "$USE_PROMETHEUS" = true ]; then
+
+    if [ "$USE_INFLUXDB" = true ]; then
+        setup_influxdb
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            "$K6_IMAGE" run \
+            --out influxdb=http://localhost:8086/k6 \
+            --summary-export="/results/stress-test-$(date +%Y%m%d_%H%M%S).json" \
+            -e TEST_TYPE=stress \
+            /scripts/scenarios/load.js
+    elif [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
             -v "$(pwd)/k6:/scripts" \
@@ -127,8 +160,19 @@ run_stress_test() {
 # 스파이크 테스트 실행
 run_spike_test() {
     echo -e "${RED}⚡ 스파이크 테스트 실행 중...${NC}"
-    
-    if [ "$USE_PROMETHEUS" = true ]; then
+
+    if [ "$USE_INFLUXDB" = true ]; then
+        setup_influxdb
+        docker run --rm -i \
+            --network host \
+            -v "$(pwd)/k6:/scripts" \
+            -v "$(pwd)/k6/results:/results" \
+            "$K6_IMAGE" run \
+            --out influxdb=http://localhost:8086/k6 \
+            --summary-export="/results/spike-test-$(date +%Y%m%d_%H%M%S).json" \
+            -e TEST_TYPE=spike \
+            /scripts/scenarios/load.js
+    elif [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
             -v "$(pwd)/k6:/scripts" \
@@ -169,11 +213,55 @@ show_results() {
     fi
 }
 
+# InfluxDB 환경 관리 함수
+setup_influxdb() {
+    echo "🗄️ InfluxDB 환경 설정 중..."
+
+    # InfluxDB가 이미 실행 중인지 확인
+    if docker ps --filter "name=influxdb-k6" --filter "status=running" | grep -q influxdb-k6; then
+        echo -e "${GREEN}✅ InfluxDB가 이미 실행 중입니다.${NC}"
+        INFLUXDB_WAS_RUNNING=true
+        return 0
+    fi
+
+    # InfluxDB 시작
+    echo "🚀 InfluxDB 시작 중..."
+    docker compose -f docker-compose-k6.yml up -d influxdb
+
+    # InfluxDB 준비 대기
+    echo "⏳ InfluxDB 준비 대기 중..."
+    for i in {1..30}; do
+        if curl -s http://localhost:8086/ping >/dev/null 2>&1; then
+            echo -e "${GREEN}✅ InfluxDB가 준비되었습니다.${NC}"
+            INFLUXDB_WAS_RUNNING=false
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo -e "${RED}❌ InfluxDB 시작에 실패했습니다.${NC}"
+    return 1
+}
+
+cleanup_influxdb() {
+    if [ "$USE_INFLUXDB" = true ] && [ "$INFLUXDB_WAS_RUNNING" = false ]; then
+        echo ""
+        echo "🧹 InfluxDB 환경 정리 중..."
+        docker compose -f docker-compose-k6.yml down
+        echo -e "${GREEN}✅ InfluxDB가 정리되었습니다. (메모리 절약)${NC}"
+    fi
+}
+
+# 트랩 설정 (스크립트 종료 시 정리)
+trap cleanup_influxdb EXIT
+
 # 인수 파싱
 USE_PROMETHEUS=false
+USE_INFLUXDB=false
 VERBOSE=false
 SHOW_RESULTS_ONLY=false
 TEST_TYPE=""
+INFLUXDB_WAS_RUNNING=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -183,6 +271,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -p|--prometheus)
             USE_PROMETHEUS=true
+            shift
+            ;;
+        -i|--influxdb)
+            USE_INFLUXDB=true
             shift
             ;;
         -v|--verbose)

@@ -124,18 +124,27 @@ docker compose -f docker-compose-elasticsearch.yml down
 docker compose -f docker-compose-elasticsearch.yml logs -f elasticsearch
 ```
 
-#### Monitoring Stack (Prometheus + Grafana + k6)
+#### Monitoring Stack (Prometheus + Grafana + Loki)
 ```bash
 # Start monitoring infrastructure
 docker compose -f docker-compose-monitoring.yml up -d
 
 # Stop monitoring services
 docker compose -f docker-compose-monitoring.yml down
+```
+
+#### Performance Testing (k6 + InfluxDB)
+```bash
+# Start performance testing infrastructure (on-demand)
+docker compose -f docker-compose-k6.yml up -d influxdb
 
 # Run performance tests
-./k6/run-tests.sh smoke
-./k6/run-tests.sh load --prometheus
-./k6/run-tests.sh stress --prometheus
+./k6/run-tests.sh smoke --influxdb
+./k6/run-tests.sh load --influxdb
+./k6/run-tests.sh stress --influxdb
+
+# Stop performance testing infrastructure (save resources)
+docker compose -f docker-compose-k6.yml down
 ```
 
 ### Service Access Points
