@@ -6,12 +6,8 @@ set -e
 
 echo "🔍 Starting AI Model Search Performance Testing Suite"
 
-# 색상 정의
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# 공통 유틸리티 로드
+source "$(dirname "$0")/../utils/influxdb-utils.sh"
 
 # 기본 설정
 K6_IMAGE="grafana/k6:latest"
@@ -20,6 +16,9 @@ INFLUXDB_URL="http://localhost:8086"
 
 # 결과 디렉토리 생성
 mkdir -p "$RESULTS_DIR"
+
+# 자동 정리 활성화
+enable_auto_cleanup
 
 # 도움말 표시
 show_help() {
@@ -48,140 +47,50 @@ show_help() {
 run_search_smoke_test() {
     echo -e "${BLUE}📋 AI 모델 검색 스모크 테스트 실행 중...${NC}"
 
-    local k6_cmd="run --summary-export=/results/aimodel/search-smoke-$(date +%Y%m%d_%H%M%S).json"
+    local result_file="search-smoke-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/aimodel/search-test.js" "smoke" "aimodel/$result_file")
 
-    if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e K6_INFLUXDB_USERNAME=k6 \
-            -e K6_INFLUXDB_PASSWORD=k6 \
-            -e TEST_TYPE=smoke \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e TEST_TYPE=smoke \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    fi
+    run_k6_docker "$k6_cmd" "/scripts/aimodel/search-test.js" "smoke"
 }
 
 # AI 모델 검색 로드 테스트 실행
 run_search_load_test() {
     echo -e "${YELLOW}⚡ AI 모델 검색 로드 테스트 실행 중...${NC}"
 
-    local k6_cmd="run --summary-export=/results/aimodel/search-load-$(date +%Y%m%d_%H%M%S).json"
+    local result_file="search-load-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/aimodel/search-test.js" "load" "aimodel/$result_file")
 
-    if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e K6_INFLUXDB_USERNAME=k6 \
-            -e K6_INFLUXDB_PASSWORD=k6 \
-            -e TEST_TYPE=load \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e TEST_TYPE=load \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    fi
+    run_k6_docker "$k6_cmd" "/scripts/aimodel/search-test.js" "load"
 }
 
 # AI 모델 검색 짧은 로드 테스트 실행
 run_search_load_short_test() {
     echo -e "${YELLOW}⚡ AI 모델 검색 짧은 로드 테스트 실행 중...${NC}"
 
-    local k6_cmd="run --summary-export=/results/aimodel/search-load-short-$(date +%Y%m%d_%H%M%S).json"
+    local result_file="search-load-short-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/aimodel/search-test.js" "load-short" "aimodel/$result_file")
 
-    if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e K6_INFLUXDB_USERNAME=k6 \
-            -e K6_INFLUXDB_PASSWORD=k6 \
-            -e TEST_TYPE=load-short \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e TEST_TYPE=load-short \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    fi
+    run_k6_docker "$k6_cmd" "/scripts/aimodel/search-test.js" "load-short"
 }
 
 # AI 모델 검색 스트레스 테스트 실행
 run_search_stress_test() {
     echo -e "${RED}🔥 AI 모델 검색 스트레스 테스트 실행 중...${NC}"
 
-    local k6_cmd="run --summary-export=/results/aimodel/search-stress-$(date +%Y%m%d_%H%M%S).json"
+    local result_file="search-stress-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/aimodel/search-test.js" "stress" "aimodel/$result_file")
 
-    if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e K6_INFLUXDB_USERNAME=k6 \
-            -e K6_INFLUXDB_PASSWORD=k6 \
-            -e TEST_TYPE=stress \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e TEST_TYPE=stress \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    fi
+    run_k6_docker "$k6_cmd" "/scripts/aimodel/search-test.js" "stress"
 }
 
 # AI 모델 검색 스파이크 테스트 실행
 run_search_spike_test() {
     echo -e "${RED}⚡ AI 모델 검색 스파이크 테스트 실행 중...${NC}"
 
-    local k6_cmd="run --summary-export=/results/aimodel/search-spike-$(date +%Y%m%d_%H%M%S).json"
+    local result_file="search-spike-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/aimodel/search-test.js" "spike" "aimodel/$result_file")
 
-    if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=$INFLUXDB_URL/k6"
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e K6_INFLUXDB_USERNAME=k6 \
-            -e K6_INFLUXDB_PASSWORD=k6 \
-            -e TEST_TYPE=spike \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            -e TEST_TYPE=spike \
-            "$K6_IMAGE" $k6_cmd \
-            /scripts/aimodel/search-test.js
-    fi
+    run_k6_docker "$k6_cmd" "/scripts/aimodel/search-test.js" "spike"
 }
 
 # 결과 표시
@@ -279,13 +188,9 @@ echo -e "${GREEN}✅ Spring Boot 애플리케이션이 실행 중입니다.${NC}
 
 # InfluxDB 메트릭 출력 설정인 경우 InfluxDB 상태 확인
 if [ "$USE_INFLUXDB" = true ]; then
-    echo "🔍 InfluxDB 상태 확인 중..."
-    if ! curl -s http://localhost:8086/health >/dev/null; then
-        echo -e "${YELLOW}⚠️  InfluxDB가 실행되지 않고 있습니다.${NC}"
-        echo "InfluxDB 없이 테스트를 계속합니다."
-        USE_INFLUXDB=false
-    else
-        echo -e "${GREEN}✅ InfluxDB가 실행 중입니다.${NC}"
+    if ! check_influxdb_status; then
+        echo -e "${YELLOW}⚠️  InfluxDB 자동 시작을 진행합니다.${NC}"
+        setup_influxdb
     fi
 fi
 
