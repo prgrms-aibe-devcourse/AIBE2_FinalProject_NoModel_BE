@@ -13,6 +13,7 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.slf4j.MDC;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -64,34 +65,61 @@ public class ServicePerformanceAspect {
         String className = method.getDeclaringClass().getSimpleName();
         String methodName = method.getName();
         String operation = className + "." + methodName;
-        
+        String executionId = java.util.UUID.randomUUID().toString().substring(0, 8);
+
+        // MDC에 Service 메서드 정보 설정
+        MDC.put("class_name", className);
+        MDC.put("method_name", methodName);
+        MDC.put("full_method_name", operation);
+        MDC.put("layer", "Service");
+        MDC.put("execution_id", executionId);
+
         long startTime = System.currentTimeMillis();
-        
+
         try {
             // 메소드 실행
             Object result = joinPoint.proceed();
-            
+
             // 실행 시간 계산
             long executionTime = System.currentTimeMillis() - startTime;
-            
+
+            // MDC에 실행 결과 추가
+            MDC.put("execution_time_ms", String.valueOf(executionTime));
+            MDC.put("status", "SUCCESS");
+
             // 비즈니스 로직 특화 로깅 (@BusinessCritical 어노테이션 기반)
             if (executionTime > slowMethodThresholdMs || isBusinessCriticalMethod(joinPoint)) {
                 Map<String, Object> context = createBusinessContext(joinPoint, executionTime, true);
                 structuredLogger.logBusinessEvent(
-                    log, "SERVICE_EXECUTION", 
+                    log, "SERVICE_EXECUTION",
                     "Business service method executed: " + operation,
                     determineSeverity(executionTime), context
                 );
             }
-            
+
+            // 일반 Service 메서드 실행 로그
+            if (executionTime > slowMethodThresholdMs) {
+                log.warn("메서드 완료 (느림): {}#{} [Service] ({}ms)",
+                         className, methodName, executionTime);
+            } else {
+                log.debug("메서드 완료: {}#{} [Service] ({}ms)",
+                         className, methodName, executionTime);
+            }
+
             return result;
-            
+
         } catch (Exception e) {
             long executionTime = System.currentTimeMillis() - startTime;
-            
+
+            // MDC에 에러 정보 추가
+            MDC.put("execution_time_ms", String.valueOf(executionTime));
+            MDC.put("status", "ERROR");
+            MDC.put("error_message", e.getMessage());
+            MDC.put("error_class", e.getClass().getSimpleName());
+
             // 예외 심각도 결정 (비즈니스 예외 vs 시스템 오류)
             String severity = determineExceptionSeverity(e);
-            
+
             // 심각도가 낮은 비즈니스 예외는 DEBUG 레벨로 처리
             if ("LOW".equals(severity)) {
                 log.debug("비즈니스 예외 발생: {} - {}", operation, e.getMessage());
@@ -100,15 +128,22 @@ public class ServicePerformanceAspect {
                 Map<String, Object> context = createBusinessContext(joinPoint, executionTime, false);
                 context.put("errorMessage", e.getMessage() != null ? e.getMessage() : "No error message available");
                 context.put("errorType", e.getClass().getSimpleName());
-                
+
                 structuredLogger.logBusinessEvent(
-                    log, "SERVICE_FAILURE", 
+                    log, "SERVICE_FAILURE",
                     "Business service method failed: " + operation,
                     severity, context
                 );
+
+                // 일반 Service 메서드 에러 로그
+                log.error("메서드 에러: {}#{} [Service] ({}ms) - {}",
+                         className, methodName, executionTime, e.getMessage(), e);
             }
-            
+
             throw e;
+        } finally {
+            // MDC 정리
+            MDC.clear();
         }
     }
     

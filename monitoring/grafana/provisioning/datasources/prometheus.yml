@@ -33,3 +33,21 @@ datasources:
       keepCookies: []
     secureJsonData:
       password: k6
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - datasourceUid: prometheus
+          matcherRegex: "trace_id=(\\w+)"
+          name: TraceID
+          url: "$$${__value.raw}"
+        - datasourceUid: prometheus
+          matcherRegex: "execution_id=(\\w+)"
+          name: ExecutionID
+          url: "$$${__value.raw}"

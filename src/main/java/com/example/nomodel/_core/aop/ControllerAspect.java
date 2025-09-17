@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.slf4j.MDC;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -68,10 +69,22 @@ public class ControllerAspect {
 
         // 메소드 정보 추출
         Method method = getMethod(proceedingJoinPoint);
-        String methodName = method.getDeclaringClass().getSimpleName() + "." + method.getName();
+        String className = method.getDeclaringClass().getSimpleName();
+        String methodName = method.getName();
+        String fullMethodName = className + "." + methodName;
+        String executionId = UUID.randomUUID().toString().substring(0, 8);
+
+        // MDC에 메서드별 상세 정보 설정
+        MDC.put("class_name", className);
+        MDC.put("method_name", methodName);
+        MDC.put("full_method_name", fullMethodName);
+        MDC.put("layer", "Controller");
+        MDC.put("execution_id", executionId);
+        MDC.put("http_method", httpMethod);
+        MDC.put("request_uri", requestUri);
 
         // StopWatch를 사용한 정확한 시간 측정
-        StopWatch stopWatch = new StopWatch(methodName);
+        StopWatch stopWatch = new StopWatch(fullMethodName);
         stopWatch.start();
 
         // 비즈니스 API인 경우만 상세 로깅 (일반적인 HTTP 메트릭은 Actuator가 처리)
@@ -98,6 +111,11 @@ public class ControllerAspect {
             // 시간 측정 종료
             stopWatch.stop();
 
+            // MDC에 실행 결과 정보 추가
+            MDC.put("execution_time_ms", String.valueOf(stopWatch.getTotalTimeMillis()));
+            MDC.put("status", "SUCCESS");
+            MDC.put("execution_category", categorizeExecutionTime(stopWatch.getTotalTimeMillis()));
+
             // 비즈니스 API인 경우만 상세 응답 로깅
             if (isBusinessApi) {
                 int statusCode = getStatusCode(response);
@@ -107,15 +125,24 @@ public class ControllerAspect {
                 responseInfo.put("businessDomain", getBusinessDomain(proceedingJoinPoint).getDescription());
                 responseInfo.put("criticalLevel", getCriticalLevel(proceedingJoinPoint).name());
                 responseInfo.put("executionCategory", categorizeExecutionTime(stopWatch.getTotalTimeMillis()));
-                
+
                 if (log.isDebugEnabled()) {
                     responseInfo.put("responseData", getResponseSummary(response));
                 }
-                
+
                 structuredLogger.logApiRequest(
-                    log, httpMethod, requestUri, methodName,
+                    log, httpMethod, requestUri, fullMethodName,
                     stopWatch.getTotalTimeMillis(), statusCode, responseInfo
                 );
+            }
+
+            // 일반 메서드 실행 로그 (성능 임계값 체크)
+            if (stopWatch.getTotalTimeMillis() > 1000) {
+                log.warn("메서드 완료 (느림): {}#{} [Controller] ({}ms)",
+                         className, methodName, stopWatch.getTotalTimeMillis());
+            } else {
+                log.info("메서드 완료: {}#{} [Controller] ({}ms)",
+                         className, methodName, stopWatch.getTotalTimeMillis());
             }
 
             return response;
@@ -123,6 +150,12 @@ public class ControllerAspect {
         } catch (Exception e) {
             // 시간 측정 종료
             stopWatch.stop();
+
+            // MDC에 에러 정보 추가
+            MDC.put("execution_time_ms", String.valueOf(stopWatch.getTotalTimeMillis()));
+            MDC.put("status", "ERROR");
+            MDC.put("error_message", e.getMessage());
+            MDC.put("error_class", e.getClass().getSimpleName());
 
             // API 에러는 항상 로깅 (비즈니스 영향도 분석용)
             Map<String, Object> errorInfo = new HashMap<>();
@@ -132,17 +165,24 @@ public class ControllerAspect {
             errorInfo.put("businessDomain", getBusinessDomain(proceedingJoinPoint).getDescription());
             errorInfo.put("criticalLevel", getCriticalLevel(proceedingJoinPoint).name());
             errorInfo.put("isBusinessCritical", isBusinessApi);
-            
+
             if (log.isDebugEnabled()) {
                 errorInfo.put("stackTrace", getShortStackTrace(e));
             }
-            
+
             structuredLogger.logApiRequest(
-                log, httpMethod, requestUri, methodName,
+                log, httpMethod, requestUri, fullMethodName,
                 stopWatch.getTotalTimeMillis(), 500, errorInfo
             );
 
+            // 일반 메서드 에러 로그
+            log.error("메서드 에러: {}#{} [Controller] ({}ms) - {}",
+                     className, methodName, stopWatch.getTotalTimeMillis(), e.getMessage(), e);
+
             throw e;
+        } finally {
+            // MDC 정리
+            MDC.clear();
         }
     }
 
