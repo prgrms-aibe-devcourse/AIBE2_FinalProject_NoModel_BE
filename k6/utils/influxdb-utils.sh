@@ -123,7 +123,6 @@ build_k6_command() {
     local k6_cmd="run --summary-export=/results/$result_file"
 
     if [ "$USE_INFLUXDB" = true ]; then
-        setup_influxdb
         k6_cmd="$k6_cmd --out influxdb=http://localhost:8086/k6"
     fi
 
@@ -136,6 +135,11 @@ run_k6_docker() {
     local test_file=$2
     local test_type=$3
     local additional_env=${4:-""}
+
+    # InfluxDB가 필요한 경우 설정
+    if [ "$USE_INFLUXDB" = true ]; then
+        setup_influxdb
+    fi
 
     local base_env="-e TEST_TYPE=$test_type"
     if [ "$USE_INFLUXDB" = true ]; then
