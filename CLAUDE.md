@@ -21,10 +21,10 @@ This is a comprehensive Spring Boot 3.5.4 application built with Java 21 and Gra
 - **Apache Kafka** for event streaming
 - **Spring Batch** for batch processing
 - **SpringDoc OpenAPI** for API documentation
-- **Logback + Logstash** for structured logging
+- **Logback + Loki** for structured logging
 
 ### Observability Stack
-- **ELK Stack**: Elasticsearch 8.15.0, Logstash 8.15.0, Kibana 8.15.0, Filebeat 8.15.0
+- **Logging Stack**: Loki 2.9.0, Promtail 2.9.0 for log aggregation (Elasticsearch 8.15.0 for AI search only)
 - **Prometheus + Grafana**: Metrics collection and visualization
 - **k6**: Performance testing and load testing
 - **Node Exporter**: System metrics monitoring
@@ -97,33 +97,54 @@ docker compose down
 docker compose logs -f [mysql|redis]
 ```
 
-#### ELK Stack (Logging & Observability)
+#### Loki + Promtail Logging Stack
 ```bash
-# Start complete ELK stack
-docker compose -f docker-compose-elk.yml up -d
+# Start logging stack (included in monitoring stack)
+docker compose -f docker-compose-monitoring.yml up -d
 
-# Stop ELK stack
-docker compose -f docker-compose-elk.yml down
+# Stop monitoring services
+docker compose -f docker-compose-monitoring.yml down
 
-# View specific service logs
-docker compose -f docker-compose-elk.yml logs -f [elasticsearch|logstash|kibana|filebeat]
+# View Loki and Promtail logs
+docker compose -f docker-compose-monitoring.yml logs -f [loki|promtail]
 
-# Check ELK services health
-docker compose -f docker-compose-elk.yml ps
+# Check logging services health
+docker compose -f docker-compose-monitoring.yml ps
 ```
 
-#### Monitoring Stack (Prometheus + Grafana + k6)
+#### Elasticsearch (AI Search Only)
+```bash
+# Start standalone Elasticsearch for AI search
+docker compose -f docker-compose-elasticsearch.yml up -d
+
+# Stop Elasticsearch
+docker compose -f docker-compose-elasticsearch.yml down
+
+# View Elasticsearch logs
+docker compose -f docker-compose-elasticsearch.yml logs -f elasticsearch
+```
+
+#### Monitoring Stack (Prometheus + Grafana + Loki)
 ```bash
 # Start monitoring infrastructure
 docker compose -f docker-compose-monitoring.yml up -d
 
 # Stop monitoring services
 docker compose -f docker-compose-monitoring.yml down
+```
+
+#### Performance Testing (k6 + InfluxDB)
+```bash
+# Start performance testing infrastructure (on-demand)
+docker compose -f docker-compose-k6.yml up -d influxdb
 
 # Run performance tests
-./k6/run-tests.sh smoke
-./k6/run-tests.sh load --prometheus
-./k6/run-tests.sh stress --prometheus
+./k6/run-tests.sh smoke --influxdb
+./k6/run-tests.sh load --influxdb
+./k6/run-tests.sh stress --influxdb
+
+# Stop performance testing infrastructure (save resources)
+docker compose -f docker-compose-k6.yml down
 ```
 
 ### Service Access Points
@@ -135,10 +156,9 @@ docker compose -f docker-compose-monitoring.yml down
 - **Actuator Metrics**: http://localhost:8080/api/actuator/metrics
 - **H2 Console**: http://localhost:8080/api/h2-console (local profile)
 
-#### ELK Stack
-- **Kibana UI**: http://localhost:5601 (elastic/elastic)
-- **Elasticsearch**: http://localhost:9200 (elastic/elastic)
-- **Logstash API**: http://localhost:9600
+#### Logging Stack
+- **Loki**: http://localhost:3100 (log aggregation)
+- **Elasticsearch**: http://localhost:9200 (AI search only)
 
 #### Monitoring Stack
 - **Grafana**: http://localhost:3000 (admin/admin123)
@@ -202,7 +222,7 @@ src/main/java/com/example/nomodel/
 - **`logback-spring.xml`**: Profile-specific logging configuration
 - **Console logging**: Development and non-prod profiles
 - **File logging**: Structured file outputs for dev profile
-- **Logstash logging**: JSON-formatted logs to ELK stack
+- **Loki logging**: JSON-formatted logs to Loki via Promtail
 - **Profile-specific log levels**: DEBUG for development, INFO for production
 
 ### Key Dependencies & Integrations
@@ -242,7 +262,7 @@ src/main/java/com/example/nomodel/
 - **lombok**: Code generation
 
 #### Observability & Monitoring
-- **logstash-logback-encoder**: Structured JSON logging
+- **Jackson JSON encoder**: Structured JSON logging for Loki
 - **micrometer-registry-prometheus**: Prometheus metrics export
 - **spring-modulith-starter-test**: Module testing support
 
@@ -252,28 +272,29 @@ src/main/java/com/example/nomodel/
 - **spring-batch-test**: Batch job testing
 - **spring-kafka-test**: Kafka testing utilities
 
-## ELK Stack Integration
+## Loki Logging Integration
 
 ### Logging Pipeline
 ```
-Spring Boot App → Logstash (TCP:5001) → Elasticsearch → Kibana
-              ↘ File Logs → Filebeat → Logstash → Elasticsearch
+Spring Boot App → JSON Log Files → Promtail → Loki → Grafana
 ```
 
 ### Log Structure
 The application generates structured JSON logs with the following fields:
 - **Standard fields**: @timestamp, message, level, logger_name, thread_name
 - **Application fields**: application, environment, service, version
-- **Tracing fields**: trace_id, span_id, transaction_id
-- **HTTP fields**: http.method, http.url, http.status_code, http.response_time
-- **Exception fields**: exception.class, exception.message, stack_trace
+- **Method tracking**: class_name, method_name, full_method_name, layer, execution_id
+- **HTTP fields**: http_method, request_uri, execution_time_ms, status
+- **Exception fields**: error_message, error_class, stack_trace
 
-### Kibana Setup
-1. Start ELK stack: `docker compose -f docker-compose-elk.yml up -d`
-2. Access Kibana: http://localhost:5601 (elastic/elastic)
-3. Create index pattern: `nomodel-logs-*` with time field `@timestamp`
-4. Import dashboards from `elk/kibana/dashboards/`
-5. See `elk/KIBANA_SETUP.md` for detailed configuration
+### Grafana Log Dashboard Setup
+1. Start monitoring stack: `docker compose -f docker-compose-monitoring.yml up -d`
+2. Access Grafana: http://localhost:3000 (admin/admin123)
+3. Loki datasource is automatically configured
+4. Pre-configured dashboards available:
+   - **Method Logging Dashboard**: Method-level tracking and performance
+   - **Real-time Log Streaming Dashboard**: Live error streams and log volume
+5. View logs with LogQL queries in Grafana Explore panel
 
 ## Performance Testing & Monitoring
 
@@ -304,7 +325,7 @@ The application generates structured JSON logs with the following fields:
 
 ### Recommended Development Setup
 1. **Start infrastructure**: `docker compose up -d` (MySQL, Redis)
-2. **Start ELK stack**: `docker compose -f docker-compose-elk.yml up -d`
+2. **Start monitoring stack**: `docker compose -f docker-compose-monitoring.yml up -d`
 3. **Run application**: `./gradlew bootRun`
 4. **Run tests**: `./gradlew test`
 5. **Optional monitoring**: `docker compose -f docker-compose-monitoring.yml up -d`
@@ -323,12 +344,10 @@ MYSQL_PORT=3306
 REDIS_PASSWORD=
 REDIS_PORT=6379
 
-# ELK Stack
+# Elasticsearch (AI Search Only)
 ELASTIC_PASSWORD=elastic
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=elastic
-KIBANA_SYSTEM_USERNAME=elastic
-KIBANA_SYSTEM_PASSWORD=elastic
 ```
 
 ### Testing Strategy
@@ -344,8 +363,8 @@ KIBANA_SYSTEM_PASSWORD=elastic
 ### Common Issues
 1. **Port conflicts**: Check Docker port mappings and local service conflicts
 2. **Database connection**: Verify MySQL container is running and credentials
-3. **ELK stack startup**: Services have dependencies; allow time for complete startup
-4. **Log ingestion**: Verify Logstash TCP port 5001 is accessible
+3. **Loki stack startup**: Services have dependencies; allow time for complete startup
+4. **Log ingestion**: Verify Promtail is reading log files from `/logs` directory
 5. **Metrics collection**: Check Actuator endpoints are exposed at `/actuator/prometheus`
 
 ### Health Checks

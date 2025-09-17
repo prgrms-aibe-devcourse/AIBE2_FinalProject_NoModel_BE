@@ -1,5 +1,6 @@
 package com.example.nomodel.model.application.controller;
 
+import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.model.application.dto.PageResponse;
 import com.example.nomodel.model.application.service.AIModelSearchService;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,31 +39,37 @@ public class AIModelSearchController {
     @GetMapping
     public ResponseEntity<?> searchModels(
             @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.search(keyword, page, size);
+        Page<AIModelDocument> result = searchService.search(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "관리자 모델 목록 조회", description = "공개된 관리자 모델 목록 (ADMIN 타입)")
+    @Operation(summary = "관리자 모델 목록 조회/검색", description = "공개된 관리자 모델 목록 (ADMIN 타입). 키워드가 있으면 검색, 없으면 전체 조회")
     @GetMapping("/admin")
     public ResponseEntity<?> getAdminModels(
+            @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getAdminModels(page, size);
+        Page<AIModelDocument> result = searchService.getAdminModels(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "내 모델 목록 조회", description = "사용자가 생성한 모든 모델 목록")
+    @Operation(summary = "내 모델 목록 조회/검색", description = "로그인한 사용자가 생성한 모델 목록. 키워드가 있으면 검색, 없으면 전체 조회")
     @GetMapping("/my-models")
-    public ResponseEntity<?> getUserModels(
-            @Parameter(description = "사용자 ID") @RequestParam Long userId,
+    public ResponseEntity<?> getMyModels(
+            @Parameter(description = "검색 키워드 (선택적)") @RequestParam(required = false) String keyword,
+            @Parameter(description = "가격 필터링 (true: 무료만, false: 유료만, null: 전체)") @RequestParam(required = false) Boolean isFree,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Page<AIModelDocument> result = searchService.getUserModels(userId, page, size);
+        Long userId = userDetails.getMemberId();
+        Page<AIModelDocument> result = searchService.getUserModels(keyword, isFree, userId, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
