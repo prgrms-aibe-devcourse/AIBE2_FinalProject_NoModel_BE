@@ -116,12 +116,12 @@ const influxDBOptimizedOptions = {
   ...selectedOptions,
   ext: {
     influxdb: {
-      // 플러시 간격을 2초로 증가하여 부하 감소
-      pushInterval: '2s',
-      // 배치 크기 증가하여 효율성 향상
-      batchSize: 5000,
-      // 동시 연결 수 제한
-      concurrentWrites: 10,
+      // 플러시 간격을 10초로 증가하여 InfluxDB 부하 대폭 감소
+      pushInterval: '10s',
+      // 배치 크기를 10000으로 증가하여 플러시 횟수 감소
+      batchSize: 10000,
+      // 동시 연결 수를 15로 증가하여 처리 효율 향상
+      concurrentWrites: 15,
     }
   }
 };
