@@ -9,7 +9,6 @@
 
     <springProfile name="local">
         <include resource="log/console-appender.xml"/>
-        <include resource="log/logstash-local-appender.xml"/>
         <include resource="log/loki-appender.xml"/>
 
         <logger name="nomodel" level="DEBUG" />
@@ -18,7 +17,6 @@
         <logger name="org.springframework" level="INFO" />
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH-LOCAL"/>
             <appender-ref ref="LOKI-FILE"/>
         </root>
     </springProfile>
@@ -28,13 +26,13 @@
         <include resource="log/file-info-appender.xml"/>
         <include resource="log/file-warn-appender.xml"/>
         <include resource="log/file-error-appender.xml"/>
-        <include resource="log/logstash-dev-appender.xml"/>
+        <include resource="log/loki-appender.xml"/>
 
         <logger name="nomodel" level="DEBUG" />
         <logger name="org.springframework" level="INFO" />
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH-DEV"/>
+            <appender-ref ref="LOKI-FILE"/>
             <appender-ref ref="FILE-INFO"/>
             <appender-ref ref="FILE-WARN"/>
             <appender-ref ref="FILE-ERROR"/>
@@ -42,16 +40,15 @@
     </springProfile>
 
     <springProfile name="prod">
-        <!-- Use async appender for maximum throughput in production -->
-        <include resource="log/logstash-prod-async-appender.xml"/>
+        <!-- Use Loki appender for structured logging in production -->
+        <include resource="log/loki-appender.xml"/>
 
         <logger name="nomodel" level="INFO" />
         <logger name="org.springframework" level="WARN" />
         <logger name="org.hibernate" level="WARN" />
         <logger name="com.zaxxer.hikari" level="WARN" />
-        <logger name="net.logstash.logback" level="ERROR" />
         <root level="INFO">
-            <appender-ref ref="LOGSTASH-PROD"/>
+            <appender-ref ref="LOKI-FILE"/>
         </root>
     </springProfile>
 </configuration>
