@@ -6,6 +6,11 @@ import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generate.application.dto.StableDiffusionRequest;
 import com.example.nomodel.generate.application.dto.StableDiffusionResponse;
+import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.domain.model.ModelMetadata;
+import com.example.nomodel.model.domain.model.OwnType;
+import com.example.nomodel.model.domain.model.SamplerType;
+import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,7 @@ public class StableDiffusionImageGenerator {
     
     private final ObjectMapper objectMapper;
     private final FileService fileService;
+    private final AIModelJpaRepository aiModelRepository;
 
     @Value("${STABLE_DIFFUSION_API_URL:http://220.127.239.150:7860}")
     private String apiUrl;
@@ -92,17 +98,15 @@ public class StableDiffusionImageGenerator {
             
             log.info("Image generation completed. Size: {} bytes", imageBytes.length);
             
-            // Firebase에 저장
-            // RelationType은 GENERATE 타입이 없으므로 MODEL 또는 새로운 타입을 추가해야 함
-            // 여기서는 일단 MODEL로 설정하거나, opts에서 relationId를 받아서 처리
-            Long relationId = getRelationId(opts);
-            RelationType relationType = getRelationType(opts);
+            // 1. AI 모델 정보를 ai_model_tb에 저장
+            AIModel savedModel = saveAIModelToDatabase(request, mode, opts);
             
+            // 2. Firebase에 저장 (생성된 모델 ID를 relation_id로 사용)
             Long fileId = fileService.saveBytes(
                 imageBytes, 
                 "image/png", 
-                relationType, 
-                relationId, 
+                RelationType.MODEL, 
+                savedModel.getId(), 
                 FileType.PREVIEW
             );
             
@@ -277,6 +281,111 @@ public class StableDiffusionImageGenerator {
             }
         }
         return null;
+    }
+
+    /**
+     * AI 모델 정보를 데이터베이스에 저장
+     */
+    private AIModel saveAIModelToDatabase(StableDiffusionRequest request, GenerationMode mode, Map<String, Object> opts) {
+        try {
+            // 모델명 생성 (프롬프트 기반으로 생성하거나 opts에서 가져오기)
+            String modelName = generateModelName(request.getPrompt(), mode, opts);
+            
+            // 소유자 ID 추출 (opts에서 가져오거나 기본값 사용)
+            Long ownerId = getOwnerId(opts);
+            
+            // Sampler 문자열을 SamplerType enum으로 변환
+            SamplerType samplerType = convertToSamplerType(request.getSamplerIndex());
+            
+            // ModelMetadata 생성
+            ModelMetadata metadata = ModelMetadata.builder()
+                    .seed(request.getSeed())
+                    .prompt(request.getPrompt())
+                    .negativePrompt(request.getNegativePrompt())
+                    .width(request.getWidth())
+                    .height(request.getHeight())
+                    .steps(request.getSteps())
+                    .samplerIndex(samplerType)
+                    .nIter(request.getNIter())
+                    .batchSize(request.getBatchSize())
+                    .build();
+            
+            // AIModel 생성 및 저장
+            AIModel aiModel = AIModel.createUserModel(modelName, metadata, ownerId);
+            
+            // 공개 여부 설정 (opts에서 가져오거나 기본값 false)
+            boolean isPublic = (Boolean) opts.getOrDefault("isPublic", false);
+            aiModel.updateVisibility(isPublic);
+            
+            // 데이터베이스에 저장
+            AIModel savedModel = aiModelRepository.save(aiModel);
+            
+            log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}", 
+                    savedModel.getId(), savedModel.getModelName());
+            
+            return savedModel;
+            
+        } catch (Exception e) {
+            log.error("Failed to save AI model to database: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to save AI model: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 모델명 생성
+     */
+    private String generateModelName(String prompt, GenerationMode mode, Map<String, Object> opts) {
+        // opts에서 모델명이 제공된 경우 사용
+        Object providedName = opts.get("modelName");
+        if (providedName instanceof String && !((String) providedName).trim().isEmpty()) {
+            return (String) providedName;
+        }
+        
+        // 프롬프트 기반으로 모델명 생성
+        String basePrompt = prompt != null ? prompt : "Generated Model";
+        String truncatedPrompt = basePrompt.length() > 30 ? basePrompt.substring(0, 30) + "..." : basePrompt;
+        
+        // 모드와 타임스탬프 추가
+        String modePrefix = mode != null ? mode.name() + "_" : "";
+        String timestamp = String.valueOf(System.currentTimeMillis() % 100000); // 마지막 5자리
+        
+        return modePrefix + truncatedPrompt.replaceAll("[^a-zA-Z0-9\\s]", "").trim() + "_" + timestamp;
+    }
+    
+    /**
+     * 소유자 ID 추출
+     */
+    private Long getOwnerId(Map<String, Object> opts) {
+        Object ownerId = opts.get("ownerId");
+        if (ownerId instanceof Number) {
+            return ((Number) ownerId).longValue();
+        }
+        // 기본값으로 1L 반환 (실제 환경에서는 현재 로그인한 사용자 ID 사용)
+        return 1L;
+    }
+    
+    /**
+     * Sampler 문자열을 SamplerType enum으로 변환
+     */
+    private SamplerType convertToSamplerType(String samplerString) {
+        if (samplerString == null) {
+            return SamplerType.DPM_PLUS_PLUS_2M_KARRAS; // 기본값
+        }
+        
+        // 문자열을 enum 형태로 변환
+        String normalizedSampler = samplerString
+                .toUpperCase()
+                .replaceAll("\\+\\+", "_PLUS_PLUS")
+                .replaceAll("\\+", "_PLUS")
+                .replaceAll("\\s+", "_")
+                .replaceAll("-", "_");
+        
+        try {
+            return SamplerType.valueOf(normalizedSampler);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown sampler type: {}, using default DPM_PLUS_PLUS_2M_KARRAS", samplerString);
+            return SamplerType.DPM_PLUS_PLUS_2M_KARRAS;
+        }
     }
 
     /**
