@@ -1,6 +1,5 @@
 package com.example.nomodel.removebg.application.controller;
 
-import com.example.nomodel.generationjob.application.service.GenerationJobService;
 import com.example.nomodel.removebg.application.dto.RemoveBgRequest;
 import com.example.nomodel.removebg.application.dto.RemoveBgResponse;
 import com.example.nomodel.removebg.application.service.RemoveBgService;

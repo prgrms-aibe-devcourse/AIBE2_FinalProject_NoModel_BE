@@ -85,7 +85,6 @@ public class GenerationJobService {
     }
 
     /** 이미지 합성 실행 로직 - 비동기 */
-    @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void runImageCompositionAsync(UUID jobId, Long productFileId, String prompt) {
         GenerationJob job = repo.findById(jobId).orElseThrow();
@@ -195,31 +194,44 @@ public class GenerationJobService {
     /**
      * remove-bg 실행 로직
      */
-    @Async
-    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void runRemoveBg(
             UUID jobId,
             java.util.function.BiFunction<Long, Map<String, Object>, Long> worker,
             Map<String, Object> params
     ) {
-        GenerationJob job = repo.findById(jobId).orElseThrow();
-
-        job.markRunning();
-        log.info("[JOB] RUN REMOVE_BG id={} -> RUNNING (inputFileId={})", jobId, job.getInputFileId());
+        log.info("[JOB] Starting runRemoveBg for jobId: {}", jobId);
+        
+        GenerationJob job = repo.findById(jobId)
+                .orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
 
         try {
+            // 상태를 RUNNING으로 변경하고 즉시 저장
+            job.markRunning();
+            repo.save(job);
+            log.info("[JOB] RUN REMOVE_BG id={} -> RUNNING (inputFileId={})", jobId, job.getInputFileId());
+
+            // 실제 작업 수행
             Long outFileId = worker.apply(job.getInputFileId(), params);
 
             if (outFileId == null) {
                 throw new IllegalStateException("BackgroundRemovalService returned null fileId");
             }
 
+            // 성공 상태로 변경
             job.succeed(outFileId);
+            repo.save(job);
             log.info("[JOB] OK REMOVE_BG id={} -> SUCCEEDED (resultFileId={})", jobId, outFileId);
 
         } catch (Exception e) {
-            job.fail(e.getMessage());
-            log.error("[JOB] FAIL REMOVE_BG id={} -> FAILED : {}", jobId, e.getMessage(), e);
+            try {
+                // 실패 상태로 변경
+                job.fail(e.getMessage());
+                repo.save(job);
+                log.error("[JOB] FAIL REMOVE_BG id={} -> FAILED : {}", jobId, e.getMessage(), e);
+            } catch (Exception saveException) {
+                log.error("[JOB] Failed to save job failure state for id={}: {}", jobId, saveException.getMessage(), saveException);
+            }
         }
     }
 
