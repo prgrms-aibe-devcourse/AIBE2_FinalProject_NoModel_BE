@@ -25,18 +25,21 @@ public class CachedModelSearchService {
     private final AIModelSearchService searchService;
 
     /**
-     * 통합 검색 (캐싱 적용)
-     * 처음 몇 페이지만 캐싱 (0-2 페이지)
+     * 통합 검색 (키워드 없는 기본 검색만 캐싱)
+     * 키워드가 있는 검색은 인기 검색어 통계 구현 후 적용 예정
      */
     @Cacheable(
             value = "modelSearch",
             key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
-            condition = "#page <= 2 && #size <= 20",  // 처음 3페이지, 페이지 크기 20 이하만 캐싱
+            condition = "#keyword == null && #page <= 2 && #size <= 10",  // 키워드 없는 기본 검색만 캐싱
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> search(String keyword, Boolean isFree, int page, int size) {
-        log.debug("캐시 미스 - 검색 실행: keyword={}, isFree={}, page={}, size={}",
-                keyword, isFree, page, size);
+        if (keyword == null) {
+            log.debug("캐시 적용 - 기본 검색 실행: isFree={}, page={}, size={}", isFree, page, size);
+        } else {
+            log.debug("캐시 미적용 - 키워드 검색 실행: keyword={}, isFree={}, page={}, size={}", keyword, isFree, page, size);
+        }
         return searchService.search(keyword, isFree, page, size);
     }
 
@@ -46,7 +49,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "popularModels",
             key = "'popular_' + #page + '_' + #size",
-            condition = "#page <= 4 && #size <= 20",
+            condition = "#page <= 2 && #size <= 10",
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> getPopularModels(int page, int size) {
@@ -60,7 +63,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "recentModels",
             key = "'recent_' + #page + '_' + #size",
-            condition = "#page <= 2 && #size <= 20",
+            condition = "#page <= 2 && #size <= 10",
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> getRecentModels(int page, int size) {
@@ -74,7 +77,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "recommendedModels",
             key = "'recommended_' + #page + '_' + #size",
-            condition = "#page <= 2 && #size <= 20",
+            condition = "#page <= 2 && #size <= 10",
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> getRecommendedModels(int page, int size) {
@@ -83,17 +86,20 @@ public class CachedModelSearchService {
     }
 
     /**
-     * 관리자 모델 검색 (캐싱 적용)
+     * 관리자 모델 검색 (키워드 없는 기본 검색만 캐싱)
      */
     @Cacheable(
             value = "adminModels",
             key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
-            condition = "#page <= 2 && #size <= 20",
+            condition = "#keyword == null && #page <= 2 && #size <= 10",  // 키워드 없는 기본 검색만 캐싱
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> getAdminModels(String keyword, Boolean isFree, int page, int size) {
-        log.debug("캐시 미스 - 관리자 모델 조회: keyword={}, isFree={}, page={}, size={}",
-                keyword, isFree, page, size);
+        if (keyword == null) {
+            log.debug("캐시 적용 - 관리자 모델 조회: isFree={}, page={}, size={}", isFree, page, size);
+        } else {
+            log.debug("캐시 미적용 - 관리자 모델 키워드 검색: keyword={}, isFree={}, page={}, size={}", keyword, isFree, page, size);
+        }
         return searchService.getAdminModels(keyword, isFree, page, size);
     }
 
@@ -103,7 +109,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "freeModels",
             key = "'free_' + #page + '_' + #size",
-            condition = "#page <= 4 && #size <= 20",
+            condition = "#page <= 2 && #size <= 10",
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelDocument> getFreeModels(int page, int size) {

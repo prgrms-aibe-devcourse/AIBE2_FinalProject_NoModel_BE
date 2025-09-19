@@ -51,13 +51,13 @@ public class RedisCacheConfig {
         // 캐시별 개별 설정
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        // 모델 검색 결과 캐시 (자주 조회되는 첫 몇 페이지)
+        // 모델 검색 결과 캐시 (이벤트 기반 무효화 사용으로 긴 TTL)
         cacheConfigurations.put("modelSearch", defaultConfig
-                .entryTtl(Duration.ofMinutes(15)));  // 15분 캐싱
+                .entryTtl(Duration.ofHours(2)));  // 2시간 캐싱 (이벤트로 무효화)
 
-        // 모델 상세 캐시 (개별 모델 상세 정보)
+        // 모델 상세 캐시 (이벤트 기반 무효화 사용)
         cacheConfigurations.put("modelDetail", defaultConfig
-                .entryTtl(Duration.ofMinutes(30)));  // 30분 캐싱
+                .entryTtl(Duration.ofHours(1)));  // 1시간 캐싱 (이벤트로 무효화)
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultConfig)

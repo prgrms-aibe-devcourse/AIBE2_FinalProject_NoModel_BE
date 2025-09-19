@@ -4,6 +4,7 @@ import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.model.application.dto.PageResponse;
 import com.example.nomodel.model.application.service.AIModelSearchService;
+import com.example.nomodel.model.application.service.CachedModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +30,7 @@ import java.util.List;
 public class AIModelSearchController {
 
     private final AIModelSearchService searchService;
+    private final CachedModelSearchService cachedSearchService;
 
     @Operation(summary = "AI 모델 통합 검색", description = "모델명, 설명, 태그에서 키워드 검색. 키워드가 없으면 전체 공개 모델 조회")
     @ApiResponses({
@@ -43,7 +45,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.search(keyword, isFree, page, size);
+        Page<AIModelDocument> result = cachedSearchService.search(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -55,7 +57,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getAdminModels(keyword, isFree, page, size);
+        Page<AIModelDocument> result = cachedSearchService.getAdminModels(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -91,7 +93,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = searchService.getRecentModels(page, size);
+        Page<AIModelDocument> result = cachedSearchService.getRecentModels(page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -101,7 +103,7 @@ public class AIModelSearchController {
     public ResponseEntity<?> getModelNameSuggestions(
             @Parameter(description = "자동완성 접두사") @RequestParam String prefix) {
 
-        List<String> suggestions = searchService.getModelNameSuggestions(prefix);
+        List<String> suggestions = cachedSearchService.getModelNameSuggestions(prefix);
         return ResponseEntity.ok(ApiUtils.success(suggestions));
     }
 
