@@ -61,4 +61,26 @@ public class ModelStatistics extends BaseTimeEntity {
     public Long getTotalInteractions() {
         return this.usageCount + this.viewCount;
     }
+
+    /**
+     * 조회수 초기화 (관리자용)
+     */
+    public void resetViewCount() {
+        this.viewCount = 0L;
+    }
+
+    /**
+     * 사용량 초기화 (관리자용)
+     */
+    public void resetUsageCount() {
+        this.usageCount = 0L;
+    }
+
+    /**
+     * 전체 통계 초기화 (관리자용)
+     */
+    public void resetAllStatistics() {
+        this.usageCount = 0L;
+        this.viewCount = 0L;
+    }
 }
