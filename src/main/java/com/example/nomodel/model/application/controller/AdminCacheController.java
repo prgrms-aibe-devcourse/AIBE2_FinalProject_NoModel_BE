@@ -1,7 +1,7 @@
 package com.example.nomodel.model.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
-import com.example.nomodel.model.application.dto.cache.CacheStatusResponse;
+import com.example.nomodel.model.application.dto.response.cache.CacheStatusResponse;
 import com.example.nomodel.model.application.service.SmartCacheEvictionService;
 import com.example.nomodel.model.application.service.LazyInvalidationService;
 import com.example.nomodel.model.application.service.ModelCacheService;

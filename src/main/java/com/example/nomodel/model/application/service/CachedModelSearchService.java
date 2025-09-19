@@ -4,14 +4,12 @@ import com.example.nomodel.model.application.dto.response.cache.ModelSearchCache
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -113,20 +111,6 @@ public class CachedModelSearchService {
         return searchService.getFreeModels(page, size);
     }
 
-    /**
-     * 평점 높은 모델 검색 (캐싱 적용)
-     */
-    @Cacheable(
-            value = "modelSearch",
-            key = "'highRated_' + #minRating + '_' + #page + '_' + #size",
-            condition = "#page <= 2 && #size <= 20",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public Page<AIModelDocument> getHighRatedModels(Double minRating, int page, int size) {
-        log.debug("캐시 미스 - 평점 높은 모델 조회: minRating={}, page={}, size={}",
-                minRating, page, size);
-        return searchService.getHighRatedModels(minRating, page, size);
-    }
 
     /**
      * 자동완성 제안 (캐싱 적용)
@@ -141,48 +125,6 @@ public class CachedModelSearchService {
         return searchService.getModelNameSuggestions(prefix);
     }
 
-    /**
-     * 태그 검색 (캐싱 적용)
-     */
-    @Cacheable(
-            value = "modelSearch",
-            key = "'tag_' + #tag + '_' + #page + '_' + #size",
-            condition = "#page <= 2 && #size <= 20",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public Page<AIModelDocument> searchByTag(String tag, int page, int size) {
-        log.debug("캐시 미스 - 태그 검색: tag={}, page={}, size={}", tag, page, size);
-        return searchService.searchByTag(tag, page, size);
-    }
-
-    /**
-     * 가격 범위 검색 (캐싱 적용)
-     */
-    @Cacheable(
-            value = "modelSearch",
-            key = "'price_' + #minPrice + '_' + #maxPrice + '_' + #page + '_' + #size",
-            condition = "#page <= 1 && #size <= 20",
-            unless = "#result == null || #result.isEmpty()"
-    )
-    public Page<AIModelDocument> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        log.debug("캐시 미스 - 가격 범위 검색: min={}, max={}, page={}, size={}",
-                minPrice, maxPrice, page, size);
-        return searchService.searchByPriceRange(minPrice, maxPrice, page, size);
-    }
-
-    /**
-     * 캐시 갱신 메서드
-     * 모델이 업데이트되었을 때 해당 검색 캐시를 갱신
-     */
-    @CachePut(
-            value = "modelSearch",
-            key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)"
-    )
-    public Page<AIModelDocument> refreshSearchCache(String keyword, Boolean isFree, int page, int size) {
-        log.info("캐시 갱신 - 검색: keyword={}, isFree={}, page={}, size={}",
-                keyword, isFree, page, size);
-        return searchService.search(keyword, isFree, page, size);
-    }
 
     /**
      * 인기 모델 캐시 갱신
@@ -208,17 +150,4 @@ public class CachedModelSearchService {
         return searchService.getRecentModels(page, size);
     }
 
-    // 사용자별 검색은 캐싱하지 않음 (개인화된 데이터)
-    public Page<AIModelDocument> getUserModels(String keyword, Boolean isFree, Long userId, int page, int size) {
-        return searchService.getUserModels(keyword, isFree, userId, page, size);
-    }
-
-    public Page<AIModelDocument> searchAccessibleModels(String keyword, Long userId, int page, int size) {
-        return searchService.searchAccessibleModels(keyword, userId, page, size);
-    }
-
-    // 유사 모델 검색은 캐싱하지 않음 (동적 데이터)
-    public Page<AIModelDocument> getSimilarModels(String modelId, int page, int size) {
-        return searchService.getSimilarModels(modelId, page, size);
-    }
 }

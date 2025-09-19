@@ -1,9 +1,9 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.model.application.dto.cache.SmartCacheStatusResponse;
-import com.example.nomodel.model.application.event.ModelCreatedEvent;
-import com.example.nomodel.model.application.event.ModelDeletedEvent;
-import com.example.nomodel.model.application.event.ModelUpdateEvent;
+import com.example.nomodel.model.application.dto.response.cache.SmartCacheStatusResponse;
+import com.example.nomodel.model.domain.event.ModelCreatedEvent;
+import com.example.nomodel.model.domain.event.ModelDeletedEvent;
+import com.example.nomodel.model.domain.event.ModelUpdateEvent;
 import com.example.nomodel.review.application.event.ReviewEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

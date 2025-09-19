@@ -1,7 +1,7 @@
 package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
-import com.example.nomodel.model.application.dto.cache.ModelCacheStatusResponse;
+import com.example.nomodel.model.application.dto.response.cache.ModelCacheStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;

@@ -1,4 +1,4 @@
-package com.example.nomodel.model.application.event;
+package com.example.nomodel.model.domain.event;
 
 /**
  * 모델 삭제 이벤트

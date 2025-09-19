@@ -1,7 +1,7 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.model.application.dto.cache.BatchStatisticsResponse;
-import com.example.nomodel.model.application.dto.cache.LazyInvalidationStatusResponse;
+import com.example.nomodel.model.application.dto.response.cache.BatchStatisticsResponse;
+import com.example.nomodel.model.application.dto.response.cache.LazyInvalidationStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

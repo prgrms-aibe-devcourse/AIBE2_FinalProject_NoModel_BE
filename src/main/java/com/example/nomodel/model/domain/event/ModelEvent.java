@@ -1,4 +1,4 @@
-package com.example.nomodel.model.application.event;
+package com.example.nomodel.model.domain.event;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
