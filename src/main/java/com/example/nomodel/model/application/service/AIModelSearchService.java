@@ -1,15 +1,7 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.member.domain.model.Email;
-import com.example.nomodel.member.domain.model.Member;
-import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.domain.document.AIModelDocument;
-import com.example.nomodel.model.domain.model.AIModel;
-import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
-import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
-import com.example.nomodel.review.domain.repository.ReviewRepository;
-import com.example.nomodel.review.domain.model.ReviewStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,9 +15,7 @@ import co.elastic.clients.elasticsearch.core.search.Suggester;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * AI 모델 검색 서비스
@@ -39,9 +29,6 @@ public class AIModelSearchService {
 
     private final AIModelSearchRepository searchRepository;
     private final ElasticsearchClient elasticsearchClient;
-    private final ModelStatisticsJpaRepository modelStatisticsRepository;
-    private final MemberJpaRepository memberRepository;
-    private final ReviewRepository reviewRepository;
 
     /**
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
@@ -149,48 +136,6 @@ public class AIModelSearchService {
         return searchRepository.findByOwnerId(userId, pageable);
     }
 
-    /**
-     * 사용자 접근 가능한 모델 검색 (본인 모델 + 공개 모델)
-     */
-    public Page<AIModelDocument> searchAccessibleModels(String keyword, Long userId, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            return searchRepository.searchAccessibleModels(keyword, userId, pageable);
-        } else {
-            return searchRepository.findAccessibleModels(userId, pageable);
-        }
-    }
-
-
-    /**
-     * 고급 검색 - 태그와 키워드 조합
-     */
-    public Page<AIModelDocument> advancedSearch(String keyword, String tag, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        return searchRepository.searchWithMultipleFilters(keyword, tag, BigDecimal.ZERO, new BigDecimal("999999"), pageable);
-    }
-
-    /**
-     * 복합 필터 검색 - 태그와 가격 범위
-     */
-    public Page<AIModelDocument> searchWithFilters(String keyword, String tag, 
-                                                  BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        return searchRepository.searchWithMultipleFilters(keyword, tag, minPrice, maxPrice, pageable);
-    }
-
-    /**
-     * 태그로 검색
-     */
-    public Page<AIModelDocument> searchByTag(String tag, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return searchRepository.searchByTag(tag, pageable);
-    }
 
     /**
      * 소유자별 검색
@@ -232,16 +177,6 @@ public class AIModelSearchService {
         return searchRepository.findRecommendedModels(pageable);
     }
 
-    /**
-     * 평점 높은 모델 검색
-     */
-    public Page<AIModelDocument> getHighRatedModels(Double minRating, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
-            Sort.by("rating").descending()
-                .and(Sort.by("reviewCount").descending()));
-        return searchRepository.findHighRatedModels(minRating, pageable);
-    }
 
     /**
      * 무료 모델 검색
@@ -250,15 +185,6 @@ public class AIModelSearchService {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("rating").descending());
         return searchRepository.findFreeModels(pageable);
-    }
-
-    /**
-     * 가격 범위로 검색
-     */
-    public Page<AIModelDocument> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("price").ascending());
-        return searchRepository.searchByPriceRange(minPrice, maxPrice, pageable);
     }
 
 
@@ -295,7 +221,7 @@ public class AIModelSearchService {
             SearchResponse<Void> resp = elasticsearchClient.search(req, Void.class);
             List<String> suggestions = resp.suggest().get("model-name-suggest").stream()
                 .flatMap(s -> s.completion().options().stream())
-                .map(o -> o.text())
+.map(co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption::text)
                 .distinct()
                 .toList();
             
@@ -308,171 +234,5 @@ public class AIModelSearchService {
         }
     }
 
-    /**
-     * 유사 모델 검색
-     */
-    public Page<AIModelDocument> getSimilarModels(String modelId, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size);
-        return searchRepository.findSimilarModels(modelId, pageable);
-    }
 
-    /**
-     * 모델 ID로 검색
-     */
-    public Optional<AIModelDocument> findById(String documentId) {
-        return searchRepository.findById(documentId);
-    }
-
-    /**
-     * 하이라이트 기능을 포함한 검색
-     */
-    public Page<AIModelDocument> searchWithHighlight(String keyword, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        return searchRepository.searchWithHighlight(keyword, pageable);
-    }
-
-    /**
-     * AI 모델을 Elasticsearch에 색인
-     */
-    @Transactional
-    public AIModelDocument indexModel(AIModel aiModel, String ownerName) {
-        log.info("AI 모델 색인: modelId={}, modelName={}", aiModel.getId(), aiModel.getModelName());
-        
-        Long usageCount = getUsageCount(aiModel);
-        Long viewCount = getViewCount(aiModel);
-        Double rating = getAverageRating(aiModel);
-        Long reviewCount = getReviewCount(aiModel);
-        
-        AIModelDocument document = AIModelDocument.from(
-            aiModel, ownerName, usageCount, viewCount, rating, reviewCount);
-        return searchRepository.save(document);
-    }
-
-    /**
-     * AI 모델 문서 업데이트
-     */
-    @Transactional
-    public Optional<AIModelDocument> updateModel(Long modelId, AIModel updatedModel, String ownerName) {
-        log.info("AI 모델 문서 업데이트: modelId={}", modelId);
-        
-        // 기존 문서 찾기 (modelId로)
-        Page<AIModelDocument> existingDocs = searchRepository.findByOwnerId(updatedModel.getOwnerId(), 
-                PageRequest.of(0, 1));
-        
-        if (!existingDocs.isEmpty()) {
-            AIModelDocument existingDoc = existingDocs.getContent().get(0);
-            
-            Long usageCount = getUsageCount(updatedModel);
-            Long viewCount = getViewCount(updatedModel);
-            Double rating = getAverageRating(updatedModel);
-            Long reviewCount = getReviewCount(updatedModel);
-            
-            AIModelDocument updatedDocument = AIModelDocument.from(
-                updatedModel, ownerName, usageCount, viewCount, rating, reviewCount);
-            // ID는 기존 것을 유지
-            return Optional.of(searchRepository.save(updatedDocument));
-        }
-        
-        // 기존 문서가 없으면 새로 생성
-        return Optional.of(indexModel(updatedModel, ownerName));
-    }
-
-    /**
-     * 사용량 증가
-     */
-    @Transactional
-    public void increaseUsage(String documentId) {
-        searchRepository.findById(documentId)
-                .ifPresent(document -> {
-                    document.increaseUsage();
-                    searchRepository.save(document);
-                    log.debug("AI 모델 사용량 증가: documentId={}, usageCount={}", 
-                            documentId, document.getUsageCount());
-                });
-    }
-
-    /**
-     * 평점 업데이트
-     */
-    @Transactional
-    public void updateRating(String documentId, Double rating, Long reviewCount) {
-        searchRepository.findById(documentId)
-                .ifPresent(document -> {
-                    document.updateRating(rating, reviewCount);
-                    searchRepository.save(document);
-                    log.debug("AI 모델 평점 업데이트: documentId={}, rating={}, reviewCount={}", 
-                            documentId, rating, reviewCount);
-                });
-    }
-
-    /**
-     * 공개 상태 변경
-     */
-    @Transactional
-    public void updateVisibility(String documentId, Boolean isPublic) {
-        searchRepository.findById(documentId)
-                .ifPresent(document -> {
-                    document.updateVisibility(isPublic);
-                    searchRepository.save(document);
-                    log.debug("AI 모델 공개 상태 변경: documentId={}, isPublic={}", 
-                            documentId, isPublic);
-                });
-    }
-
-    /**
-     * 가격 업데이트
-     */
-    @Transactional
-    public void updatePrice(String documentId, BigDecimal price) {
-        searchRepository.findById(documentId)
-                .ifPresent(document -> {
-                    document.updatePrice(price);
-                    searchRepository.save(document);
-                    log.debug("AI 모델 가격 업데이트: documentId={}, price={}", 
-                            documentId, price);
-                });
-    }
-
-    /**
-     * 문서 삭제
-     */
-    @Transactional
-    public void deleteModel(String documentId) {
-        log.info("AI 모델 문서 삭제: documentId={}", documentId);
-        searchRepository.deleteById(documentId);
-    }
-    
-    /**
-     * 모델의 사용량 조회
-     */
-    private Long getUsageCount(AIModel aiModel) {
-        return modelStatisticsRepository.findByModelId(aiModel.getId())
-                .map(ModelStatistics::getUsageCount)
-                .orElse(0L);
-    }
-
-    /**
-     * 모델의 조회수 조회
-     */
-    private Long getViewCount(AIModel aiModel) {
-        return modelStatisticsRepository.findByModelId(aiModel.getId())
-                .map(ModelStatistics::getViewCount)
-                .orElse(0L);
-    }
-
-    /**
-     * 모델의 평점 조회
-     */
-    private Double getAverageRating(AIModel aiModel) {
-        return reviewRepository.calculateAverageRatingByModelId(aiModel.getId(), ReviewStatus.ACTIVE);
-    }
-
-    /**
-     * 모델의 리뷰 수 조회
-     */
-    private Long getReviewCount(AIModel aiModel) {
-        return reviewRepository.countByModelIdAndStatus(aiModel.getId(), ReviewStatus.ACTIVE);
-    }
 }
