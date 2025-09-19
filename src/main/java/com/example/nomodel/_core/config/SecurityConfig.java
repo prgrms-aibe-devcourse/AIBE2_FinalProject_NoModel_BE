@@ -53,6 +53,7 @@ public class SecurityConfig {
             "/favicon.ico",
             "/test/**",          // 테스트 API 허용
             "/models/sync/**",   // 동기화 API 허용 (개발/테스트용)
+            "/models/search/**", // 모델 검색 API 허용 (공개)
             "/oauth2/**",
             "/login/**",
             "/compose/**",
@@ -143,7 +144,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // React 개발 서버 주소
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173", "https://aibe-2-final-project-no-model-eztill33q.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

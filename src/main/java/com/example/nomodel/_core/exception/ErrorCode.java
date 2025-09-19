@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
+    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     INTERNAL_SERVER_ERROR("ISE001", HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     INVALID_REQUEST("IRE001", HttpStatus.BAD_REQUEST, "Invalid request"),
-    INVALID_ENUM_VALUE("IEV001", HttpStatus.BAD_REQUEST, "Invalid enum value"),
     MEMBER_NOT_FOUND("MNF001", HttpStatus.NOT_FOUND, "Member not found"),
     MEMBER_ALREADY_EXISTS("MAE001", HttpStatus.CONFLICT, "Member already exists"),
     MODEL_NOT_FOUND("MONF001", HttpStatus.NOT_FOUND, "Model not found"),
@@ -65,7 +65,24 @@ public enum ErrorCode {
     // 포인트 관련 에러
     POINT_INVALID_INIT("PT001", HttpStatus.BAD_REQUEST, "Invalid initial points value."),
     POINT_INVALID_AMOUNT("PT002", HttpStatus.BAD_REQUEST, "Invalid points amount."),
-    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance.")
+    POINT_INSUFFICIENT_BALANCE("PT003", HttpStatus.BAD_REQUEST, "Insufficient points balance."),
+    DUPLICATE_REVIEW_REWARD("PT004", HttpStatus.CONFLICT, "Review reward already granted"),
+    PAYMENT_VERIFICATION_FAILED("PVF001", HttpStatus.BAD_REQUEST, "Payment verification failed."),
+
+    // 보안 관련 에러
+    SECURITY_ALGORITHM_NOT_AVAILABLE("SA001", HttpStatus.INTERNAL_SERVER_ERROR, "Security algorithm not available"),
+    IP_BLOCKED("IB001", HttpStatus.TOO_MANY_REQUESTS, "IP address is temporarily blocked due to suspicious activity"),
+    TOO_MANY_LOGIN_ATTEMPTS("TML001", HttpStatus.TOO_MANY_REQUESTS, "Too many failed login attempts"),
+
+    // 구독 관련 에러
+    SUBSCRIPTION_NOT_FOUND("SUB001", HttpStatus.NOT_FOUND, "Subscription not found"),
+    SUBSCRIPTION_ALREADY_EXISTS("SUB002", HttpStatus.CONFLICT, "Subscription already exists"),
+    SUBSCRIPTION_PLAN_NOT_FOUND("SUB003", HttpStatus.NOT_FOUND, "Subscription plan not found"),
+    SUBSCRIPTION_EXPIRED("SUB004", HttpStatus.BAD_REQUEST, "Subscription has expired"),
+    SUBSCRIPTION_ALREADY_CANCELLED("SUB005", HttpStatus.CONFLICT, "Subscription is already cancelled"),
+    SUBSCRIPTION_RENEWAL_NOT_ALLOWED("SUB006", HttpStatus.BAD_REQUEST, "Subscription renewal not allowed for the current status"),
+    SUBSCRIPTION_PAYMENT_FAILED("SUB007", HttpStatus.INTERNAL_SERVER_ERROR, "Subscription payment failed"),
+    SUBSCRIPTION_INVALID_REQUEST("SUB008", HttpStatus.BAD_REQUEST, "Invalid subscription request")
     ;
 
     private final String errorCode;

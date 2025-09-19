@@ -1,0 +1,65 @@
+spring:
+  # H2 인메모리 데이터베이스 (단위 테스트용)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database: h2
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+  # Repository scanning 비활성화 (메인 설정이 @Profile("!test")로 제외됨)
+  data:
+    elasticsearch:
+      repositories:
+        enabled: false
+    redis:
+      repositories:
+        enabled: false
+      
+  # Firebase 설정 (테스트용)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+
+# Firebase bucket 설정 (테스트용)
+firebase:
+  storage:
+    bucket: ${FIREBASE_STORAGE:nomodel-fdaae.appspot.com}
+  config:
+    key-path: "classpath:dummy-firebase-key.json"
+
+# JWT 설정 (테스트용)
+jwt:
+  secret: dGVzdC1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdGluZy1wdXJwb3NlLW9ubHk=
+  access-token-lifetime: 3600000
+  refresh-token-lifetime: 86400000
+  
+app:
+  frontend-origin: http://localhost:5173
+  oauth2-callback-path: /oauth2/callback
+
+server:
+  tomcat:
+    max-part-count: -1
+
+# 로깅 설정 (테스트용)
+logging:
+  level:
+    com.example.nomodel: DEBUG
+    org.springframework.security: DEBUG

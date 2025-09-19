@@ -1,0 +1,153 @@
+= NoModel API Documentation
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+[[overview]]
+= Overview
+
+NoModel API는 AI 모델 관리 및 검색 서비스를 제공하는 RESTful API입니다.
+
+[[overview-http-verbs]]
+== HTTP Verbs
+
+|===
+| Verb | Usage
+
+| `GET`
+| 리소스 조회
+
+| `POST`
+| 새 리소스 생성
+
+| `PUT`
+| 기존 리소스 전체 수정
+
+| `PATCH`
+| 기존 리소스 부분 수정
+
+| `DELETE`
+| 리소스 삭제
+|===
+
+[[overview-http-status-codes]]
+== HTTP Status Codes
+
+|===
+| Status code | Usage
+
+| `200 OK`
+| 요청 성공
+
+| `201 Created`
+| 새 리소스 생성 성공
+
+| `204 No Content`
+| 요청 성공, 응답 본문 없음
+
+| `400 Bad Request`
+| 잘못된 요청
+
+| `401 Unauthorized`
+| 인증 실패
+
+| `403 Forbidden`
+| 권한 없음
+
+| `404 Not Found`
+| 리소스를 찾을 수 없음
+
+| `409 Conflict`
+| 리소스 충돌
+
+| `500 Internal Server Error`
+| 서버 내부 오류
+|===
+
+[[authentication]]
+= Authentication
+
+API는 JWT 토큰 기반 인증을 사용합니다. 쿠키 방식으로 토큰을 관리합니다.
+
+[[auth-api]]
+== Authentication API
+
+=== 회원가입
+include::{snippets}/auth-signup/curl-request.adoc[]
+include::{snippets}/auth-signup/http-request.adoc[]
+include::{snippets}/auth-signup/request-fields.adoc[]
+include::{snippets}/auth-signup/http-response.adoc[]
+include::{snippets}/auth-signup/response-fields.adoc[]
+
+=== 로그인
+include::{snippets}/auth-login/curl-request.adoc[]
+include::{snippets}/auth-login/http-request.adoc[]
+include::{snippets}/auth-login/request-fields.adoc[]
+include::{snippets}/auth-login/http-response.adoc[]
+include::{snippets}/auth-login/response-fields.adoc[]
+
+=== 토큰 재발급
+include::{snippets}/auth-refresh/curl-request.adoc[]
+include::{snippets}/auth-refresh/http-request.adoc[]
+include::{snippets}/auth-refresh/request-headers.adoc[]
+include::{snippets}/auth-refresh/http-response.adoc[]
+include::{snippets}/auth-refresh/response-fields.adoc[]
+
+=== 로그아웃
+include::{snippets}/auth-logout/curl-request.adoc[]
+include::{snippets}/auth-logout/http-request.adoc[]
+include::{snippets}/auth-logout/request-headers.adoc[]
+include::{snippets}/auth-logout/http-response.adoc[]
+include::{snippets}/auth-logout/response-fields.adoc[]
+
+[[model-api]]
+= Model API
+
+AI 모델 관련 API입니다.
+
+[[model-usage]]
+== Model Usage
+
+=== 모델 사용량 증가
+include::{snippets}/model-usage-count/curl-request.adoc[]
+include::{snippets}/model-usage-count/http-request.adoc[]
+include::{snippets}/model-usage-count/http-response.adoc[]
+include::{snippets}/model-usage-count/response-fields.adoc[]
+
+=== 모델 사용량 히스토리 조회  
+include::{snippets}/model-usage-history/curl-request.adoc[]
+include::{snippets}/model-usage-history/http-request.adoc[]
+include::{snippets}/model-usage-history/query-parameters.adoc[]
+include::{snippets}/model-usage-history/http-response.adoc[]
+include::{snippets}/model-usage-history/response-fields.adoc[]
+
+[[report-api]]
+= Report API
+
+모델 신고 관련 API입니다.
+
+[[model-reports]]
+== Model Reports
+
+=== 모델 신고 생성
+include::{snippets}/integration-model-report-create/curl-request.adoc[]
+include::{snippets}/integration-model-report-create/http-request.adoc[]
+include::{snippets}/integration-model-report-create/request-fields.adoc[]
+include::{snippets}/integration-model-report-create/http-response.adoc[]
+include::{snippets}/integration-model-report-create/response-fields.adoc[]
+
+=== 내 신고 목록 조회
+include::{snippets}/integration-model-report-my-list/curl-request.adoc[]
+include::{snippets}/integration-model-report-my-list/http-request.adoc[]
+include::{snippets}/integration-model-report-my-list/http-response.adoc[]
+include::{snippets}/integration-model-report-my-list/response-fields.adoc[]
+
+=== 신고 상세 조회
+include::{snippets}/integration-model-report-detail/curl-request.adoc[]
+include::{snippets}/integration-model-report-detail/http-request.adoc[]
+include::{snippets}/integration-model-report-detail/path-parameters.adoc[]
+include::{snippets}/integration-model-report-detail/http-response.adoc[]
+include::{snippets}/integration-model-report-detail/response-fields.adoc[]

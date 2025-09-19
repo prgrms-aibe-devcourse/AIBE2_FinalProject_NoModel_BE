@@ -1,17 +1,13 @@
 #!/bin/bash
 
-# k6 테스트 실행 스크립트
+# k6 테스트 실행 스크립트 (통합 시나리오 테스트)
 
 set -e
 
 echo "🚀 Starting k6 Performance Testing Suite"
 
-# 색상 정의
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# 공통 유틸리티 로드
+source "$(dirname "$0")/utils/influxdb-utils.sh"
 
 # 기본 설정
 K6_IMAGE="grafana/k6:latest"
@@ -20,6 +16,9 @@ PROMETHEUS_URL="http://localhost:9090/api/v1/write"
 
 # 결과 디렉토리 생성
 mkdir -p "$RESULTS_DIR"
+
+# 자동 정리 활성화
+enable_auto_cleanup
 
 # 도움말 표시
 show_help() {
@@ -31,22 +30,31 @@ show_help() {
     echo "  stress    - 스트레스 테스트 (높은 부하)"
     echo "  spike     - 스파이크 테스트 (급격한 부하 변화)"
     echo ""
+    echo "도메인별 테스트:"
+    echo "  Use k6/aimodel/run-search-tests.sh for AI model search performance tests"
+    echo ""
     echo "옵션:"
     echo "  -h, --help          이 도움말 표시"
     echo "  -p, --prometheus    Prometheus로 메트릭 전송"
+    echo "  -i, --influxdb      InfluxDB로 메트릭 전송 (자동 환경 관리)"
     echo "  -v, --verbose       상세 출력"
     echo "  -r, --results       결과만 표시"
     echo ""
     echo "예시:"
     echo "  $0 smoke"
     echo "  $0 load --prometheus"
+    echo "  $0 load --influxdb      # InfluxDB 자동 시작/종료"
     echo "  $0 stress --verbose"
+    echo "  k6/aimodel/run-search-tests.sh load --influxdb"
 }
 
 # 스모크 테스트 실행
 run_smoke_test() {
     echo -e "${BLUE}📋 스모크 테스트 실행 중...${NC}"
-    
+
+    local result_file="smoke-test-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/scenarios/smoke.js" "smoke" "$result_file")
+
     if [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
@@ -55,23 +63,20 @@ run_smoke_test() {
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
-            --summary-export="/results/smoke-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/smoke-test.js
+            --summary-export="/results/$result_file" \
+            /scripts/scenarios/smoke.js
     else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            "$K6_IMAGE" run \
-            --summary-export="/results/smoke-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/smoke-test.js
+        run_k6_docker "$k6_cmd" "/scripts/scenarios/smoke.js" "smoke"
     fi
 }
 
 # 로드 테스트 실행
 run_load_test() {
     echo -e "${YELLOW}⚡ 로드 테스트 실행 중...${NC}"
-    
+
+    local result_file="load-test-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/scenarios/load.js" "load" "$result_file")
+
     if [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
@@ -80,23 +85,20 @@ run_load_test() {
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
-            --summary-export="/results/load-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/load-test.js
+            --summary-export="/results/$result_file" \
+            /scripts/scenarios/load.js
     else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            "$K6_IMAGE" run \
-            --summary-export="/results/load-test-$(date +%Y%m%d_%H%M%S).json" \
-            /scripts/load-test.js
+        run_k6_docker "$k6_cmd" "/scripts/scenarios/load.js" "load"
     fi
 }
 
 # 스트레스 테스트 실행
 run_stress_test() {
     echo -e "${RED}🔥 스트레스 테스트 실행 중...${NC}"
-    
+
+    local result_file="stress-test-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/scenarios/load.js" "stress" "$result_file")
+
     if [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
@@ -105,25 +107,21 @@ run_stress_test() {
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
-            --summary-export="/results/stress-test-$(date +%Y%m%d_%H%M%S).json" \
+            --summary-export="/results/$result_file" \
             -e TEST_TYPE=stress \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            "$K6_IMAGE" run \
-            --summary-export="/results/stress-test-$(date +%Y%m%d_%H%M%S).json" \
-            -e TEST_TYPE=stress \
-            /scripts/load-test.js
+        run_k6_docker "$k6_cmd" "/scripts/scenarios/load.js" "stress"
     fi
 }
 
 # 스파이크 테스트 실행
 run_spike_test() {
     echo -e "${RED}⚡ 스파이크 테스트 실행 중...${NC}"
-    
+
+    local result_file="spike-test-$(date +%Y%m%d_%H%M%S).json"
+    local k6_cmd=$(build_k6_command "/scripts/scenarios/load.js" "spike" "$result_file")
+
     if [ "$USE_PROMETHEUS" = true ]; then
         docker run --rm -i \
             --network host \
@@ -132,18 +130,11 @@ run_spike_test() {
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
-            --summary-export="/results/spike-test-$(date +%Y%m%d_%H%M%S).json" \
+            --summary-export="/results/$result_file" \
             -e TEST_TYPE=spike \
-            /scripts/load-test.js
+            /scripts/scenarios/load.js
     else
-        docker run --rm -i \
-            --network host \
-            -v "$(pwd)/k6:/scripts" \
-            -v "$(pwd)/k6/results:/results" \
-            "$K6_IMAGE" run \
-            --summary-export="/results/spike-test-$(date +%Y%m%d_%H%M%S).json" \
-            -e TEST_TYPE=spike \
-            /scripts/load-test.js
+        run_k6_docker "$k6_cmd" "/scripts/scenarios/load.js" "spike"
     fi
 }
 
@@ -165,11 +156,15 @@ show_results() {
     fi
 }
 
+# 중복 함수 제거 - 공통 유틸리티 사용
+
 # 인수 파싱
 USE_PROMETHEUS=false
+USE_INFLUXDB=false
 VERBOSE=false
 SHOW_RESULTS_ONLY=false
 TEST_TYPE=""
+INFLUXDB_WAS_RUNNING=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -179,6 +174,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -p|--prometheus)
             USE_PROMETHEUS=true
+            shift
+            ;;
+        -i|--influxdb)
+            USE_INFLUXDB=true
             shift
             ;;
         -v|--verbose)

@@ -1,10 +1,9 @@
 package com.example.nomodel;
 
+import com.example.nomodel._core.base.BaseUnitTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class NoModelApplicationTests {
+class NoModelApplicationTests extends BaseUnitTest {
 
     @Test
     void contextLoads() {

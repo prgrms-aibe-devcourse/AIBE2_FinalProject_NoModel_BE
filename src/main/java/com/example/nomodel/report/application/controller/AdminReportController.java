@@ -28,10 +28,10 @@ public class AdminReportController {
   }
   
   @GetMapping("/admin/report")
-  public ResponseEntity<?> getReport(@RequestParam(defaultValue = "0") int page,
-                                     @RequestParam(defaultValue = "10") int size,
-                                     @RequestParam(required = false) String targetType,
-                                     @RequestParam(required = false) String reportStatus) {
+  public ResponseEntity<?> getReport(@RequestParam(name = "page", defaultValue = "0") int page,
+                                     @RequestParam(name = "size", defaultValue = "10") int size,
+                                     @RequestParam(name = "targetType", required = false) String targetType,
+                                     @RequestParam(name = "reportStatus", required = false) String reportStatus) {
     TargetType tt     = parseEnumOrNull(TargetType.class, targetType);
     ReportStatus rs   = parseEnumOrNull(ReportStatus.class, reportStatus);
     

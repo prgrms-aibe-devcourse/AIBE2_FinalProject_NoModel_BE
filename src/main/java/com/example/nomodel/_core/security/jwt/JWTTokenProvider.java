@@ -60,14 +60,6 @@ public class JWTTokenProvider {
         this.refreshTokenLifetime = refreshTokenLifetime;
     }
 
-    public AuthTokenDTO generateToken(Authentication authentication) {
-        return generateToken(authentication.getName(), authentication.getAuthorities());
-    }
-
-    public AuthTokenDTO generateToken(String name, Collection<? extends GrantedAuthority> grantedAuthorities) {
-        return generateToken(name, null, grantedAuthorities);
-    }
-
     public AuthTokenDTO generateToken(String email, Long memberId, Collection<? extends GrantedAuthority> grantedAuthorities) {
         // 권한 확인
         String authorities = grantedAuthorities.stream()
@@ -208,4 +200,5 @@ public class JWTTokenProvider {
     public String resolveRefreshTokenFromCookies(HttpServletRequest request) {
         return resolveTokenFromCookies(request, REFRESH_TOKEN_COOKIE_NAME);
     }
+
 }

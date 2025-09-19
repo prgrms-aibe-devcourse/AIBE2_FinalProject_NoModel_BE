@@ -4,6 +4,7 @@ import com.example.nomodel.point.domain.model.*;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,35 +26,32 @@ public class PointDomainService {
                 .orElse(new MemberPointBalance(memberId));
     }
 
-    public PointTransaction addPoints(Long memberId, BigDecimal amount, TransactionType type, RefererType refererType, Long refererId) {
-        MemberPointBalance balance = getBalance(memberId);
-        BigDecimal before = balance.getAvailablePoints();
-        balance.addPoints(amount);
-        MemberPointBalance saved = balanceRepository.save(balance);
+    /**
+     * 포인트 충전 도메인 로직 (트랜잭션 관리)
+     * @param memberId 회원 ID
+     * @param amount 충전 금액
+     * @param paymentReference 결제 참조번호 (imp_uid)
+     */
+    public Mono<Void> chargePoints(Long memberId, BigDecimal amount, String paymentReference) {
+        return Mono.fromRunnable(() -> {
+            MemberPointBalance balance = balanceRepository.findByMemberId(memberId)
+                    .orElse(new MemberPointBalance(memberId)); // 잔액이 없으면 새로 생성
 
-        PointTransaction tx = new PointTransaction(
-                memberId, TransactionDirection.CREDIT, type,
-                amount, before, saved.getAvailablePoints(),
-                refererType, refererId
-        );
-        return transactionRepository.save(tx);
-    }
+            PointTransaction transaction = new PointTransaction(
+                    memberId,
+                    TransactionDirection.CREDIT,   // 충전은 CREDIT
+                    TransactionType.CHARGE,       // 충전 타입
+                    amount,
+                    balance.getTotalPoints(),
+                    balance.getTotalPoints().add(amount),
+                    RefererType.CHARGE,           // 충전이므로 "CHARGE" 참조 타입
+                    paymentReference != null ? (long) paymentReference.hashCode() : null  // 결제 참조번호를 해시값으로 저장
+            );
 
-    public PointTransaction usePoints(Long memberId, BigDecimal amount, TransactionType type, RefererType refererType, Long refererId) {
-        MemberPointBalance balance = getBalance(memberId);
-        BigDecimal before = balance.getAvailablePoints();
-        balance.subtractPoints(amount);
-        MemberPointBalance saved = balanceRepository.save(balance);
+            transactionRepository.save(transaction);
 
-        PointTransaction tx = new PointTransaction(
-                memberId, TransactionDirection.DEBIT, type,
-                amount, before, saved.getAvailablePoints(),
-                refererType, refererId
-        );
-        return transactionRepository.save(tx);
-    }
-
-    public List<PointTransaction> getTransactions(Long memberId) {
-        return transactionRepository.findByMemberId(memberId);
+            balance.addPoints(amount);
+            balanceRepository.save(balance);
+        }).then();
     }
 }

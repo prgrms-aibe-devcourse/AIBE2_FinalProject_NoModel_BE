@@ -1,8 +1,18 @@
 package com.example.nomodel.subscription.application.dto.response;
 
+import com.example.nomodel.subscription.domain.model.MemberSubscription;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MemberSubscriptionResponse {
     private Long id;
     private Long memberId;
@@ -15,20 +25,37 @@ public class MemberSubscriptionResponse {
     private String cancellationReason;
     private BigDecimal paidAmount;
 
-    public MemberSubscriptionResponse(Long id, Long memberId, Long subscriptionId, String status,
-                                      Boolean autoRenewal, LocalDateTime startedAt, LocalDateTime expiresAt,
-                                      LocalDateTime cancelledAt, String cancellationReason, BigDecimal paidAmount) {
-        this.id = id;
-        this.memberId = memberId;
-        this.subscriptionId = subscriptionId;
-        this.status = status;
-        this.autoRenewal = autoRenewal;
-        this.startedAt = startedAt;
-        this.expiresAt = expiresAt;
-        this.cancelledAt = cancelledAt;
-        this.cancellationReason = cancellationReason;
-        this.paidAmount = paidAmount;
+    // Entity -> DTO 변환
+    public static MemberSubscriptionResponse from(MemberSubscription entity) {
+        return MemberSubscriptionResponse.builder()
+                .id(entity.getId())
+                .memberId(entity.getMemberId())
+                .subscriptionId(entity.getSubscription().getId())
+                .status(entity.getStatus().name()) // Enum이면 .name() or getValue()
+                .autoRenewal(entity.getAutoRenewal())
+                .startedAt(entity.getStartedAt())
+                .expiresAt(entity.getExpiresAt())
+                .cancelledAt(entity.getCancelledAt())
+                .cancellationReason(entity.getCancellationReason() != null
+                        ? entity.getCancellationReason().name()
+                        : null)
+                .paidAmount(entity.getPaidAmount())
+                .build();
     }
 
-    // getter...
+    // 미구독 상태를 나타내는 empty 응답
+    public static MemberSubscriptionResponse empty() {
+        return MemberSubscriptionResponse.builder()
+                .id(null)
+                .memberId(null)
+                .subscriptionId(null)
+                .status("NONE") // 또는 "UNSUBSCRIBED" 등 미구독 상태를 나타내는 값
+                .autoRenewal(false)
+                .startedAt(null)
+                .expiresAt(null)
+                .cancelledAt(null)
+                .cancellationReason(null)
+                .paidAmount(BigDecimal.ZERO)
+                .build();
+    }
 }

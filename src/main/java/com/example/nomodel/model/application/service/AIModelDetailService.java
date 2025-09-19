@@ -40,7 +40,6 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class AIModelDetailService {
 
     private final AIModelJpaRepository aiModelRepository;
@@ -89,6 +88,7 @@ public class AIModelDetailService {
     /**
      * AI 모델 상세 조회 (조회수 증가 없음)
      */
+    @Transactional(readOnly = true)
     public AIModelDetailResponse getModelDetail(Long modelId) {
         // 1. AI 모델 기본 정보 조회
         AIModel model = aiModelRepository.findById(modelId)

@@ -1,0 +1,56 @@
+spring:
+  # TestContainers가 자동으로 데이터소스를 설정하므로 별도 설정 불필요
+  # MySQL TestContainer가 DataSource를 자동 구성함
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    defer-datasource-initialization: true
+    
+  sql:
+    init:
+      mode: always
+      
+  # TestContainers가 자동으로 Redis 연결을 설정하므로 별도 설정 불필요
+  # Redis TestContainer가 RedisConnectionDetails를 자동 구성함
+  
+  # Firebase 설정 (통합 테스트용)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+
+# TestContainers가 자동으로 ElasticSearch 연결을 설정하므로 별도 설정 불필요
+# ElasticSearch TestContainer가 자동 구성함
+
+# Firebase bucket 설정 (통합 테스트용)
+firebase:
+  storage:
+    bucket: ${FIREBASE_STORAGE:nomodel-fdaae.appspot.com}
+  config:
+    key-path: "classpath:dummy-firebase-key.json"
+
+# JWT 설정 (통합 테스트용)
+jwt:
+  secret: dGVzdC1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdGluZy1wdXJwb3NlLW9ubHk=
+  access-token-lifetime: 3600000
+  refresh-token-lifetime: 86400000
+  
+app:
+  frontend-origin: http://localhost:5173
+  oauth2-callback-path: /oauth2/callback
+
+server:
+  tomcat:
+    max-part-count: -1
+
+# 로깅 설정 (통합 테스트용)
+logging:
+  level:
+    org.testcontainers: DEBUG
+    com.github.dockerjava: INFO
+    com.example.nomodel: DEBUG
+    org.springframework.security: DEBUG
+    ROOT: INFO

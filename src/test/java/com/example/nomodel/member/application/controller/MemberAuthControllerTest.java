@@ -1,5 +1,6 @@
 package com.example.nomodel.member.application.controller;
 
+import com.example.nomodel._core.base.BaseUnitTest;
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.member.application.dto.request.LoginRequestDto;
@@ -10,27 +11,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static com.example.nomodel._core.restdocs.RestDocsConfig.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.springframework.restdocs.headers.HeaderDocumentation.*;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.*;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = MemberAuthController.class)
-@AutoConfigureMockMvc(addFilters = false) // Security 필터 비활성화
 @DisplayName("MemberAuthController 단위 테스트")
-class MemberAuthControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class MemberAuthControllerTest extends BaseUnitTest {
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -51,7 +55,13 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response").doesNotExist());
+                .andExpect(jsonPath("$.response").doesNotExist())
+                .andDo(document("auth-signup",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestFields(signUpRequestFields()),
+                        responseFields(signUpSuccessResponse())
+                ));
 
         then(memberAuthService).should().signUp(any(SignUpRequestDto.class));
     }
@@ -90,9 +100,15 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.grantType").value("Bearer"))
-                .andExpect(jsonPath("$.response.accessToken").value("access-token"))
-                .andExpect(jsonPath("$.response.refreshToken").value("refresh-token"));
+                .andExpect(jsonPath("$.response").value("로그인 성공"))
+                .andExpect(cookie().exists("accessToken"))
+                .andExpect(cookie().exists("refreshToken"))
+                .andDo(document("auth-login",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestFields(loginRequestFields()),
+                        responseFields(authSuccessResponse())
+                ));
 
         then(memberAuthService).should().login(any(LoginRequestDto.class));
     }
@@ -147,7 +163,15 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.accessToken").value("new-access-token"));
+                .andExpect(jsonPath("$.response").value("토큰 재발급 성공"))
+                .andExpect(cookie().exists("accessToken"))
+                .andExpect(cookie().exists("refreshToken"))
+                .andDo(document("auth-refresh",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestHeaders(authHeaders()),
+                        responseFields(authSuccessResponse())
+                ));
 
         then(memberAuthService).should().refreshToken(any());
     }
@@ -176,7 +200,13 @@ class MemberAuthControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response").doesNotExist());
+                .andExpect(jsonPath("$.response").value("로그아웃 성공"))
+                .andDo(document("auth-logout",
+                        preprocessRequest(prettyPrint()),
+                        preprocessResponse(prettyPrint()),
+                        requestHeaders(authHeaders()),
+                        responseFields(authSuccessResponse())
+                ));
 
         then(memberAuthService).should().logout(any());
     }

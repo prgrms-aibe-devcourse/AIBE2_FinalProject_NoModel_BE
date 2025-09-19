@@ -11,30 +11,32 @@ public class Subscription {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", nullable = false)
+    private PlanType planType;
     private String description;
     private BigDecimal price;
-    private Long period; // 일 단위
+    private Integer period; // 일 단위
     private Integer dailyLimit;
     private Integer selfMadeModelNum;
 
     protected Subscription() {}
 
-    public Subscription(String name, String description, BigDecimal price, Long period) {
-        this.name = name;
+    public Subscription(PlanType planType, String description, BigDecimal price, Integer period) {
+        this.planType = planType;
         this.description = description;
-        this.price = price;
         this.period = period;
-        this.dailyLimit = 0;
-        this.selfMadeModelNum = 0;
+        this.dailyLimit = dailyLimit;
+        this.price = price;
+        this.selfMadeModelNum = selfMadeModelNum;
     }
 
     // getter
     public Long getId() { return id; }
-    public String getName() { return name; }
+    public PlanType getPlanType() { return planType; }
     public String getDescription() { return description; }
-    public BigDecimal getPrice() { return price; }
     public Long getPeriod() { return period; }
     public Integer getDailyLimit() { return dailyLimit; }
+    public BigDecimal getPrice() { return price; }
     public Integer getSelfMadeModelNum() { return selfMadeModelNum; }
 }

@@ -1,6 +1,10 @@
 {
   "number_of_shards": 1,
-  "number_of_replicas": 0,
+  "number_of_replicas": 1,
+  "refresh_interval": "30s",
+  "index.max_result_window": 10000,
+  "index.queries.cache.enabled": true,
+  "index.requests.cache.enable": true,
   "analysis": {
     "analyzer": {
       "nori_analyzer": {
