@@ -92,7 +92,7 @@ public class ImageCompositor {
         
         // Python 명령어 구성
         ProcessBuilder processBuilder = new ProcessBuilder(
-            "python", 
+            "python3", 
             PYTHON_SCRIPT_PATH,
             productImagePath,
             modelImagePath,
