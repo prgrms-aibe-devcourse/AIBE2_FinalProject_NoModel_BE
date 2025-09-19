@@ -25,7 +25,7 @@ import java.util.Map;
 
 /**
  * Redis 캐시 설정
- * 모델 검색 결과 캐싱을 위한 Redis Cache Manager 구성
+ * 모델 상세 조회 및 검색 결과 캐싱을 위한 Redis Cache Manager 구성
  */
 @Configuration
 @EnableCaching
@@ -53,35 +53,11 @@ public class RedisCacheConfig {
 
         // 모델 검색 결과 캐시 (자주 조회되는 첫 몇 페이지)
         cacheConfigurations.put("modelSearch", defaultConfig
-                .entryTtl(Duration.ofMinutes(30)));  // 30분 캐싱
-
-        // 인기 모델 캐시 (변경이 적음)
-        cacheConfigurations.put("popularModels", defaultConfig
-                .entryTtl(Duration.ofHours(1)));  // 1시간 캐싱
-
-        // 최신 모델 캐시 (자주 변경됨)
-        cacheConfigurations.put("recentModels", defaultConfig
-                .entryTtl(Duration.ofMinutes(5)));  // 5분 캐싱
-
-        // 추천 모델 캐시
-        cacheConfigurations.put("recommendedModels", defaultConfig
-                .entryTtl(Duration.ofHours(2)));  // 2시간 캐싱
-
-        // 관리자 모델 캐시
-        cacheConfigurations.put("adminModels", defaultConfig
-                .entryTtl(Duration.ofHours(6)));  // 6시간 캐싱
-
-        // 무료 모델 캐시
-        cacheConfigurations.put("freeModels", defaultConfig
-                .entryTtl(Duration.ofMinutes(30)));  // 30분 캐싱
-
-        // 자동완성 제안 캐시
-        cacheConfigurations.put("autoComplete", defaultConfig
-                .entryTtl(Duration.ofHours(1)));  // 1시간 캐싱
-
-        // 모델 상세 캐시 (개별 모델)
-        cacheConfigurations.put("modelDetail", defaultConfig
                 .entryTtl(Duration.ofMinutes(15)));  // 15분 캐싱
+
+        // 모델 상세 캐시 (개별 모델 상세 정보)
+        cacheConfigurations.put("modelDetail", defaultConfig
+                .entryTtl(Duration.ofMinutes(30)));  // 30분 캐싱
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultConfig)
@@ -90,36 +66,6 @@ public class RedisCacheConfig {
                 .build();
     }
 
-    /**
-     * 짧은 TTL을 가진 캐시 매니저 (실시간성이 중요한 데이터)
-     */
-    @Bean
-    public CacheManager shortLivedCacheManager(RedisConnectionFactory redisConnectionFactory) {
-        ObjectMapper objectMapper = createCacheObjectMapper();
-
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(1))  // 1분 TTL
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-                        new GenericJackson2JsonRedisSerializer(objectMapper)))
-                .disableCachingNullValues();
-
-        Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-
-        // 사용자별 개인화된 검색 결과 (짧은 캐싱)
-        cacheConfigurations.put("userSearchResults", config
-                .entryTtl(Duration.ofMinutes(2)));
-
-        // 실시간 통계 (매우 짧은 캐싱)
-        cacheConfigurations.put("realtimeStats", config
-                .entryTtl(Duration.ofSeconds(30)));
-
-        return RedisCacheManager.builder(redisConnectionFactory)
-                .cacheDefaults(config)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .transactionAware()
-                .build();
-    }
 
     /**
      * 캐시용 ObjectMapper 생성

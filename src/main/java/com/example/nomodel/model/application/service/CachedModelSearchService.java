@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.model.application.dto.ModelSearchCacheKey;
+import com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class CachedModelSearchService {
      */
     @Cacheable(
             value = "modelSearch",
-            key = "T(com.example.nomodel.model.application.dto.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
+            key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
             condition = "#page <= 2 && #size <= 20",  // 처음 3페이지, 페이지 크기 20 이하만 캐싱
             unless = "#result == null || #result.isEmpty()"
     )
@@ -89,7 +89,7 @@ public class CachedModelSearchService {
      */
     @Cacheable(
             value = "adminModels",
-            key = "T(com.example.nomodel.model.application.dto.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
+            key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
             condition = "#page <= 2 && #size <= 20",
             unless = "#result == null || #result.isEmpty()"
     )
@@ -176,7 +176,7 @@ public class CachedModelSearchService {
      */
     @CachePut(
             value = "modelSearch",
-            key = "T(com.example.nomodel.model.application.dto.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)"
+            key = "T(com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)"
     )
     public Page<AIModelDocument> refreshSearchCache(String keyword, Boolean isFree, int page, int size) {
         log.info("캐시 갱신 - 검색: keyword={}, isFree={}, page={}, size={}",

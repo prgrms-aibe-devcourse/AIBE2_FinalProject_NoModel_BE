@@ -1,9 +1,7 @@
 package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -15,15 +13,19 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CachedModelDetailService {
 
     private final AIModelDetailService modelDetailService;
     private final ModelViewCountService viewCountService;
+    private final CachedModelDetailService self; // AOP 적용된 프록시
 
-    @Lazy
-    @Autowired
-    private CachedModelDetailService self; // AOP 적용된 프록시
+    public CachedModelDetailService(AIModelDetailService modelDetailService,
+                                   ModelViewCountService viewCountService,
+                                   @Lazy CachedModelDetailService self) {
+        this.modelDetailService = modelDetailService;
+        this.viewCountService = viewCountService;
+        this.self = self;
+    }
 
     /**
      * AI 모델 상세 조회 (조회수 증가 포함)
