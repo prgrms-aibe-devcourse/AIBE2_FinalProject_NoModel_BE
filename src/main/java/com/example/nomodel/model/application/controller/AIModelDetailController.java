@@ -3,7 +3,7 @@ package com.example.nomodel.model.application.controller;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
-import com.example.nomodel.model.application.service.AIModelDetailService;
+import com.example.nomodel.model.application.service.CachedModelDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * AI 모델 상세 조회 API 컨트롤러
- * JPA 기반 완전한 모델 상세 정보 조회 (파일, 리뷰, 통계 포함)
+ * 캐싱이 적용된 모델 상세 정보 조회 (파일, 리뷰, 통계 포함)
  */
 @RestController
 @RequestMapping("/models")
@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "AI Model Detail", description = "AI 모델 상세 조회 API")
 public class AIModelDetailController {
 
-    private final AIModelDetailService modelDetailService;
+    private final CachedModelDetailService cachedModelDetailService;
 
-    @Operation(summary = "AI 모델 상세 조회", 
-               description = "모델 ID로 상세 정보 조회 (자동으로 조회수 증가)")
+    @Operation(summary = "AI 모델 상세 조회",
+               description = "모델 ID로 상세 정보 조회 (캐싱 적용, 비동기 조회수 증가)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "404", description = "모델을 찾을 수 없음"),
@@ -37,13 +37,13 @@ public class AIModelDetailController {
     public ResponseEntity<?> getModelDetail(
             @Parameter(description = "모델 ID") @PathVariable Long modelId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
-        // 현재 인증된 사용자의 memberId 추출
-        Long memberId = userDetails.getMemberId();
-        
-        // 상세 정보 조회 + 조회수 증가 통합 (중복 방지 포함)
-        AIModelDetailResponse response = modelDetailService.getModelDetailWithViewIncrement(modelId, memberId);
-        
+
+        // 캐시된 상세 정보 조회 + 비동기 조회수 증가 (중복 방지 포함)
+        AIModelDetailResponse response = cachedModelDetailService.getModelDetailWithView(
+                modelId,
+                userDetails.getMemberId()
+        );
+
         return ResponseEntity.ok(ApiUtils.success(response));
     }
 }
