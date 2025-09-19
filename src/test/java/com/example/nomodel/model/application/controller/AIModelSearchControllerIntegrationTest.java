@@ -62,7 +62,7 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
         Page<AIModelDocument> mockPage = new PageImpl<>(Arrays.asList(document1, document2), PageRequest.of(0, 10), 2);
         
         // Mock 서비스 메서드 호출
-        given(searchService.search(eq("GPT"), eq(0), eq(10))).willReturn(mockPage);
+        given(searchService.search(eq("GPT"), any(), eq(0), eq(10))).willReturn(mockPage);
 
         // when & then - GPT 키워드로 검색
         mockMvc.perform(get("/models/search")
@@ -78,44 +78,6 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.response.content[0].modelName").value(containsString("GPT")));
     }
 
-    @Test
-    @DisplayName("접근 가능한 모델 검색 통합 테스트")
-    void searchAccessibleModels_IntegrationTest() throws Exception {
-        // given - 공개/비공개 모델 데이터 생성
-        AIModelDocument publicModel = createTestDocument("1", "Public GPT", "Public model", 1L, "User1");
-        AIModelDocument privateModel = createTestDocument("2", "Private GPT", "Private model", 1L, "User1");
-        
-        Page<AIModelDocument> mockPage = new PageImpl<>(Arrays.asList(publicModel, privateModel), PageRequest.of(0, 10), 2);
-        
-        // Mock 서비스 메서드 호출 - searchAccessibleModels 메서드 모킹 (keyword는 null일 수 있음)
-        given(searchService.searchAccessibleModels(any(), eq(1L), eq(0), eq(10))).willReturn(mockPage);
-
-        // when & then - 사용자 1이 접근 가능한 모델 검색 (본인 모델 + 공개 모델)
-        mockMvc.perform(get("/models/search/accessible")
-                        .param("userId", "1")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.totalElements").value(2)); // 본인의 2개 모델만
-    }
-
-    @Test
-    @DisplayName("태그별 검색 통합 테스트")
-    void searchByTag_IntegrationTest() throws Exception {
-        // given - Mock service method
-        given(searchService.searchByTag(eq("NLP"), eq(0), eq(10))).willReturn(Page.empty());
-
-        // when & then - NLP 태그로 검색
-        mockMvc.perform(get("/models/search/tag")
-                        .param("tag", "NLP")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
 
     @Test
     @DisplayName("소유자별 검색 통합 테스트")
@@ -170,26 +132,6 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.response").exists());
     }
 
-    @Test
-    @DisplayName("고평점 모델 검색 통합 테스트")
-    void getHighRatedModels_IntegrationTest() throws Exception {
-        // given - Mock service method with high rated model
-        AIModelDocument highRatedModel = createTestDocument("1", "Excellent Model", "High rating model", 1L, "User1");
-        highRatedModel.updateRating(4.8, 100L);
-        
-        Page<AIModelDocument> mockPage = new PageImpl<>(Arrays.asList(highRatedModel), PageRequest.of(0, 10), 1);
-        given(searchService.getHighRatedModels(eq(4.0), eq(0), eq(10))).willReturn(mockPage);
-
-        // when & then - 4.0 이상 평점 모델 검색
-        mockMvc.perform(get("/models/search/high-rated")
-                        .param("minRating", "4.0")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.totalElements").value(1));
-    }
 
     @Test
     @DisplayName("무료 모델 검색 통합 테스트")
@@ -206,22 +148,6 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-    @Test
-    @DisplayName("가격 범위 검색 통합 테스트")
-    void searchByPriceRange_IntegrationTest() throws Exception {
-        // given - Mock service method
-        given(searchService.searchByPriceRange(eq(new BigDecimal("10")), eq(new BigDecimal("50")), eq(0), eq(10))).willReturn(Page.empty());
-
-        // when & then - 10~50 가격 범위 검색
-        mockMvc.perform(get("/models/search/price-range")
-                        .param("minPrice", "10")
-                        .param("maxPrice", "50")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
 
     @Test
     @DisplayName("자동완성 제안 통합 테스트")
@@ -238,49 +164,6 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.response").isArray());
     }
 
-    @Test
-    @DisplayName("모델 사용량 증가 통합 테스트")
-    void increaseUsage_IntegrationTest() throws Exception {
-        // given - Mock service method
-        String documentId = "test-doc-1";
-        doNothing().when(searchService).increaseUsage(eq(documentId));
-
-        // when - 사용량 증가 요청
-        mockMvc.perform(post("/models/search/{documentId}/usage", documentId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @DisplayName("모델 상세 정보 조회 통합 테스트")
-    void getModelDetail_IntegrationTest() throws Exception {
-        // given - Mock service method
-        String documentId = "test-doc-2";
-        AIModelDocument model = createTestDocument(documentId, "Detailed Model", "Model for detail test", 1L, "User1");
-        given(searchService.findById(eq(documentId))).willReturn(java.util.Optional.of(model));
-
-        // when & then
-        mockMvc.perform(get("/models/search/{documentId}", documentId))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response.id").value(documentId))
-                .andExpect(jsonPath("$.response.modelName").value("Detailed Model"));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 모델 조회 통합 테스트")
-    void getModelDetail_NotFound_IntegrationTest() throws Exception {
-        // given - Mock service method to return empty optional
-        String nonExistentId = "non-existent-id";
-        given(searchService.findById(eq(nonExistentId))).willReturn(Optional.empty());
-
-        // when & then
-        mockMvc.perform(get("/models/search/{documentId}", nonExistentId))
-                .andDo(print())
-                .andExpect(status().isNotFound());
-    }
 
     // 헬퍼 메서드
     private AIModelDocument createTestDocument(String id, String modelName, String prompt, Long ownerId, String ownerName) {

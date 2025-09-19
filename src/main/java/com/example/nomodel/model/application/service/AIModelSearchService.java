@@ -233,6 +233,4 @@ public class AIModelSearchService {
             return List.of();
         }
     }
-
-
 }
