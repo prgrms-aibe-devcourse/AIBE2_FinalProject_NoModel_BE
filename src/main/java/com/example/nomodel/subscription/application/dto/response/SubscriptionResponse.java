@@ -8,9 +8,9 @@ public class SubscriptionResponse {
     private PlanType planType;
     private String description;
     private BigDecimal price;
-    private Long period; // 일 단위니까 Long이 더 자연스러움
+    private Integer period; //
 
-    public SubscriptionResponse(Long id, PlanType planType, String description, BigDecimal price, Long period) {
+    public SubscriptionResponse(Long id, PlanType planType, String description, BigDecimal price, Integer period) {
         this.id = id;
         this.planType = planType;
         this.description = description;
@@ -22,5 +22,5 @@ public class SubscriptionResponse {
     public PlanType getPlanType() { return planType; }
     public String getDescription() { return description; }
     public BigDecimal getPrice() { return price; }
-    public Long getPeriod() { return period; }
+    public Integer getPeriod() { return period; }
 }
