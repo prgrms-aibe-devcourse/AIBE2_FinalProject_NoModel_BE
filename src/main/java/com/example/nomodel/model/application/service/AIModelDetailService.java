@@ -11,10 +11,8 @@ import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
 import com.example.nomodel.model.domain.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
-import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
-import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import com.example.nomodel.review.application.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -28,14 +26,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * AI 모델 상세 조회 통합 서비스
- * 
+ * AI 모델 상세 조회 서비스
+ *
  * 각 도메인 서비스를 조합하여 상세 조회 응답을 구성:
  * - AI 모델 기본 정보 (JPA)
- * - 검색 통계 정보 (Elasticsearch)  
+ * - 검색 통계 정보 (Elasticsearch)
  * - 파일 정보 (File 도메인)
  * - 리뷰 정보 (Review 서비스)
  * - 소유자 정보 (Member 도메인)
+ *
+ * 조회수 증가는 ModelViewCountService에서 담당
  */
 @Slf4j
 @Service
@@ -44,49 +44,12 @@ public class AIModelDetailService {
 
     private final AIModelJpaRepository aiModelRepository;
     private final AIModelSearchRepository searchRepository;
-    private final ModelStatisticsJpaRepository modelStatisticsRepository;
-    private final ViewCountThrottleService viewCountThrottleService;
     private final FileJpaRepository fileRepository;
     private final ReviewService reviewService;
     private final MemberJpaRepository memberRepository;
 
     /**
-     * AI 모델 상세 조회 + 조회수 증가 (통합 메소드)
-     * 
-     * @param modelId 모델 ID
-     * @param memberId 회원 ID (중복 방지용)
-     */
-    @Transactional
-    public AIModelDetailResponse getModelDetailWithViewIncrement(Long modelId, Long memberId) {
-        // 1. AI 모델 기본 정보 조회
-        AIModel model = aiModelRepository.findById(modelId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
-        
-        // 2. 중복 방지 체크 후 조회수 증가
-        if (viewCountThrottleService.canIncrementViewCount(modelId, memberId)) {
-            incrementViewCountBothSources(modelId);
-        } else {
-            log.debug("조회수 증가 생략 (중복 방지): modelId={}, memberId={}", modelId, memberId);
-        }
-        
-        // 3. Elasticsearch 문서에서 통계 정보 조회
-        AIModelDocument document = findModelDocument(modelId);
-        
-        // 4. 소유자 정보 조회
-        String ownerName = getOwnerName(model);
-        
-        // 5. 파일 정보 조회
-        List<File> files = fileRepository.findImageFilesByRelation(RelationType.MODEL, modelId);
-        
-        // 6. 리뷰 정보 조회 (예외 발생하지 않도록 처리)
-        List<ReviewResponse> reviews = getModelReviews(modelId);
-        
-        // 7. 응답 DTO 생성
-        return AIModelDetailResponse.from(model, ownerName, document, files, reviews);
-    }
-
-    /**
-     * AI 모델 상세 조회 (조회수 증가 없음)
+     * AI 모델 상세 조회
      */
     @Transactional(readOnly = true)
     public AIModelDetailResponse getModelDetail(Long modelId) {
@@ -110,40 +73,6 @@ public class AIModelDetailService {
         return AIModelDetailResponse.from(model, ownerName, document, files, reviews);
     }
 
-    /**
-     * 조회수 증가 (JPA only - Elasticsearch는 배치로 동기화)
-     */
-    @Transactional
-    public void incrementViewCountBothSources(Long modelId) {
-        // JPA ModelStatistics 업데이트만 수행
-        ModelStatistics statistics = getOrCreateModelStatistics(modelId);
-        statistics.incrementViewCount();
-        modelStatisticsRepository.save(statistics);
-        
-        log.debug("AI 모델 조회수 증가 완료: modelId={}, JPA_viewCount={} (Elasticsearch는 배치 동기화)", 
-                 modelId, statistics.getViewCount());
-    }
-
-    /**
-     * 조회수 증가 (레거시 메소드 - Elasticsearch만 업데이트)
-     */
-    @Transactional
-    public void increaseViewCount(Long modelId) {
-        incrementViewCountBothSources(modelId);
-    }
-    
-    /**
-     * ModelStatistics 조회 또는 생성
-     */
-    private ModelStatistics getOrCreateModelStatistics(Long modelId) {
-        return modelStatisticsRepository.findByModelId(modelId)
-                .orElseGet(() -> {
-                    AIModel model = aiModelRepository.findById(modelId)
-                            .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
-                    ModelStatistics newStatistics = ModelStatistics.createInitialStatistics(model);
-                    return modelStatisticsRepository.save(newStatistics);
-                });
-    }
 
     /**
      * Elasticsearch 문서 조회
