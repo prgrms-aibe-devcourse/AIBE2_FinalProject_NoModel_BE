@@ -106,5 +106,109 @@ public class ReviewService {
 
         return ReviewResponse.from(deleted);
     }
+
+    //내가 작성한 모든 리뷰 조회
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> getMyAllReviews(Long reviewerId) {
+        // ACTIVE 상태인 내가 작성한 모든 리뷰 조회 (최신순 정렬)
+        List<ModelReview> myReviews = reviewRepository.findByReviewerIdAndStatusOrderByCreatedAtDesc(
+                reviewerId,
+                ReviewStatus.ACTIVE
+        );
+
+        return myReviews.stream()
+                .map(ReviewResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 내가 작성한 특정 리뷰 조회 (권한 체크 포함)
+     */
+    @Transactional(readOnly = true)
+    public ReviewResponse getMyReview(Long reviewerId, Long reviewId) {
+        ModelReview review = reviewRepository.findByIdAndReviewerId(reviewId, reviewerId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 삭제된 리뷰는 조회 불가
+        if (review.getStatus() == ReviewStatus.DELETED) {
+            throw new ApplicationException(ErrorCode.REVIEW_NOT_FOUND);
+        }
+
+        return ReviewResponse.from(review);
+    }
+
+    /**
+     * 내가 작성한 리뷰 수정 (권한 체크 포함)
+     */
+    @Transactional
+    public ReviewResponse updateMyReview(Long reviewerId, Long reviewId, ReviewRequest request) {
+        ModelReview review = reviewRepository.findByIdAndReviewerId(reviewId, reviewerId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 삭제된 리뷰 수정 불가
+        if (review.getStatus() == ReviewStatus.DELETED) {
+            throw new ApplicationException(ErrorCode.REVIEW_NOT_ALLOWED);
+        }
+
+        // 리뷰 내용 업데이트
+        review.update(
+                new Rating(request.getRating()),
+                request.getContent()
+        );
+
+        return ReviewResponse.from(reviewRepository.save(review));
+    }
+
+
+    //내가 작성한 리뷰 삭제(권한 포함)
+    @Transactional
+    public void deleteMyReview(Long reviewerId, Long reviewId) {
+        ModelReview review = reviewRepository.findByIdAndReviewerId(reviewId, reviewerId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        review.deactivate(ReviewStatus.DELETED);
+        reviewRepository.save(review);
+    }
+
+
+   // 특정 모델에서 내가 작성한 리뷰 조회
+
+    @Transactional(readOnly = true)
+    public ReviewResponse getMyReviewByModel(Long reviewerId, Long modelId) {
+        ModelReview review = reviewRepository.findByReviewerIdAndModelIdAndStatus(
+                reviewerId, modelId, ReviewStatus.ACTIVE
+        ).orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        return ReviewResponse.from(review);
+    }
+
+
+     //특정 모델에서 내 리뷰 수정
+    @Transactional
+    public ReviewResponse updateMyReviewByModel(Long reviewerId, Long modelId, ReviewRequest request) {
+        ModelReview review = reviewRepository.findByReviewerIdAndModelIdAndStatus(
+                reviewerId, modelId, ReviewStatus.ACTIVE
+        ).orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        // 리뷰 내용 업데이트
+        review.update(
+                new Rating(request.getRating()),
+                request.getContent()
+        );
+
+        return ReviewResponse.from(reviewRepository.save(review));
+    }
+
+
+     //특정 모델에서 내 리뷰 삭제
+    @Transactional
+    public void deleteMyReviewByModel(Long reviewerId, Long modelId) {
+        ModelReview review = reviewRepository.findByReviewerIdAndModelIdAndStatus(
+                reviewerId, modelId, ReviewStatus.ACTIVE
+        ).orElseThrow(() -> new ApplicationException(ErrorCode.REVIEW_NOT_FOUND));
+
+        review.deactivate(ReviewStatus.DELETED);
+        reviewRepository.save(review);
+    }
 }
 
