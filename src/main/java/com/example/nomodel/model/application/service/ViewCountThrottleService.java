@@ -36,7 +36,7 @@ public class ViewCountThrottleService {
         
         try {
             // 이미 존재하면 중복 요청
-            if (Boolean.TRUE.equals(redisTemplate.hasKey(throttleKey))) {
+            if (redisTemplate.hasKey(throttleKey)) {
                 log.debug("조회수 증가 중복 방지: modelId={}, memberId={}", modelId, memberId);
                 return false;
             }
@@ -55,33 +55,6 @@ public class ViewCountThrottleService {
         }
     }
     
-    /**
-     * 특정 모델의 모든 조회수 중복 방지 키 삭제 (관리용)
-     * 
-     * @param modelId 모델 ID
-     */
-    public void clearViewCountThrottle(Long modelId) {
-        try {
-            String pattern = THROTTLE_KEY_PREFIX + modelId + ":*";
-            redisTemplate.delete(redisTemplate.keys(pattern));
-            log.info("조회수 중복 방지 키 삭제: modelId={}", modelId);
-        } catch (Exception e) {
-            log.error("조회수 중복 방지 키 삭제 실패: modelId={}, error={}", modelId, e.getMessage());
-        }
-    }
-    
-    /**
-     * 전체 조회수 중복 방지 키 삭제 (관리용)
-     */
-    public void clearAllViewCountThrottle() {
-        try {
-            String pattern = THROTTLE_KEY_PREFIX + "*";
-            redisTemplate.delete(redisTemplate.keys(pattern));
-            log.info("전체 조회수 중복 방지 키 삭제 완료");
-        } catch (Exception e) {
-            log.error("전체 조회수 중복 방지 키 삭제 실패: error={}", e.getMessage());
-        }
-    }
     
     /**
      * 중복 방지용 Redis 키 생성
@@ -90,10 +63,4 @@ public class ViewCountThrottleService {
         return THROTTLE_KEY_PREFIX + modelId + ":" + memberId;
     }
     
-    /**
-     * 중복 방지 설정 정보 조회
-     */
-    public Duration getThrottleDuration() {
-        return THROTTLE_DURATION;
-    }
 }
