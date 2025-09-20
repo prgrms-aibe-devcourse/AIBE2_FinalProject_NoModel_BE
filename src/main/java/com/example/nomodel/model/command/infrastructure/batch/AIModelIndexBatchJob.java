@@ -69,7 +69,6 @@ public class AIModelIndexBatchJob {
                 .processor(aiModelProcessor())
                 .writer(aiModelWriter())
                 .taskExecutor(aiModelIndexTaskExecutor())
-                .throttleLimit(4)
                 .build();
     }
 
