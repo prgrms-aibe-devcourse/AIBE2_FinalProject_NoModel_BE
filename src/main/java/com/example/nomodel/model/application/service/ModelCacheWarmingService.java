@@ -37,18 +37,12 @@ public class ModelCacheWarmingService {
 
         try {
             // 병렬로 여러 캐시 워밍 작업 실행
-            CompletableFuture<Void> popularModels = warmUpPopularModels();
             CompletableFuture<Void> recentModels = warmUpRecentModels();
-            CompletableFuture<Void> freeModels = warmUpFreeModels();
-            CompletableFuture<Void> recommendedModels = warmUpRecommendedModels();
             CompletableFuture<Void> generalSearch = warmUpGeneralSearch();
 
             // 모든 작업 완료 대기
             CompletableFuture.allOf(
-                    popularModels,
                     recentModels,
-                    freeModels,
-                    recommendedModels,
                     generalSearch
             ).join();
 
@@ -69,25 +63,6 @@ public class ModelCacheWarmingService {
         warmUpCachesOnStartup();
     }
 
-    /**
-     * 인기 모델 캐시 워밍
-     */
-    @Async
-    public CompletableFuture<Void> warmUpPopularModels() {
-        log.debug("인기 모델 캐시 워밍 시작");
-
-        IntStream.range(0, MAX_WARM_PAGES)
-                .forEach(page -> {
-                    try {
-                        cachedSearchService.getPopularModels(page, DEFAULT_PAGE_SIZE);
-                        log.debug("인기 모델 캐시 워밍: page={}", page);
-                    } catch (Exception e) {
-                        log.warn("인기 모델 캐시 워밍 실패: page={}", page, e);
-                    }
-                });
-
-        return CompletableFuture.completedFuture(null);
-    }
 
     /**
      * 최신 모델 캐시 워밍
@@ -109,45 +84,6 @@ public class ModelCacheWarmingService {
         return CompletableFuture.completedFuture(null);
     }
 
-    /**
-     * 무료 모델 캐시 워밍
-     */
-    @Async
-    public CompletableFuture<Void> warmUpFreeModels() {
-        log.debug("무료 모델 캐시 워밍 시작");
-
-        IntStream.range(0, MAX_WARM_PAGES)
-                .forEach(page -> {
-                    try {
-                        cachedSearchService.getFreeModels(page, DEFAULT_PAGE_SIZE);
-                        log.debug("무료 모델 캐시 워밍: page={}", page);
-                    } catch (Exception e) {
-                        log.warn("무료 모델 캐시 워밍 실패: page={}", page, e);
-                    }
-                });
-
-        return CompletableFuture.completedFuture(null);
-    }
-
-    /**
-     * 추천 모델 캐시 워밍
-     */
-    @Async
-    public CompletableFuture<Void> warmUpRecommendedModels() {
-        log.debug("추천 모델 캐시 워밍 시작");
-
-        IntStream.range(0, 2) // 추천 모델은 2페이지만
-                .forEach(page -> {
-                    try {
-                        cachedSearchService.getRecommendedModels(page, DEFAULT_PAGE_SIZE);
-                        log.debug("추천 모델 캐시 워밍: page={}", page);
-                    } catch (Exception e) {
-                        log.warn("추천 모델 캐시 워밍 실패: page={}", page, e);
-                    }
-                });
-
-        return CompletableFuture.completedFuture(null);
-    }
 
     /**
      * 일반 검색 캐시 워밍 (자주 검색되는 키워드)

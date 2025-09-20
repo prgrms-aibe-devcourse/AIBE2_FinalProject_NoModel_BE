@@ -142,15 +142,6 @@ public class LazyInvalidationService {
                 cacheEvictionService.evictSpecificCacheKey("modelSearch", null);
                 break;
 
-            case "popularModels":
-                // 인기 모델 캐시 재구성
-                refreshPopularModelsCache();
-                break;
-
-            case "freeModels":
-                // 무료 모델 캐시 재구성
-                refreshFreeModelsCache();
-                break;
 
             case "recentModels":
                 // 최신 모델 캐시 재구성
@@ -183,34 +174,6 @@ public class LazyInvalidationService {
         }
     }
 
-    /**
-     * 인기 모델 캐시 재구성
-     */
-    private void refreshPopularModelsCache() {
-        try {
-            // 첫 페이지만 즉시 재구성
-            cachedSearchService.refreshPopularModelsCache(0, 20);
-            log.debug("인기 모델 캐시 재구성 완료");
-        } catch (Exception e) {
-            log.warn("인기 모델 캐시 재구성 실패", e);
-            cacheEvictionService.evictSpecificCacheKey("popularModels", null);
-        }
-    }
-
-    /**
-     * 무료 모델 캐시 재구성
-     */
-    private void refreshFreeModelsCache() {
-        try {
-            for (int page = 0; page < 3; page++) { // 첫 3페이지
-                cachedSearchService.getFreeModels(page, 20);
-            }
-            log.debug("무료 모델 캐시 재구성 완료");
-        } catch (Exception e) {
-            log.warn("무료 모델 캐시 재구성 실패", e);
-            cacheEvictionService.evictSpecificCacheKey("freeModels", null);
-        }
-    }
 
     /**
      * 최신 모델 캐시 재구성

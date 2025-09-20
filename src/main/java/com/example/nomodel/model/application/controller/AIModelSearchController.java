@@ -3,6 +3,7 @@ package com.example.nomodel.model.application.controller;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.model.application.dto.PageResponse;
+import com.example.nomodel.model.application.dto.response.AIModelSearchResponse;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.application.service.CachedModelSearchService;
 import com.example.nomodel.model.domain.document.AIModelDocument;
@@ -45,7 +46,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = cachedSearchService.search(keyword, isFree, page, size);
+        Page<AIModelSearchResponse> result = cachedSearchService.search(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -57,7 +58,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = cachedSearchService.getAdminModels(keyword, isFree, page, size);
+        Page<AIModelSearchResponse> result = cachedSearchService.getAdminModels(keyword, isFree, page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
@@ -93,7 +94,7 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelDocument> result = cachedSearchService.getRecentModels(page, size);
+        Page<AIModelSearchResponse> result = cachedSearchService.getRecentModels(page, size);
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 

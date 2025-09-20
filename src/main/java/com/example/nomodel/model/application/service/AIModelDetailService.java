@@ -73,7 +73,6 @@ public class AIModelDetailService {
         return AIModelDetailResponse.from(model, ownerName, document, files, reviews);
     }
 
-
     /**
      * Elasticsearch 문서 조회
      */
@@ -100,7 +99,6 @@ public class AIModelDetailService {
      * 모델 리뷰 조회 (빈 리스트 또는 리뷰 목록 반환)
      */
     private List<ReviewResponse> getModelReviews(Long modelId) {
-        // ReviewService가 이제 예외를 던지지 않고 빈 리스트를 반환하므로 단순화
         return reviewService.getReviewsByModel(modelId);
     }
 }
