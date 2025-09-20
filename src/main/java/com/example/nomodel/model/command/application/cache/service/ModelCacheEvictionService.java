@@ -84,5 +84,4 @@ public class ModelCacheEvictionService {
     public void evictCaches(List<String> cacheNames) {
         cacheNames.forEach(this::evictCache);
     }
-
 }

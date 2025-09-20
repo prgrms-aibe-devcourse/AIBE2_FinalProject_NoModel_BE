@@ -111,19 +111,14 @@ public class SmartCacheEvictionService {
         BigDecimal oldPrice = (BigDecimal) event.getOldValue();
         BigDecimal newPrice = (BigDecimal) event.getNewValue();
 
-        boolean wasFreeBefore = isPrice(oldPrice);
-        boolean isFreeNow = isPrice(newPrice);
-
         // 모델 상세 즉시 갱신
         modelCacheService.updateModelDetailCache(event.getModelId());
 
-        // 무료 상태 변경 시 즉시 캐시 무효화
-        if (wasFreeBefore != isFreeNow) {
-            cacheEvictionService.evictCache("modelSearch");
-            cacheEvictionService.evictCache("adminModels");
-        }
+        // 가격 정보는 즉시 반영되도록 검색 캐시 무효화
+        cacheEvictionService.evictCache("modelSearch");
+        cacheEvictionService.evictCache("adminModels");
 
-        // 기타 검색 캐시는 지연 처리
+        // 배치가 캐시를 다시 채우도록 지연 무효화 마킹
         lazyInvalidationService.markSearchCacheDirty("modelSearch");
         lazyInvalidationService.markSearchCacheDirty("adminModels");
     }
@@ -168,9 +163,6 @@ public class SmartCacheEvictionService {
     }
 
     /**
-     * 검색 캐시를 dirty로 마킹 (지연 무효화)
-     */
-    /**
      * 특정 모델 긴급 캐시 무효화
      * 잘못된 데이터가 캐싱된 경우 즉시 제거
      */
@@ -204,13 +196,6 @@ public class SmartCacheEvictionService {
 
         // TODO: 실제 운영 시 슬랙/이메일 알림 연동
         // alertService.sendCriticalAlert("긴급 캐시 무효화", modelId, reason);
-    }
-
-    /**
-     * 가격이 무료인지 체크
-     */
-    private boolean isPrice(BigDecimal price) {
-        return price == null || price.compareTo(BigDecimal.ZERO) == 0;
     }
 
     /**
