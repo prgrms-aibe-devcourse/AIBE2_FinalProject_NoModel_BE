@@ -22,7 +22,6 @@ public class ModelCacheEvictionService {
 
     private final CacheManager cacheManager;
 
-
     /**
      * 모델 삭제 시 캐시 무효화
      */
@@ -33,7 +32,6 @@ public class ModelCacheEvictionService {
     public void evictOnModelDelete(Long modelId) {
         log.info("모델 삭제로 인한 캐시 무효화: modelId={}", modelId);
     }
-
 
     /**
      * 전체 검색 캐시 무효화

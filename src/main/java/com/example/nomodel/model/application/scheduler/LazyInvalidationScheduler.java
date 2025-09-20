@@ -26,12 +26,5 @@ public class LazyInvalidationScheduler {
         lazyInvalidationService.processDirtySearchCaches();
     }
 
-    /**
-     * 모델 캐시로부터 파생되는 검색 캐시 재마킹을 10분 주기로 실행한다.
-     */
-    @Scheduled(fixedDelay = 600000)
-    public void triggerModelCacheInvalidation() {
-        log.trace("모델 캐시 지연 무효화 스케줄 실행");
-        lazyInvalidationService.processDirtyModelCaches();
-    }
+    // 모델 단위 dirty 마킹은 향후 필요 시 별도 스케줄러로 확장 예정
 }

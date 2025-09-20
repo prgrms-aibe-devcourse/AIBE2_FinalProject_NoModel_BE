@@ -65,7 +65,6 @@ public class CachedModelSearchService {
         return searchService.getModelNameSuggestions(prefix);
     }
 
-
     /**
      * AIModelDocument 페이지와 파일 정보를 조합하여 AIModelSearchResponse 페이지로 변환
      */

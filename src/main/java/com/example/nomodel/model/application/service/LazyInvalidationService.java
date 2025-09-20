@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,6 @@ public class LazyInvalidationService {
 
     // Redis 키 상수
     private static final String DIRTY_SEARCH_PREFIX = "cache:dirty:search:"; // 검색 캐시 마킹
-    private static final String DIRTY_MODELS_PREFIX = "cache:dirty:models:"; // 모델 단위 마킹
     private static final String BATCH_STATS_KEY = "cache:batch_stats";
 
     /**
@@ -87,50 +85,7 @@ public class LazyInvalidationService {
         }
     }
 
-    /**
-     * 모델 캐시 dirty 마킹 정리 (10분마다)
-     */
-    public void processDirtyModelCaches() {
-        try {
-            Set<String> dirtyKeys = redisTemplate.keys(DIRTY_MODELS_PREFIX + "*");
 
-            if (dirtyKeys.isEmpty()) {
-                return;
-            }
-
-            log.info("모델 캐시 배치 처리 시작: dirty_count={}", dirtyKeys.size());
-
-            List<Long> modelIds = dirtyKeys.stream()
-                    .map(key -> key.substring(DIRTY_MODELS_PREFIX.length()))
-                    .map(Long::valueOf)
-                    .toList();
-
-            // 영향받는 검색 캐시 재마킹
-            remarkAffectedSearchCaches(modelIds);
-
-            // dirty 마킹 제거
-            redisTemplate.delete(dirtyKeys);
-
-            recordBatchStats("model_cache", modelIds.size());
-
-            log.info("모델 캐시 배치 처리 완료: processed={}", modelIds.size());
-
-        } catch (Exception e) {
-            log.error("모델 캐시 배치 처리 실패", e);
-        }
-    }
-
-    /**
-     * Dirty 모델로 영향받는 검색 캐시 재마킹
-     */
-    private void remarkAffectedSearchCaches(List<Long> modelIds) {
-        if (!modelIds.isEmpty()) {
-            markSearchCacheDirty("modelSearch");
-            markSearchCacheDirty("adminModels");
-
-            log.debug("Dirty 모델들로 인한 검색 캐시 재마킹: models={}", modelIds.size());
-        }
-    }
 
 
 
@@ -160,7 +115,6 @@ public class LazyInvalidationService {
         log.warn("긴급 dirty 캐시 즉시 처리 시작");
 
         processDirtySearchCaches();
-        processDirtyModelCaches();
 
         log.warn("긴급 dirty 캐시 즉시 처리 완료");
     }
@@ -170,10 +124,8 @@ public class LazyInvalidationService {
      */
     public LazyInvalidationStatusResponse getStatus() {
         Set<String> dirtySearchKeys = redisTemplate.keys(DIRTY_SEARCH_PREFIX + "*");
-        Set<String> dirtyModelKeys = redisTemplate.keys(DIRTY_MODELS_PREFIX + "*");
-
         long searchCount = dirtySearchKeys.size();
-        long modelCount = dirtyModelKeys.size();
+        long modelCount = 0L;
 
         // 배치 통계 조회
         BatchStatisticsResponse batchStats = getBatchStatistics();
@@ -199,14 +151,12 @@ public class LazyInvalidationService {
 
             Long searchCacheCount = parseStatValue(stats.get("search_cache_count"));
             LocalDateTime searchCacheLastRun = parseDateTime((String) stats.get("search_cache_last_run"));
-            Long modelCacheCount = parseStatValue(stats.get("model_cache_count"));
-            LocalDateTime modelCacheLastRun = parseDateTime((String) stats.get("model_cache_last_run"));
 
             return new BatchStatisticsResponse(
                     searchCacheCount,
                     searchCacheLastRun,
-                    modelCacheCount,
-                    modelCacheLastRun
+                    0L,
+                    null
             );
         } catch (Exception e) {
             log.warn("배치 통계 조회 실패", e);
