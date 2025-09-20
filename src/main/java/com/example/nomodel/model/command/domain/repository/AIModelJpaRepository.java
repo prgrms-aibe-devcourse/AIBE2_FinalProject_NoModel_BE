@@ -124,4 +124,21 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
         LEFT JOIN Member mem ON mem.id = m.ownerId
         """)
     List<ModelWithStatisticsProjection> findAllModelsWithStatisticsAndOwner();
+
+
+    @Query("""
+        SELECT m as model, s as statistics, mem.username as ownerName,
+               (SELECT AVG(r.rating.value) FROM ModelReview r WHERE r.modelId = m.id AND r.status = :status) as averageRating,
+               (SELECT COUNT(r) FROM ModelReview r WHERE r.modelId = m.id AND r.status = :status) as reviewCount
+        FROM AIModel m
+        LEFT JOIN ModelStatistics s ON s.model.id = m.id
+        LEFT JOIN Member mem ON mem.id = m.ownerId
+        WHERE m.updatedAt >= :fromDateTime
+        ORDER BY m.updatedAt ASC
+        """)
+    org.springframework.data.domain.Page<ModelIndexProjection> findModelIndexesUpdatedAfter(
+            @Param("fromDateTime") LocalDateTime fromDateTime,
+            org.springframework.data.domain.Pageable pageable,
+            @Param("status") ReviewStatus status);
+
 }

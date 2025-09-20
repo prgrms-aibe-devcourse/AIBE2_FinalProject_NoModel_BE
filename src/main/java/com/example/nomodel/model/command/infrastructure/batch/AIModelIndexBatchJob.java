@@ -134,7 +134,7 @@ public class AIModelIndexBatchJob {
     @Bean
     public ItemWriter<AIModelDocument> aiModelWriter() {
         return items -> {
-            if (items == null || items.isEmpty()) {
+            if (items.isEmpty()) {
                 return;
             }
             elasticsearchOperations.save(items);
