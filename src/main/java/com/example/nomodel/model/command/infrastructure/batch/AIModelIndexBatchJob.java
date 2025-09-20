@@ -93,7 +93,7 @@ public class AIModelIndexBatchJob {
                 .repository(aiModelRepository)
                 .methodName("findModelIndexesUpdatedAfter")
                 .arguments(actualFromDateTime, REVIEW_STATUS)
-                .sorts(Map.of("updatedAt", Sort.Direction.ASC)) // 정렬은 JPQL에서 처리
+                .sorts(Map.of("updatedAt", Sort.Direction.ASC)) // 정렬은 JPQL 에서 처리
                 .pageSize(CHUNK_SIZE)
                 .build();
     }
