@@ -1,6 +1,7 @@
 package com.example.nomodel.model.command.application.dto;
 
 import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  * Spring Data의 Page 인터페이스를 안정적인 JSON 구조로 변환
  */
 @Builder
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public record PageResponse<T>(
         List<T> content,           // 현재 페이지 데이터
         int page,                  // 현재 페이지 번호 (0부터 시작)

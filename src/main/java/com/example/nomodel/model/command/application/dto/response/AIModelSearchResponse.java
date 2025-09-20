@@ -2,7 +2,9 @@ package com.example.nomodel.model.command.application.dto.response;
 
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,8 +14,10 @@ import java.util.List;
  * AI 모델 검색 응답 DTO
  * AIModelDocument + File 정보를 조합한 응답
  */
-@Getter
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AIModelSearchResponse {
 
     private String id;
