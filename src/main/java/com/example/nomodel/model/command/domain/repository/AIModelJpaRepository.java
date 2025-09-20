@@ -10,6 +10,9 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.nomodel.review.domain.model.ReviewStatus;
+import com.example.nomodel.model.command.application.dto.ModelIndexProjection;
 import java.util.Optional;
 
 public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
