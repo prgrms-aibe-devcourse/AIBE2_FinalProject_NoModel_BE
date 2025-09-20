@@ -138,7 +138,7 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
         """)
     org.springframework.data.domain.Page<ModelIndexProjection> findModelIndexesUpdatedAfter(
             @Param("fromDateTime") LocalDateTime fromDateTime,
-            org.springframework.data.domain.Pageable pageable,
-            @Param("status") ReviewStatus status);
+            @Param("status") ReviewStatus status,
+            org.springframework.data.domain.Pageable pageable);
 
 }
