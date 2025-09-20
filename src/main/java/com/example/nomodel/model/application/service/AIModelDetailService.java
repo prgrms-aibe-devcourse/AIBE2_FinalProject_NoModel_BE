@@ -9,7 +9,7 @@ import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.application.dto.AIModelDetailResponse;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * AI 모델 상세 조회 서비스

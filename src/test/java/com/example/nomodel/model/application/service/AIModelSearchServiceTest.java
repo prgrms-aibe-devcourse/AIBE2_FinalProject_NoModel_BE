@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;

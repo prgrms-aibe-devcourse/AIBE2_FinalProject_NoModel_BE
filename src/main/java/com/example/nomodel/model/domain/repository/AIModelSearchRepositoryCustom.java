@@ -1,8 +1,7 @@
 package com.example.nomodel.model.domain.repository;
 
-import com.example.nomodel.model.domain.document.AIModelDocument;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
+
 import java.util.List;
 
 /**

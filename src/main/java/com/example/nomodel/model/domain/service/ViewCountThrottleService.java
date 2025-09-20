@@ -1,4 +1,4 @@
-package com.example.nomodel.model.application.service;
+package com.example.nomodel.model.domain.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

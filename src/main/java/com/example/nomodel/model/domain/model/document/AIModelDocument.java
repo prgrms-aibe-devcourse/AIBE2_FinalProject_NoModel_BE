@@ -1,4 +1,4 @@
-package com.example.nomodel.model.domain.document;
+package com.example.nomodel.model.domain.model.document;
 
 import com.example.nomodel.model.domain.model.AIModel;
 import lombok.AccessLevel;

@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.service;
 
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.repository.AIModelSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

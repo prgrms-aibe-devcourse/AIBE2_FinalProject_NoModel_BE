@@ -4,7 +4,7 @@ import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.application.dto.ModelWithStatisticsProjection;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 

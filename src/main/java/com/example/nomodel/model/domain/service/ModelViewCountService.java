@@ -1,4 +1,4 @@
-package com.example.nomodel.model.application.service;
+package com.example.nomodel.model.domain.service;
 
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
@@ -45,9 +45,9 @@ public class ModelViewCountService {
     /**
      * 조회수 직접 증가 (내부 사용)
      * 중복 체크 없이 단순 증가
+     * processViewCountAsync의 트랜잭션 컨텍스트 내에서 실행됨
      */
-    @Transactional
-    public void incrementViewCount(Long modelId) {
+    private void incrementViewCount(Long modelId) {
         ModelStatistics statistics = getModelStatistics(modelId);
         statistics.incrementViewCount();
         statisticsRepository.save(statistics);
@@ -64,5 +64,4 @@ public class ModelViewCountService {
         return statisticsRepository.findByModelId(modelId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
     }
-
 }

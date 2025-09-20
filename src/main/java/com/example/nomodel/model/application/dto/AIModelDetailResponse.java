@@ -1,7 +1,7 @@
 package com.example.nomodel.model.application.dto;
 
 import com.example.nomodel.file.domain.model.File;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import lombok.Builder;

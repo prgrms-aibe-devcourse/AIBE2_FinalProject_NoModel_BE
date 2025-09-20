@@ -1,6 +1,6 @@
 package com.example.nomodel.model.application.dto.response;
 
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import lombok.Builder;
 import lombok.Getter;
 

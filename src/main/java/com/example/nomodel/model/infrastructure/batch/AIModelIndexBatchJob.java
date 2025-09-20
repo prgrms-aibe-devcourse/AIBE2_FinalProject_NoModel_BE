@@ -1,8 +1,7 @@
 package com.example.nomodel.model.infrastructure.batch;
 
 import com.example.nomodel.member.domain.model.Email;
-import com.example.nomodel.model.application.service.AIModelSearchService;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.ModelStatistics;
 import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
@@ -20,8 +19,6 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.data.RepositoryItemReader;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;

@@ -2,8 +2,7 @@ package com.example.nomodel.model.application.service;
 
 import com.example.nomodel.file.application.service.FileService;
 import com.example.nomodel.model.application.dto.response.AIModelSearchResponse;
-import com.example.nomodel.model.application.dto.response.cache.ModelSearchCacheKey;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;

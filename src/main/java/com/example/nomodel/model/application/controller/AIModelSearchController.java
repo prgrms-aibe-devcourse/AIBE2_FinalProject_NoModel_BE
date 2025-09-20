@@ -6,7 +6,7 @@ import com.example.nomodel.model.application.dto.PageResponse;
 import com.example.nomodel.model.application.dto.response.AIModelSearchResponse;
 import com.example.nomodel.model.application.service.AIModelSearchService;
 import com.example.nomodel.model.application.service.CachedModelSearchService;
-import com.example.nomodel.model.domain.document.AIModelDocument;
+import com.example.nomodel.model.domain.model.document.AIModelDocument;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
