@@ -1,8 +1,8 @@
 package com.example.nomodel.statistics.application.service;
 
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
-import com.example.nomodel.model.domain.repository.AdResultJpaRepository;
-import com.example.nomodel.model.domain.repository.ModelStatisticsJpaRepository;
+import com.example.nomodel.model.command.domain.repository.AdResultJpaRepository;
+import com.example.nomodel.model.command.domain.repository.ModelStatisticsJpaRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
 import com.example.nomodel.review.domain.repository.ReviewRepository;
 import com.example.nomodel.statistics.application.dto.response.*;
