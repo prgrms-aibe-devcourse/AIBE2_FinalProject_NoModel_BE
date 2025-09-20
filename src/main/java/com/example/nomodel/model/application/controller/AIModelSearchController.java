@@ -88,15 +88,6 @@ public class AIModelSearchController {
         return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
     }
 
-    @Operation(summary = "최신 모델 검색", description = "최근 생성된 모델 검색")
-    @GetMapping("/recent")
-    public ResponseEntity<?> getRecentModels(
-            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
-
-        Page<AIModelSearchResponse> result = cachedSearchService.getRecentModels(page, size);
-        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
-    }
 
 
     @Operation(summary = "모델명 자동완성", description = "모델명 자동완성을 위한 제안 목록 (completion suggester 기반)")

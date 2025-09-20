@@ -157,14 +157,6 @@ public class AIModelSearchService {
         return searchRepository.findPopularModels(pageable);
     }
 
-    /**
-     * 최신 모델 검색
-     */
-    public Page<AIModelDocument> getRecentModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return searchRepository.findRecentModels(pageable);
-    }
 
     /**
      * 관리자 추천 모델 검색

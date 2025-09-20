@@ -143,10 +143,6 @@ public class LazyInvalidationService {
                 break;
 
 
-            case "recentModels":
-                // 최신 모델 캐시 재구성
-                refreshRecentModelsCache();
-                break;
 
             case "autoComplete":
                 // 자동완성 캐시 무효화
@@ -175,18 +171,6 @@ public class LazyInvalidationService {
     }
 
 
-    /**
-     * 최신 모델 캐시 재구성
-     */
-    private void refreshRecentModelsCache() {
-        try {
-            cachedSearchService.refreshRecentModelsCache(0, 20);
-            log.debug("최신 모델 캐시 재구성 완료");
-        } catch (Exception e) {
-            log.warn("최신 모델 캐시 재구성 실패", e);
-            cacheEvictionService.evictSpecificCacheKey("recentModels", null);
-        }
-    }
 
     /**
      * 배치 처리 통계 기록
