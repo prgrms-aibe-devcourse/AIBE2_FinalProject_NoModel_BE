@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 public class ModelCacheWarmingService {
 
     private final CachedModelSearchService cachedSearchService;
-    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_WARM_PAGES = 2; // 첫 2페이지만 워밍
 
     /**

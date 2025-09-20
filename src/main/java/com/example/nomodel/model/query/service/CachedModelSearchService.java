@@ -32,7 +32,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "modelSearch",
             key = "T(com.example.nomodel.model.command.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
-            condition = "#keyword == null && #page <= 2 && #size <= 10",  // 키워드 없는 기본 검색만 캐싱
+            condition = "#keyword == null && #page <= 2 && #size <= 20",  // 키워드 없는 기본 검색만 캐싱
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelSearchResponse> search(String keyword, Boolean isFree, int page, int size) {
@@ -50,7 +50,7 @@ public class CachedModelSearchService {
     @Cacheable(
             value = "adminModels",
             key = "T(com.example.nomodel.model.command.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
-            condition = "#keyword == null && #page <= 2 && #size <= 10",  // 키워드 없는 기본 검색만 캐싱
+            condition = "#keyword == null && #page <= 2 && #size <= 20",  // 키워드 없는 기본 검색만 캐싱
             unless = "#result == null || #result.isEmpty()"
     )
     public Page<AIModelSearchResponse> getAdminModels(String keyword, Boolean isFree, int page, int size) {
