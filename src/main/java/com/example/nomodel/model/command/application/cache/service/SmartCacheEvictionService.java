@@ -11,7 +11,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -108,9 +107,6 @@ public class SmartCacheEvictionService {
      * 가격 변경 처리 - 중요도 높음
      */
     private void handlePriceUpdate(ModelUpdateEvent event) {
-        BigDecimal oldPrice = (BigDecimal) event.getOldValue();
-        BigDecimal newPrice = (BigDecimal) event.getNewValue();
-
         // 모델 상세 즉시 갱신
         modelCacheService.updateModelDetailCache(event.getModelId());
 
