@@ -46,8 +46,8 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelSearchResponse> result = cachedSearchService.search(keyword, isFree, page, size);
-        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
+        PageResponse<AIModelSearchResponse> result = cachedSearchService.search(keyword, isFree, page, size);
+        return ResponseEntity.ok(ApiUtils.success(result));
     }
 
     @Operation(summary = "관리자 모델 목록 조회/검색", description = "공개된 관리자 모델 목록 (ADMIN 타입). 키워드가 있으면 검색, 없으면 전체 조회")
@@ -58,8 +58,8 @@ public class AIModelSearchController {
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size) {
 
-        Page<AIModelSearchResponse> result = cachedSearchService.getAdminModels(keyword, isFree, page, size);
-        return ResponseEntity.ok(ApiUtils.success(PageResponse.from(result)));
+        PageResponse<AIModelSearchResponse> result = cachedSearchService.getAdminModels(keyword, isFree, page, size);
+        return ResponseEntity.ok(ApiUtils.success(result));
     }
 
     @Operation(summary = "내 모델 목록 조회/검색", description = "로그인한 사용자가 생성한 모델 목록. 키워드가 있으면 검색, 없으면 전체 조회")

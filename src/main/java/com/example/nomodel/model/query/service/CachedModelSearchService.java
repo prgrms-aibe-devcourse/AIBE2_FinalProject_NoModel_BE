@@ -2,6 +2,7 @@ package com.example.nomodel.model.query.service;
 
 import com.example.nomodel.file.application.service.FileService;
 import com.example.nomodel.model.command.application.dto.response.AIModelSearchResponse;
+import com.example.nomodel.model.command.application.dto.PageResponse;
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -33,14 +34,14 @@ public class CachedModelSearchService {
             value = "modelSearch",
             key = "T(com.example.nomodel.model.command.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
             condition = "#keyword == null && #page <= 2 && #size <= 20",  // 키워드 없는 기본 검색만 캐싱
-            unless = "#result == null || #result.isEmpty()"
+            unless = "#result == null || #result.empty()"
     )
-    public Page<AIModelSearchResponse> search(String keyword, Boolean isFree, int page, int size) {
+    public PageResponse<AIModelSearchResponse> search(String keyword, Boolean isFree, int page, int size) {
         // 1. 모델 검색
         Page<AIModelDocument> models = searchService.search(keyword, isFree, page, size);
 
         // 2. 파일 정보 조합
-        return combineWithFiles(models);
+        return toPageResponse(models);
     }
 
 
@@ -51,11 +52,11 @@ public class CachedModelSearchService {
             value = "adminModels",
             key = "T(com.example.nomodel.model.command.application.dto.response.cache.ModelSearchCacheKey).generate(#keyword, #isFree, #page, #size)",
             condition = "#keyword == null && #page <= 2 && #size <= 20",  // 키워드 없는 기본 검색만 캐싱
-            unless = "#result == null || #result.isEmpty()"
+            unless = "#result == null || #result.empty()"
     )
-    public Page<AIModelSearchResponse> getAdminModels(String keyword, Boolean isFree, int page, int size) {
+    public PageResponse<AIModelSearchResponse> getAdminModels(String keyword, Boolean isFree, int page, int size) {
         Page<AIModelDocument> models = searchService.getAdminModels(keyword, isFree, page, size);
-        return combineWithFiles(models);
+        return toPageResponse(models);
     }
 
     /**
@@ -68,9 +69,9 @@ public class CachedModelSearchService {
     /**
      * AIModelDocument 페이지와 파일 정보를 조합하여 AIModelSearchResponse 페이지로 변환
      */
-    private Page<AIModelSearchResponse> combineWithFiles(Page<AIModelDocument> models) {
+    private PageResponse<AIModelSearchResponse> toPageResponse(Page<AIModelDocument> models) {
         if (models.isEmpty()) {
-            return Page.empty();
+            return PageResponse.empty(models.getNumber(), models.getSize());
         }
 
         // 1. 모든 모델 ID 추출
@@ -89,7 +90,7 @@ public class CachedModelSearchService {
                 })
                 .toList();
 
-        // 4. Page 객체로 변환하여 반환
-        return new PageImpl<>(responses, models.getPageable(), models.getTotalElements());
+        Page<AIModelSearchResponse> responsePage = new PageImpl<>(responses, models.getPageable(), models.getTotalElements());
+        return PageResponse.from(responsePage);
     }
 }
