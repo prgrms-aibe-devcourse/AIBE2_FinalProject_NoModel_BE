@@ -4,6 +4,7 @@ import com.example.nomodel.model.query.service.CachedModelSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +25,7 @@ import java.util.stream.IntStream;
 public class ModelCacheWarmingService {
 
     private final CachedModelSearchService cachedSearchService;
+    private final CacheManager cacheManager;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_WARM_PAGES = 2; // 첫 2페이지만 워밍
 
@@ -34,20 +36,20 @@ public class ModelCacheWarmingService {
     @EventListener(ApplicationReadyEvent.class)
     @Async
     public void warmUpCachesOnStartup() {
-        log.info("애플리케이션 시작 - 캐시 워밍 시작");
+        log.info("애플리케이션 시작 - 캐시 초기화 및 워밍 시작");
 
         try {
-            // 향후 추가 워밍 작업을 대비해 비동기 Future 형태 유지
+            clearCaches();
+
             CompletableFuture<Void> generalSearch = warmUpGeneralSearch();
 
-            // 모든 작업 완료 대기
             CompletableFuture.allOf(
                     generalSearch
             ).join();
 
-            log.info("캐시 워밍 완료");
+            log.info("캐시 초기화 및 워밍 완료");
         } catch (Exception e) {
-            log.error("캐시 워밍 중 오류 발생", e);
+            log.error("캐시 초기화/워밍 중 오류 발생", e);
         }
     }
 
@@ -60,6 +62,22 @@ public class ModelCacheWarmingService {
     public void scheduledCacheWarming() {
         log.info("스케줄된 캐시 워밍 시작");
         warmUpCachesOnStartup();
+    }
+
+    private void clearCaches() {
+        try {
+            var modelSearchCache = cacheManager.getCache("modelSearch");
+            if (modelSearchCache != null) {
+                modelSearchCache.clear();
+            }
+            var adminModelsCache = cacheManager.getCache("adminModels");
+            if (adminModelsCache != null) {
+                adminModelsCache.clear();
+            }
+            log.info("검색 캐시 초기화 완료");
+        } catch (Exception e) {
+            log.warn("검색 캐시 초기화 실패", e);
+        }
     }
 
     /**
