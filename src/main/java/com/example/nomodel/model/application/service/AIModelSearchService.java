@@ -147,40 +147,6 @@ public class AIModelSearchService {
     }
 
     /**
-     * 인기 모델 검색 (사용량 + 평점 기준)
-     */
-    public Page<AIModelDocument> getPopularModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
-            Sort.by("usageCount").descending()
-                .and(Sort.by("rating").descending()));
-        return searchRepository.findPopularModels(pageable);
-    }
-
-
-    /**
-     * 관리자 추천 모델 검색
-     */
-    public Page<AIModelDocument> getRecommendedModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
-            Sort.by("rating").descending()
-                .and(Sort.by("usageCount").descending()));
-        return searchRepository.findRecommendedModels(pageable);
-    }
-
-
-    /**
-     * 무료 모델 검색
-     */
-    public Page<AIModelDocument> getFreeModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("rating").descending());
-        return searchRepository.findFreeModels(pageable);
-    }
-
-
-    /**
      * 자동완성 제안 (completion suggester 기반)
      * 모델명 문자열 리스트만 반환
      */
@@ -213,7 +179,7 @@ public class AIModelSearchService {
             SearchResponse<Void> resp = elasticsearchClient.search(req, Void.class);
             List<String> suggestions = resp.suggest().get("model-name-suggest").stream()
                 .flatMap(s -> s.completion().options().stream())
-.map(co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption::text)
+                    .map(co.elastic.clients.elasticsearch.core.search.CompletionSuggestOption::text)
                 .distinct()
                 .toList();
             

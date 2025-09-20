@@ -59,13 +59,8 @@ public class CachedModelSearchService {
     }
 
     /**
-     * 자동완성 제안 (캐싱 적용)
+     * 자동완성 제안 (캐싱 미적용 - 메모리 효율성)
      */
-    @Cacheable(
-            value = "autoComplete",
-            key = "#prefix.toLowerCase()",
-            unless = "#result == null || #result.isEmpty()"
-    )
     public List<String> getModelNameSuggestions(String prefix) {
         return searchService.getModelNameSuggestions(prefix);
     }

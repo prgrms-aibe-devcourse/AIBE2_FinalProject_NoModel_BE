@@ -24,7 +24,7 @@ public class ModelCacheWarmingService {
 
     private final CachedModelSearchService cachedSearchService;
     private static final int DEFAULT_PAGE_SIZE = 20;
-    private static final int MAX_WARM_PAGES = 3; // 처음 3페이지만 워밍
+    private static final int MAX_WARM_PAGES = 2; // 첫 2페이지만 워밍
 
     /**
      * 애플리케이션 시작 시 캐시 워밍
@@ -36,13 +36,11 @@ public class ModelCacheWarmingService {
         log.info("애플리케이션 시작 - 캐시 워밍 시작");
 
         try {
-            // 병렬로 여러 캐시 워밍 작업 실행
-            CompletableFuture<Void> recentModels = warmUpRecentModels();
+            // 향후 추가 워밍 작업을 대비해 비동기 Future 형태 유지
             CompletableFuture<Void> generalSearch = warmUpGeneralSearch();
 
             // 모든 작업 완료 대기
             CompletableFuture.allOf(
-                    recentModels,
                     generalSearch
             ).join();
 
@@ -62,28 +60,6 @@ public class ModelCacheWarmingService {
         log.info("스케줄된 캐시 워밍 시작");
         warmUpCachesOnStartup();
     }
-
-
-    /**
-     * 최신 모델 캐시 워밍
-     */
-    @Async
-    public CompletableFuture<Void> warmUpRecentModels() {
-        log.debug("최신 모델 캐시 워밍 시작");
-
-        IntStream.range(0, 2) // 최신 모델은 2페이지만
-                .forEach(page -> {
-                    try {
-                        cachedSearchService.getRecentModels(page, DEFAULT_PAGE_SIZE);
-                        log.debug("최신 모델 캐시 워밍: page={}", page);
-                    } catch (Exception e) {
-                        log.warn("최신 모델 캐시 워밍 실패: page={}", page, e);
-                    }
-                });
-
-        return CompletableFuture.completedFuture(null);
-    }
-
 
     /**
      * 일반 검색 캐시 워밍 (자주 검색되는 키워드)
@@ -106,7 +82,7 @@ public class ModelCacheWarmingService {
 
         popularKeywords.forEach(keyword -> {
             freeFilters.forEach(isFree -> {
-                IntStream.range(0, 2).forEach(page -> { // 첫 2페이지만
+                IntStream.range(0, MAX_WARM_PAGES).forEach(page -> {
                     try {
                         cachedSearchService.search(keyword, isFree, page, DEFAULT_PAGE_SIZE);
                         log.debug("일반 검색 캐시 워밍: keyword={}, isFree={}, page={}",

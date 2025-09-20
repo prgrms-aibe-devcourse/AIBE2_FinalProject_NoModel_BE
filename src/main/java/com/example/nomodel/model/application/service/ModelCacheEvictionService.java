@@ -28,8 +28,7 @@ public class ModelCacheEvictionService {
      */
     @Caching(evict = {
             @CacheEvict(value = "modelDetail", key = "#modelId"),
-            @CacheEvict(value = "modelSearch", allEntries = true),
-            @CacheEvict(value = "recentModels", allEntries = true)
+            @CacheEvict(value = "modelSearch", allEntries = true)
     })
     public void evictOnModelDelete(Long modelId) {
         log.info("모델 삭제로 인한 캐시 무효화: modelId={}", modelId);
@@ -41,23 +40,7 @@ public class ModelCacheEvictionService {
      * 대규모 변경이나 배치 작업 후 사용
      */
     public void evictAllSearchCaches() {
-        List<String> cacheNames = Arrays.asList(
-                "modelSearch",
-                "popularModels",
-                "recentModels",
-                "recommendedModels",
-                "adminModels",
-                "freeModels",
-                "autoComplete"
-        );
-
-        cacheNames.forEach(cacheName -> {
-            var cache = cacheManager.getCache(cacheName);
-            if (cache != null) {
-                cache.clear();
-                log.info("캐시 전체 삭제: {}", cacheName);
-            }
-        });
+        evictCaches(Arrays.asList("modelSearch", "adminModels"));
     }
 
     /**
@@ -84,6 +67,24 @@ public class ModelCacheEvictionService {
                 log.info("비동기 캐시 무효화: {}", cacheName);
             }
         });
+    }
+
+    /**
+     * 지정한 캐시 전체 무효화 (동기 실행)
+     */
+    public void evictCache(String cacheName) {
+        var cache = cacheManager.getCache(cacheName);
+        if (cache != null) {
+            cache.clear();
+            log.info("캐시 전체 삭제: {}", cacheName);
+        }
+    }
+
+    /**
+     * 여러 캐시 전체 무효화 (동기 실행)
+     */
+    public void evictCaches(List<String> cacheNames) {
+        cacheNames.forEach(this::evictCache);
     }
 
 }

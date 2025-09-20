@@ -46,16 +46,11 @@ public class SmartCacheEvictionService {
                 event.getModelId(), event.isPublic());
 
         if (event.isPublic()) {
-            // 무료 모델 캐시에 즉시 추가 (자주 조회됨)
-            if (event.isFree()) {
-                markSearchCacheDirty("freeModels");
+            markSearchCacheDirty("modelSearch");
+
+            if ("ADMIN".equalsIgnoreCase(event.getOwnType())) {
+                markSearchCacheDirty("adminModels");
             }
-
-            // 최신 모델 캐시는 즉시 갱신 (첫 페이지에 나타남)
-            cacheEvictionService.evictSpecificCacheKey("recentModels", null);
-
-            // 나머지 검색 캐시는 지연 무효화
-            markSearchCacheDirty("popularModels");
         }
     }
 
@@ -111,9 +106,9 @@ public class SmartCacheEvictionService {
         // 모델 상세는 즉시 갱신 (리뷰 정보 포함)
         modelCacheService.updateModelDetailCache(event.getModelId());
 
-        // 평점 관련 캐시는 지연 무효화 (성능 우선)
-        markSearchCacheDirty("popularModels");
-        markSearchCacheDirty("recommendedModels");
+        // 평점 변화는 검색 결과 순서에 영향을 주므로 검색 캐시 지연 무효화
+        markSearchCacheDirty("modelSearch");
+        markSearchCacheDirty("adminModels");
     }
 
     /**
@@ -129,13 +124,15 @@ public class SmartCacheEvictionService {
         // 모델 상세 즉시 갱신
         modelCacheService.updateModelDetailCache(event.getModelId());
 
-        // 무료 상태 변경 시 즉시 무효화 (중요)
+        // 무료 상태 변경 시 즉시 캐시 무효화
         if (wasFreeBefore != isFreeNow) {
-            cacheEvictionService.evictSpecificCacheKey("freeModels", null);
+            cacheEvictionService.evictCache("modelSearch");
+            cacheEvictionService.evictCache("adminModels");
         }
 
         // 기타 검색 캐시는 지연 처리
         markSearchCacheDirty("modelSearch");
+        markSearchCacheDirty("adminModels");
     }
 
     /**
@@ -150,7 +147,7 @@ public class SmartCacheEvictionService {
         if (Boolean.TRUE.equals(newVisibility)) {
             // 공개로 변경 - 검색 결과에 나타나야 함
             markSearchCacheDirty("modelSearch");
-            markSearchCacheDirty("recentModels");
+            markSearchCacheDirty("adminModels");
         } else {
             // 비공개로 변경 - 즉시 제거
             cacheEvictionService.evictAllSearchCaches();
@@ -166,7 +163,7 @@ public class SmartCacheEvictionService {
 
         // 검색 관련은 지연 처리
         markSearchCacheDirty("modelSearch");
-        markSearchCacheDirty("autoComplete");
+        markSearchCacheDirty("adminModels");
     }
 
     /**

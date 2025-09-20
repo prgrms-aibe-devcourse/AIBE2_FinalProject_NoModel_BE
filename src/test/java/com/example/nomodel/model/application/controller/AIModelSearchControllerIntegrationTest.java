@@ -90,55 +90,6 @@ class AIModelSearchControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("인기 모델 검색 통합 테스트")
-    void getPopularModels_IntegrationTest() throws Exception {
-        // given - Mock service method
-        given(searchService.getPopularModels(eq(0), eq(10))).willReturn(Page.empty());
-
-        // when & then
-        mockMvc.perform(get("/models/search/popular")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response").exists());
-    }
-
-    @Test
-    @DisplayName("최신 모델 검색 통합 테스트")
-    void getRecentModels_IntegrationTest() throws Exception {
-        // given - Mock service method
-        given(searchService.getRecentModels(eq(0), eq(10))).willReturn(Page.empty());
-
-        // when & then
-        mockMvc.perform(get("/models/search/recent")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.response").exists());
-    }
-
-
-    @Test
-    @DisplayName("무료 모델 검색 통합 테스트")
-    void getFreeModels_IntegrationTest() throws Exception {
-        // given - Mock service method
-        given(searchService.getFreeModels(eq(0), eq(10))).willReturn(Page.empty());
-
-        // when & then
-        mockMvc.perform(get("/models/search/free")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-
-    @Test
     @DisplayName("자동완성 제안 통합 테스트")
     void getModelNameSuggestions_IntegrationTest() throws Exception {
         // given - Mock service method
