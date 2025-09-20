@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +41,24 @@ public class LazyInvalidationService {
         redisTemplate.expire(key, 1, TimeUnit.HOURS); // 1시간 후 자동 삭제
 
         log.debug("검색 캐시 dirty 마킹: cache={}, key=ALL", cacheName);
+    }
+
+    public List<String> getDirtyCacheNames() {
+        Set<String> dirtyKeys = redisTemplate.keys(DIRTY_SEARCH_PREFIX + "*");
+        if (dirtyKeys == null || dirtyKeys.isEmpty()) {
+            return List.of();
+        }
+        return dirtyKeys.stream()
+                .map(key -> key.substring(DIRTY_SEARCH_PREFIX.length()))
+                .sorted()
+                .toList();
+    }
+
+    public void clearAllMarks() {
+        Set<String> dirtyKeys = redisTemplate.keys(DIRTY_SEARCH_PREFIX + "*");
+        if (dirtyKeys != null && !dirtyKeys.isEmpty()) {
+            redisTemplate.delete(dirtyKeys);
+        }
     }
 
     /**
@@ -85,10 +104,6 @@ public class LazyInvalidationService {
         }
     }
 
-
-
-
-
     /**
      * 배치 처리 통계 기록 (단기 모니터링을 위해 Redis 활용)
      */
@@ -123,8 +138,7 @@ public class LazyInvalidationService {
      * 지연 무효화 서비스 상태 정보 반환
      */
     public LazyInvalidationStatusResponse getStatus() {
-        Set<String> dirtySearchKeys = redisTemplate.keys(DIRTY_SEARCH_PREFIX + "*");
-        long searchCount = dirtySearchKeys.size();
+        long searchCount = getDirtyCacheNames().size();
         long modelCount = 0L;
 
         // 배치 통계 조회
