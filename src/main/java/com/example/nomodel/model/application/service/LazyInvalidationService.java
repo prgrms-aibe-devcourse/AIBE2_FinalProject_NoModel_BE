@@ -5,7 +5,6 @@ import com.example.nomodel.model.application.dto.response.cache.LazyInvalidation
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,39 +25,29 @@ public class LazyInvalidationService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ModelCacheEvictionService cacheEvictionService;
-    private final CachedModelSearchService cachedSearchService;
 
     // Redis 키 상수
-    private static final String DIRTY_SEARCH_PREFIX = "cache:dirty:search:";
-    private static final String DIRTY_MODELS_PREFIX = "cache:dirty:models:";
+    private static final String DIRTY_SEARCH_PREFIX = "cache:dirty:search:"; // 검색 캐시 마킹
+    private static final String DIRTY_MODELS_PREFIX = "cache:dirty:models:"; // 모델 단위 마킹
     private static final String BATCH_STATS_KEY = "cache:batch_stats";
 
     /**
      * 검색 캐시를 지연 무효화 대상으로 마킹
      */
     public void markSearchCacheDirty(String cacheName) {
-        markSearchCacheDirty(cacheName, null);
-    }
-
-    /**
-     * 특정 키워드/조건의 검색 캐시를 dirty로 마킹
-     */
-    public void markSearchCacheDirty(String cacheName, String searchKey) {
         String key = DIRTY_SEARCH_PREFIX + cacheName;
-        String value = searchKey != null ? searchKey : "ALL";
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
-        redisTemplate.opsForHash().put(key, value, timestamp);
+        redisTemplate.opsForHash().put(key, "ALL", timestamp);
         redisTemplate.expire(key, 1, TimeUnit.HOURS); // 1시간 후 자동 삭제
 
-        log.debug("검색 캐시 dirty 마킹: cache={}, key={}", cacheName, value);
+        log.debug("검색 캐시 dirty 마킹: cache={}, key=ALL", cacheName);
     }
 
     /**
      * 검색 캐시 배치 무효화 (5분마다)
      * 피크 시간을 피해 DB 부하 분산
      */
-    @Scheduled(fixedDelay = 300000) // 5분
     public void processDirtySearchCaches() {
         try {
             Set<String> dirtyKeys = redisTemplate.keys(DIRTY_SEARCH_PREFIX + "*");
@@ -77,18 +66,18 @@ public class LazyInvalidationService {
                 Set<Object> dirtyItems = redisTemplate.opsForHash().keys(dirtyKey);
 
                 if (dirtyItems.isEmpty()) {
+                    redisTemplate.delete(dirtyKey);
                     continue;
                 }
 
-                // 캐시 타입별 처리
-                processSearchCacheByType(cacheName, dirtyItems);
+                cacheEvictionService.evictCache(cacheName);
 
-                // dirty 마킹 제거
                 redisTemplate.delete(dirtyKey);
                 processedCount++;
+
+                log.debug("검색 캐시 배치 무효화 처리: cache={}, dirty_items={}", cacheName, dirtyItems.size());
             }
 
-            // 배치 통계 기록
             recordBatchStats("search_cache", processedCount);
 
             log.info("검색 캐시 배치 무효화 완료: processed={}", processedCount);
@@ -99,9 +88,8 @@ public class LazyInvalidationService {
     }
 
     /**
-     * 모델 캐시 배치 처리 (10분마다)
+     * 모델 캐시 dirty 마킹 정리 (10분마다)
      */
-    @Scheduled(fixedDelay = 600000) // 10분
     public void processDirtyModelCaches() {
         try {
             Set<String> dirtyKeys = redisTemplate.keys(DIRTY_MODELS_PREFIX + "*");
@@ -117,8 +105,8 @@ public class LazyInvalidationService {
                     .map(Long::valueOf)
                     .toList();
 
-            // 배치로 처리
-            processDirtyModels(modelIds);
+            // 영향받는 검색 캐시 재마킹
+            remarkAffectedSearchCaches(modelIds);
 
             // dirty 마킹 제거
             redisTemplate.delete(dirtyKeys);
@@ -133,38 +121,12 @@ public class LazyInvalidationService {
     }
 
     /**
-     * 검색 캐시 타입별 처리
+     * Dirty 모델로 영향받는 검색 캐시 재마킹
      */
-    private void processSearchCacheByType(String cacheName, Set<Object> dirtyItems) {
-        switch (cacheName) {
-            case "modelSearch":
-                // 전체 검색 캐시 무효화
-                cacheEvictionService.evictSpecificCacheKey("modelSearch", null);
-                break;
-
-
-
-            case "autoComplete":
-                // 자동완성 캐시 무효화
-                cacheEvictionService.evictSpecificCacheKey("autoComplete", null);
-                break;
-
-            default:
-                // 기본: 무효화
-                cacheEvictionService.evictSpecificCacheKey(cacheName, null);
-        }
-
-        log.debug("검색 캐시 타입별 처리 완료: type={}, items={}", cacheName, dirtyItems.size());
-    }
-
-    /**
-     * Dirty 모델들 배치 처리
-     */
-    private void processDirtyModels(List<Long> modelIds) {
-        // 모델별로 개별 처리보다는 영향받는 검색 캐시를 일괄 갱신
+    private void remarkAffectedSearchCaches(List<Long> modelIds) {
         if (!modelIds.isEmpty()) {
             markSearchCacheDirty("modelSearch");
-            markSearchCacheDirty("popularModels");
+            markSearchCacheDirty("adminModels");
 
             log.debug("Dirty 모델들로 인한 검색 캐시 재마킹: models={}", modelIds.size());
         }
@@ -173,7 +135,7 @@ public class LazyInvalidationService {
 
 
     /**
-     * 배치 처리 통계 기록
+     * 배치 처리 통계 기록 (단기 모니터링을 위해 Redis 활용)
      */
     private void recordBatchStats(String type, int count) {
         try {
