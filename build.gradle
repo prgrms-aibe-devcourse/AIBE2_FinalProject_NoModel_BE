@@ -35,7 +35,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    
+
+    // 외부 API 호출을 위해 WebClient 불러오기용
+    implementation 'org.springframework:spring-webflux'
+
+
     // Security & Authentication
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
@@ -62,6 +66,12 @@ dependencies {
     implementation 'org.springframework.modulith:spring-modulith-starter-core'
     implementation 'org.springframework.modulith:spring-modulith-starter-jpa'
     implementation 'org.springframework.modulith:spring-modulith-events-api'
+
+    // WebClient
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Netty HttpClient
+    implementation 'io.projectreactor.netty:reactor-netty-http'
     
     // Code Generation & Processing
     compileOnly 'org.projectlombok:lombok'

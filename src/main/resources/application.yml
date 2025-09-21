@@ -1,3 +1,4 @@
+
 server:
   servlet:
     context-path: /api
@@ -18,9 +19,18 @@ spring:
       initialize-schema: always  # 배치 테이블 자동 생성
     job:
       enabled: false  # 애플리케이션 시작 시 자동 실행 비활성화
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
 
 # 애플리케이션 설정
 app:
   batch:
     aimodel-index:
       enabled: true  # AIModel 인덱싱 스케줄러 활성화 (증분 처리)
+
+# Google API 설정
+google:
+  api:
+    key: ${GOOGLE_API_KEY}

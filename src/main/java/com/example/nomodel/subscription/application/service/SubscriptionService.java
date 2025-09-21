@@ -30,7 +30,7 @@ public class SubscriptionService {
                         s.getPlanType(),
                         s.getDescription(),
                         s.getPrice(),
-                        s.getPeriod()
+                        s.getPeriod()    //Integer을 Long으로 변환
                 ))
                 .collect(Collectors.toList());
     }

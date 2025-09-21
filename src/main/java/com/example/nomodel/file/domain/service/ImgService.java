@@ -27,4 +27,8 @@ public interface ImgService {
      * @return 이미지의 공개 URL
      */
     String getImageUrl(String fileName);
+
+    // ▼ 신규: 바이트 업로드/다운로드 지원
+    String uploadBytes(byte[] data, String contentType, String fileName);
+    byte[] download(String fileName);
 }

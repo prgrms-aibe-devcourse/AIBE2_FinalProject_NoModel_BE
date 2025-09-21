@@ -43,7 +43,7 @@ public class ReviewController {
     //리뷰 수정 Controller 엔드포인트
     @Operation(summary = "리뷰 수정", description = "특정 리뷰를 수정합니다.")
     @PutMapping("/{reviewId}")
-    public ResponseEntity <ApiUtils.ApiResult<ReviewResponse>> updateReview(
+    public ResponseEntity<ApiUtils.ApiResult<ReviewResponse>> updateReview(
             @PathVariable Long modelId,
             @PathVariable Long reviewId,
             @AuthenticationPrincipal(expression = "memberId") Long reviewerId,
@@ -64,8 +64,4 @@ public class ReviewController {
         ReviewResponse deleted = reviewService.deleteReview(reviewerId, reviewId);
         return ResponseEntity.ok(ApiUtils.success(deleted));
     }
-
-
-
-
 }
