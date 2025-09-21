@@ -3,10 +3,10 @@ package com.example.nomodel._core.fixture;
 import com.example.nomodel._core.security.jwt.JWTTokenProvider;
 import com.example.nomodel.member.application.dto.response.AuthTokenDTO;
 import com.example.nomodel.member.domain.model.*;
-import com.example.nomodel.model.domain.model.AIModel;
-import com.example.nomodel.model.domain.model.ModelMetadata;
-import com.example.nomodel.model.domain.model.OwnType;
-import com.example.nomodel.model.domain.model.SamplerType;
+import com.example.nomodel.model.command.domain.model.AIModel;
+import com.example.nomodel.model.command.domain.model.ModelMetadata;
+import com.example.nomodel.model.command.domain.model.OwnType;
+import com.example.nomodel.model.command.domain.model.SamplerType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
