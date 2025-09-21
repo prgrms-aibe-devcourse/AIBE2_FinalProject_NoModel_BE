@@ -42,6 +42,7 @@ public class AIModelSearchService {
     private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final MemberJpaRepository memberRepository;
     private final ReviewRepository reviewRepository;
+    private AIModelSearchRepository aiModelSearchRepository;
 
     /**
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
@@ -474,5 +475,19 @@ public class AIModelSearchService {
      */
     private Long getReviewCount(AIModel aiModel) {
         return reviewRepository.countByModelIdAndStatus(aiModel.getId(), ReviewStatus.ACTIVE);
+    }
+
+    /**
+     * 모델의 리뷰 생성시 ID 조회(문자열 documentID를 숫자 modelId로 변환)
+     */
+    public Long getModelIdByDocumentId(String documentId) {
+        // findById는 상속받은 메서드라서 바로 사용 가능
+        Optional<AIModelDocument> document = aiModelSearchRepository.findById(documentId);
+
+        if (document.isPresent()) {
+            return document.get().getModelId();
+        } else {
+            throw new RuntimeException("모델을 찾을 수 없습니다: " + documentId);
+        }
     }
 }
