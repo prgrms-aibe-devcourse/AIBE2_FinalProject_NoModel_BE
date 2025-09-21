@@ -7,12 +7,14 @@ spring:
   profiles:
     active:
       - local
+      - stablediffusion
   config:
     import: 
       - optional:file:.env[.properties]
       - optional:classpath:config/application-docker.yml
       - optional:classpath:config/application-monitoring.yml
       - optional:classpath:config/external-services.yml
+      - optional:classpath:config/application-stablediffusion.yml
   batch:
     jdbc:
       initialize-schema: always  # 배치 테이블 자동 생성
