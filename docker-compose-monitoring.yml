@@ -21,7 +21,7 @@ services:
       - -c
       - |
         cp /etc/prometheus/prometheus.yml.template /etc/prometheus/prometheus.yml
-        sed -i 's|\${PROM_APP_TARGET}|${PROM_APP_TARGET}|g' /etc/prometheus/prometheus.yml
+        sed -i 's/${PROM_APP_TARGET}/'"${PROM_APP_TARGET}"'/g' /etc/prometheus/prometheus.yml
         exec /bin/prometheus \
           --config.file=/etc/prometheus/prometheus.yml \
           --storage.tsdb.path=/prometheus \
