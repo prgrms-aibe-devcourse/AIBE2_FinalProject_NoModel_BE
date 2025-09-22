@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: nomodel-server:latest
+    image: 495264909330.dkr.ecr.ap-northeast-2.amazonaws.com/nomodel-server:latest
     container_name: nomodel-app
     env_file:
       - .env
