@@ -42,7 +42,6 @@ public class AIModelSearchService {
     private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final MemberJpaRepository memberRepository;
     private final ReviewRepository reviewRepository;
-    private AIModelSearchRepository aiModelSearchRepository;
 
     /**
      * 통합 검색 - 모델명, 설명, 태그에서 키워드 검색
@@ -482,7 +481,7 @@ public class AIModelSearchService {
      */
     public Long getModelIdByDocumentId(String documentId) {
         // findById는 상속받은 메서드라서 바로 사용 가능
-        Optional<AIModelDocument> document = aiModelSearchRepository.findById(documentId);
+        Optional<AIModelDocument> document = searchRepository.findById(documentId);
 
         if (document.isPresent()) {
             return document.get().getModelId();
