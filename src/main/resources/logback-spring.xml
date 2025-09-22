@@ -41,6 +41,7 @@
 
     <springProfile name="prod">
         <!-- Use Loki appender for structured logging in production -->
+        <include resource="log/console-appender.xml"/>
         <include resource="log/loki-appender.xml"/>
 
         <logger name="nomodel" level="INFO" />

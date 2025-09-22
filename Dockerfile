@@ -21,10 +21,13 @@ RUN chmod +x gradlew \
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Install Python and required pip packages for auxiliary scripts
+# Install Python virtual environment and genAI dependencies
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-pip \
-    && pip3 install --no-cache-dir google-genai pillow \
+    && apt-get install -y --no-install-recommends python3 python3-venv python3-pip \
+    && python3 -m venv /opt/genai-env \
+    && /opt/genai-env/bin/pip install --no-cache-dir google-genai pillow \
+    && ln -s /opt/genai-env/bin/python /usr/local/bin/python-genai \
+    && ln -s /opt/genai-env/bin/pip /usr/local/bin/pip-genai \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
