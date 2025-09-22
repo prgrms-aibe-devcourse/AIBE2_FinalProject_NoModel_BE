@@ -43,6 +43,7 @@ scrape_configs:
           method_name:
       - pack:
           labels:
+            - message
             - full_method_name
             - execution_id
             - execution_time_ms
