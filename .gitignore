@@ -79,7 +79,6 @@ Thumbs.db
 ### Application Specific ###
 uploads/
 downloads/
-cache/
 tmp/
 
 ### k6 Performance Testing ###

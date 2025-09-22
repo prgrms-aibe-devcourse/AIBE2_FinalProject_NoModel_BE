@@ -8,7 +8,7 @@ public class SubscriptionResponse {
     private PlanType planType;
     private String description;
     private BigDecimal price;
-    private Integer period; //
+    private Integer period; // 일 단위니까 Long이 더 자연스러움
 
     public SubscriptionResponse(Long id, PlanType planType, String description, BigDecimal price, Integer period) {
         this.id = id;

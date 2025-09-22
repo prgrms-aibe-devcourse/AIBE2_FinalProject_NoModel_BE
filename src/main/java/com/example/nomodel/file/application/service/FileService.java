@@ -9,19 +9,41 @@ import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.file.domain.repository.FileJpaRepository;
 import com.example.nomodel.file.domain.service.ImgService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
 
     private final FileJpaRepository fileJpaRepository;
     private final ImgService imgService; // ← Firebase 어댑터
+
+    /**
+     * 여러 모델의 이미지 URL을 일괄 조회 (N+1 쿼리 방지)
+     */
+    public Map<Long, List<String>> getImageUrlsMap(List<Long> modelIds) {
+        if (modelIds == null || modelIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<File> imageFiles = fileJpaRepository.findImageFilesByModelIds(modelIds);
+
+        return imageFiles.stream()
+                .collect(Collectors.groupingBy(
+                    File::getRelationId,
+                    Collectors.mapping(File::getFileUrl, Collectors.toList())
+                ));
+    }
 
     @Transactional
     public Long saveFile(MultipartFile multipartFile,

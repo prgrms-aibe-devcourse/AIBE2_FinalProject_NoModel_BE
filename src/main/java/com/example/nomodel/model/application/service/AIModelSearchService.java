@@ -153,9 +153,9 @@ public class AIModelSearchService {
      * 사용자 접근 가능한 모델 검색 (본인 모델 + 공개 모델)
      */
     public Page<AIModelDocument> searchAccessibleModels(String keyword, Long userId, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
-        
+
         if (keyword != null && !keyword.trim().isEmpty()) {
             return searchRepository.searchAccessibleModels(keyword, userId, pageable);
         } else {
@@ -168,7 +168,7 @@ public class AIModelSearchService {
      * 고급 검색 - 태그와 키워드 조합
      */
     public Page<AIModelDocument> advancedSearch(String keyword, String tag, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithMultipleFilters(keyword, tag, BigDecimal.ZERO, new BigDecimal("999999"), pageable);
     }
@@ -176,9 +176,9 @@ public class AIModelSearchService {
     /**
      * 복합 필터 검색 - 태그와 가격 범위
      */
-    public Page<AIModelDocument> searchWithFilters(String keyword, String tag, 
+    public Page<AIModelDocument> searchWithFilters(String keyword, String tag,
                                                   BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithMultipleFilters(keyword, tag, minPrice, maxPrice, pageable);
     }
@@ -187,7 +187,7 @@ public class AIModelSearchService {
      * 태그로 검색
      */
     public Page<AIModelDocument> searchByTag(String tag, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.searchByTag(tag, pageable);
     }
@@ -196,7 +196,7 @@ public class AIModelSearchService {
      * 소유자별 검색
      */
     public Page<AIModelDocument> searchByOwner(Long ownerId, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.findByOwnerId(ownerId, pageable);
     }
@@ -205,8 +205,8 @@ public class AIModelSearchService {
      * 인기 모델 검색 (사용량 + 평점 기준)
      */
     public Page<AIModelDocument> getPopularModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
+
+        Pageable pageable = PageRequest.of(page, size,
             Sort.by("usageCount").descending()
                 .and(Sort.by("rating").descending()));
         return searchRepository.findPopularModels(pageable);
@@ -216,7 +216,7 @@ public class AIModelSearchService {
      * 최신 모델 검색
      */
     public Page<AIModelDocument> getRecentModels(int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return searchRepository.findRecentModels(pageable);
     }
@@ -225,8 +225,8 @@ public class AIModelSearchService {
      * 관리자 추천 모델 검색
      */
     public Page<AIModelDocument> getRecommendedModels(int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
+
+        Pageable pageable = PageRequest.of(page, size,
             Sort.by("rating").descending()
                 .and(Sort.by("usageCount").descending()));
         return searchRepository.findRecommendedModels(pageable);
@@ -236,8 +236,8 @@ public class AIModelSearchService {
      * 평점 높은 모델 검색
      */
     public Page<AIModelDocument> getHighRatedModels(Double minRating, int page, int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, 
+
+        Pageable pageable = PageRequest.of(page, size,
             Sort.by("rating").descending()
                 .and(Sort.by("reviewCount").descending()));
         return searchRepository.findHighRatedModels(minRating, pageable);
@@ -247,7 +247,7 @@ public class AIModelSearchService {
      * 무료 모델 검색
      */
     public Page<AIModelDocument> getFreeModels(int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("rating").descending());
         return searchRepository.findFreeModels(pageable);
     }
@@ -256,7 +256,7 @@ public class AIModelSearchService {
      * 가격 범위로 검색
      */
     public Page<AIModelDocument> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("price").ascending());
         return searchRepository.searchByPriceRange(minPrice, maxPrice, pageable);
     }
@@ -268,7 +268,7 @@ public class AIModelSearchService {
      */
     public List<String> getModelNameSuggestions(String prefix) {
         log.debug("모델명 자동완성 요청: prefix={}", prefix);
-        
+
         try {
             // Completion Suggester 빌드
             Suggester suggester = Suggester.of(s -> s
@@ -298,7 +298,7 @@ public class AIModelSearchService {
                 .map(o -> o.text())
                 .distinct()
                 .toList();
-            
+
             log.debug("자동완성 결과: count={}, suggestions={}", suggestions.size(), suggestions);
             return suggestions;
         } catch (Exception e) {
@@ -312,7 +312,7 @@ public class AIModelSearchService {
      * 유사 모델 검색
      */
     public Page<AIModelDocument> getSimilarModels(String modelId, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size);
         return searchRepository.findSimilarModels(modelId, pageable);
     }
@@ -328,7 +328,7 @@ public class AIModelSearchService {
      * 하이라이트 기능을 포함한 검색
      */
     public Page<AIModelDocument> searchWithHighlight(String keyword, int page, int size) {
-        
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("_score").descending());
         return searchRepository.searchWithHighlight(keyword, pageable);
     }
@@ -339,12 +339,12 @@ public class AIModelSearchService {
     @Transactional
     public AIModelDocument indexModel(AIModel aiModel, String ownerName) {
         log.info("AI 모델 색인: modelId={}, modelName={}", aiModel.getId(), aiModel.getModelName());
-        
+
         Long usageCount = getUsageCount(aiModel);
         Long viewCount = getViewCount(aiModel);
         Double rating = getAverageRating(aiModel);
         Long reviewCount = getReviewCount(aiModel);
-        
+
         AIModelDocument document = AIModelDocument.from(
             aiModel, ownerName, usageCount, viewCount, rating, reviewCount);
         return searchRepository.save(document);
@@ -356,25 +356,25 @@ public class AIModelSearchService {
     @Transactional
     public Optional<AIModelDocument> updateModel(Long modelId, AIModel updatedModel, String ownerName) {
         log.info("AI 모델 문서 업데이트: modelId={}", modelId);
-        
+
         // 기존 문서 찾기 (modelId로)
-        Page<AIModelDocument> existingDocs = searchRepository.findByOwnerId(updatedModel.getOwnerId(), 
+        Page<AIModelDocument> existingDocs = searchRepository.findByOwnerId(updatedModel.getOwnerId(),
                 PageRequest.of(0, 1));
-        
+
         if (!existingDocs.isEmpty()) {
             AIModelDocument existingDoc = existingDocs.getContent().get(0);
-            
+
             Long usageCount = getUsageCount(updatedModel);
             Long viewCount = getViewCount(updatedModel);
             Double rating = getAverageRating(updatedModel);
             Long reviewCount = getReviewCount(updatedModel);
-            
+
             AIModelDocument updatedDocument = AIModelDocument.from(
                 updatedModel, ownerName, usageCount, viewCount, rating, reviewCount);
             // ID는 기존 것을 유지
             return Optional.of(searchRepository.save(updatedDocument));
         }
-        
+
         // 기존 문서가 없으면 새로 생성
         return Optional.of(indexModel(updatedModel, ownerName));
     }
@@ -388,7 +388,7 @@ public class AIModelSearchService {
                 .ifPresent(document -> {
                     document.increaseUsage();
                     searchRepository.save(document);
-                    log.debug("AI 모델 사용량 증가: documentId={}, usageCount={}", 
+                    log.debug("AI 모델 사용량 증가: documentId={}, usageCount={}",
                             documentId, document.getUsageCount());
                 });
     }
@@ -402,7 +402,7 @@ public class AIModelSearchService {
                 .ifPresent(document -> {
                     document.updateRating(rating, reviewCount);
                     searchRepository.save(document);
-                    log.debug("AI 모델 평점 업데이트: documentId={}, rating={}, reviewCount={}", 
+                    log.debug("AI 모델 평점 업데이트: documentId={}, rating={}, reviewCount={}",
                             documentId, rating, reviewCount);
                 });
     }
@@ -416,7 +416,7 @@ public class AIModelSearchService {
                 .ifPresent(document -> {
                     document.updateVisibility(isPublic);
                     searchRepository.save(document);
-                    log.debug("AI 모델 공개 상태 변경: documentId={}, isPublic={}", 
+                    log.debug("AI 모델 공개 상태 변경: documentId={}, isPublic={}",
                             documentId, isPublic);
                 });
     }
@@ -430,7 +430,7 @@ public class AIModelSearchService {
                 .ifPresent(document -> {
                     document.updatePrice(price);
                     searchRepository.save(document);
-                    log.debug("AI 모델 가격 업데이트: documentId={}, price={}", 
+                    log.debug("AI 모델 가격 업데이트: documentId={}, price={}",
                             documentId, price);
                 });
     }
@@ -443,7 +443,7 @@ public class AIModelSearchService {
         log.info("AI 모델 문서 삭제: documentId={}", documentId);
         searchRepository.deleteById(documentId);
     }
-    
+
     /**
      * 모델의 사용량 조회
      */

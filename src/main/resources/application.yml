@@ -9,7 +9,7 @@ spring:
       - local
       - stablediffusion
   config:
-    import: 
+    import:
       - optional:file:.env[.properties]
       - optional:classpath:config/application-docker.yml
       - optional:classpath:config/application-monitoring.yml
