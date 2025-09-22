@@ -1,8 +1,7 @@
 package com.example.nomodel.review.application.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
-import com.example.nomodel.model.application.controller.AIModelSearchController;
-import com.example.nomodel.model.application.service.AIModelSearchService;
+import com.example.nomodel.model.query.service.AIModelSearchService;
 import com.example.nomodel.review.application.dto.request.ReviewRequest;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import com.example.nomodel.review.application.service.ReviewService;
@@ -25,8 +24,6 @@ import java.util.List;
 @RequestMapping("/models/{modelId}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
-
-    private static final Logger log = LoggerFactory.getLogger(ReviewController.class); // 이 줄 추가
 
     private final ReviewService reviewService;
     private final AIModelSearchService aiModelSearchService;
