@@ -7,6 +7,10 @@ services:
     container_name: prometheus-metrics
     ports:
       - "9090:9090"
+    env_file:
+      - .env
+    environment:
+      PROM_APP_TARGET: ${PROM_APP_TARGET:-host.docker.internal:8080}
     networks:
       - monitoring
     volumes:
