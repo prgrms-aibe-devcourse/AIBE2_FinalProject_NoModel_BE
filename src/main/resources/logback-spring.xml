@@ -48,6 +48,7 @@
         <logger name="org.hibernate" level="WARN" />
         <logger name="com.zaxxer.hikari" level="WARN" />
         <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
             <appender-ref ref="LOKI-FILE"/>
         </root>
     </springProfile>
