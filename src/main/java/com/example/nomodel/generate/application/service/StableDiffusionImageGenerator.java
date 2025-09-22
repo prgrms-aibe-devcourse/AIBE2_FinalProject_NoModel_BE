@@ -183,6 +183,7 @@ public class StableDiffusionImageGenerator {
         double cfgScale = ((Number) opts.getOrDefault("cfg_scale", 7.0)).doubleValue();
         String negativePrompt = (String) opts.getOrDefault("negative_prompt", 
             "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark");
+        String samplingMethod = (String) opts.getOrDefault("sampling_method", "Euler a");
 
         // 모드에 따른 프롬프트 보정
         String enhancedPrompt = buildPrompt(mode, prompt);
@@ -194,7 +195,7 @@ public class StableDiffusionImageGenerator {
                 .height(height)
                 .steps(steps)
                 .cfgScale(cfgScale)
-                .samplerIndex("DPM++ 2M Karras")
+                .samplerIndex(samplingMethod)
                 .restoreFaces(false)
                 .tiling(false)
                 .nIter(1)

@@ -41,6 +41,7 @@ public class StableDiffusionController {
             @RequestParam(defaultValue = "7.0") double cfgScale,
             @RequestParam(defaultValue = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark") 
             String negativePrompt,
+            @RequestParam(defaultValue = "Euler a") String samplingMethod,
             @RequestParam(defaultValue = "0") Long relationId,
             @RequestParam(defaultValue = "MODEL") String relationType,
             @RequestParam(required = false) Long inputFileId) {
@@ -55,6 +56,7 @@ public class StableDiffusionController {
             options.put("steps", steps);
             options.put("cfg_scale", cfgScale);
             options.put("negative_prompt", negativePrompt);
+            options.put("sampling_method", samplingMethod);
             options.put("relationId", relationId);
             options.put("relationType", relationType);
             options.put("inputFileId", inputFileId);
@@ -92,6 +94,7 @@ public class StableDiffusionController {
             options.put("steps", request.getSteps());
             options.put("cfg_scale", request.getCfgScale());
             options.put("negative_prompt", request.getNegativePrompt());
+            options.put("sampling_method", request.getSamplingMethod());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
@@ -135,6 +138,7 @@ public class StableDiffusionController {
             options.put("steps", request.getSteps());
             options.put("cfg_scale", request.getCfgScale());
             options.put("negative_prompt", request.getNegativePrompt());
+            options.put("sampling_method", request.getSamplingMethod());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
@@ -206,7 +210,8 @@ public class StableDiffusionController {
         private int height = 512;
         private int steps = 25;
         private double cfgScale = 7.0;
-        private String negativePrompt = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark";
+        private String negativePrompt = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,nsfw";
+        private String samplingMethod = "Euler a";
         private Long relationId = 0L;
         private String relationType = "MODEL";
         private Long inputFileId; // 입력 파일 ID 추가
