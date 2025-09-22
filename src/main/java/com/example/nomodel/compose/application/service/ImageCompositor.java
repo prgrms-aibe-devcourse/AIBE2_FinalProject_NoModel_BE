@@ -90,70 +90,96 @@ public class ImageCompositor {
         // 커스텀 프롬프트가 null이면 "null" 문자열로 전달
         String promptArg = (customPrompt != null && !customPrompt.trim().isEmpty()) ? customPrompt : "null";
         
-        // Python 명령어 구성
-        ProcessBuilder processBuilder = new ProcessBuilder(
-            "python3", 
-            PYTHON_SCRIPT_PATH,
-            productImagePath,
-            modelImagePath,
-            promptArg,
-            outputImagePath
-        );
-        
-        // 작업 디렉토리 설정
-        processBuilder.directory(new File("."));
-        
         log.info("Executing Python script with arguments: product={}, model={}, prompt={}, output={}", 
                 productImagePath, modelImagePath, promptArg, outputImagePath);
         
-        try {
-            // 프로세스 실행
-            Process process = processBuilder.start();
-            
-            // 표준 출력 읽기
-            String output = readProcessOutput(process.getInputStream());
-            
-            // 표준 에러 읽기
-            String error = readProcessOutput(process.getErrorStream());
-            
-            // 프로세스 완료 대기 (최대 5분)
-            boolean finished = process.waitFor(5, TimeUnit.MINUTES);
-            
-            if (!finished) {
-                process.destroyForcibly();
-                throw new Exception("Python script execution timed out");
+        // python3 먼저 시도, 실패하면 python 시도
+        String[] pythonCommands = {"python3", "python"};
+        Exception lastException = null;
+        
+        for (String pythonCommand : pythonCommands) {
+            try {
+                log.info("Trying Python command: {}", pythonCommand);
+                
+                // Python 명령어 구성
+                ProcessBuilder processBuilder = new ProcessBuilder(
+                    pythonCommand, 
+                    PYTHON_SCRIPT_PATH,
+                    productImagePath,
+                    modelImagePath,
+                    promptArg,
+                    outputImagePath
+                );
+                
+                // 작업 디렉토리 설정
+                processBuilder.directory(new File("."));
+                
+                // 프로세스 실행
+                Process process = processBuilder.start();
+                
+                // 표준 출력 읽기
+                String output = readProcessOutput(process.getInputStream());
+                
+                // 표준 에러 읽기
+                String error = readProcessOutput(process.getErrorStream());
+                
+                // 프로세스 완료 대기 (최대 5분)
+                boolean finished = process.waitFor(5, TimeUnit.MINUTES);
+                
+                if (!finished) {
+                    process.destroyForcibly();
+                    throw new Exception("Python script execution timed out");
+                }
+                
+                int exitCode = process.exitValue();
+                
+                // exit code 9009는 명령어를 찾을 수 없음을 의미 (Windows)
+                // 이 경우 다음 Python 명령어를 시도
+                if (exitCode == 9009) {
+                    log.warn("Python command '{}' not found (exit code 9009), trying next command", pythonCommand);
+                    lastException = new Exception("Python command '" + pythonCommand + "' not found");
+                    continue;
+                }
+                
+                if (exitCode != 0) {
+                    log.error("Python script failed with exit code: {}, error: {}", exitCode, error);
+                    throw new Exception("Python script execution failed: " + error);
+                }
+                
+                // Python 스크립트의 JSON 출력 파싱
+                JsonNode result = objectMapper.readTree(output);
+                
+                if (!result.get("success").asBoolean()) {
+                    String errorMessage = result.get("error").asText();
+                    throw new Exception("Image composition failed: " + errorMessage);
+                }
+                
+                // 결과 이미지 파일 읽기
+                Path outputPath = Paths.get(outputImagePath);
+                if (!Files.exists(outputPath)) {
+                    throw new Exception("Output image file not found: " + outputImagePath);
+                }
+                
+                byte[] resultImage = Files.readAllBytes(outputPath);
+                log.info("Successfully read result image using '{}', size: {} bytes", pythonCommand, resultImage.length);
+                
+                return resultImage;
+                
+            } catch (Exception e) {
+                log.warn("Failed to execute Python script with command '{}': {}", pythonCommand, e.getMessage());
+                lastException = e;
+                
+                // exit code 9009가 아닌 다른 오류인 경우, 다음 명령어를 시도하지 않고 바로 예외 발생
+                if (e.getMessage() != null && !e.getMessage().contains("not found") && !e.getMessage().contains("9009")) {
+                    break;
+                }
             }
-            
-            int exitCode = process.exitValue();
-            
-            if (exitCode != 0) {
-                log.error("Python script failed with exit code: {}, error: {}", exitCode, error);
-                throw new Exception("Python script execution failed: " + error);
-            }
-            
-            // Python 스크립트의 JSON 출력 파싱
-            JsonNode result = objectMapper.readTree(output);
-            
-            if (!result.get("success").asBoolean()) {
-                String errorMessage = result.get("error").asText();
-                throw new Exception("Image composition failed: " + errorMessage);
-            }
-            
-            // 결과 이미지 파일 읽기
-            Path outputPath = Paths.get(outputImagePath);
-            if (!Files.exists(outputPath)) {
-                throw new Exception("Output image file not found: " + outputImagePath);
-            }
-            
-            byte[] resultImage = Files.readAllBytes(outputPath);
-            log.info("Successfully read result image, size: {} bytes", resultImage.length);
-            
-            return resultImage;
-            
-        } catch (Exception e) {
-            log.error("Error executing Python script", e);
-            throw new Exception("Failed to execute Python script: " + e.getMessage(), e);
         }
+        
+        // 모든 Python 명령어가 실패한 경우
+        log.error("All Python commands failed. Last error: {}", lastException != null ? lastException.getMessage() : "Unknown error");
+        throw new Exception("Failed to execute Python script with any available Python command: " + 
+                          (lastException != null ? lastException.getMessage() : "Unknown error"), lastException);
     }
 
     /**
