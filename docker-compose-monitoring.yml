@@ -16,17 +16,20 @@ services:
     volumes:
       - ./monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
-    command: >-
-      /bin/sh -c "cp /etc/prometheus/prometheus.yml.template /etc/prometheus/prometheus.yml &&
-      sed -i 's|\${PROM_APP_TARGET}|${PROM_APP_TARGET}|g' /etc/prometheus/prometheus.yml &&
-      exec /bin/prometheus \
-        --config.file=/etc/prometheus/prometheus.yml \
-        --storage.tsdb.path=/prometheus \
-        --web.console.libraries=/etc/prometheus/console_libraries \
-        --web.console.templates=/etc/prometheus/consoles \
-        --storage.tsdb.retention.time=15d \
-        --web.enable-lifecycle \
-        --web.enable-admin-api"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        cp /etc/prometheus/prometheus.yml.template /etc/prometheus/prometheus.yml
+        sed -i 's|\${PROM_APP_TARGET}|${PROM_APP_TARGET}|g' /etc/prometheus/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --web.console.libraries=/etc/prometheus/console_libraries \
+          --web.console.templates=/etc/prometheus/consoles \
+          --storage.tsdb.retention.time=15d \
+          --web.enable-lifecycle \
+          --web.enable-admin-api
     restart: unless-stopped
 
   # Grafana Visualization
