@@ -95,6 +95,10 @@ public class StableDiffusionController {
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
+            options.put("userId", request.getUserId());
+            options.put("modelName", request.getModelName());
+            options.put("price", request.getPrice());
+            options.put("isPublic", request.getIsPublic());
 
             // 파일 ID를 받아서 실제 바이트 데이터 로드
             Long fileId = stableDiffusionImageGenerator.generate(request.getMode(), request.getPrompt(), options);
@@ -134,6 +138,10 @@ public class StableDiffusionController {
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
+            options.put("userId", request.getUserId());
+            options.put("modelName", request.getModelName());
+            options.put("price", request.getPrice());
+            options.put("isPublic", request.getIsPublic());
 
             StableDiffusionImageGenerator.GenerationJobResponse jobResponse = 
                 stableDiffusionImageGenerator.generateWithJobResponse(request.getMode(), request.getPrompt(), options);
@@ -202,6 +210,12 @@ public class StableDiffusionController {
         private Long relationId = 0L;
         private String relationType = "MODEL";
         private Long inputFileId; // 입력 파일 ID 추가
+        private Long userId = 1L; // 사용자 ID 추가
+        
+        // 추가된 필드들
+        private String modelName; // 모델 이름
+        private Double price; // 판매 가격
+        private Boolean isPublic; // 공개 설정
     }
 
     /**
