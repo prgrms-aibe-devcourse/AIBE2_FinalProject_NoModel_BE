@@ -183,6 +183,7 @@ public class StableDiffusionImageGenerator {
         double cfgScale = ((Number) opts.getOrDefault("cfg_scale", 7.0)).doubleValue();
         String negativePrompt = (String) opts.getOrDefault("negative_prompt", 
             "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark");
+        String samplingMethod = (String) opts.getOrDefault("sampling_method", "Euler a");
 
         // 모드에 따른 프롬프트 보정
         String enhancedPrompt = buildPrompt(mode, prompt);
@@ -194,7 +195,7 @@ public class StableDiffusionImageGenerator {
                 .height(height)
                 .steps(steps)
                 .cfgScale(cfgScale)
-                .samplerIndex("DPM++ 2M Karras")
+                .samplerIndex(samplingMethod)
                 .restoreFaces(false)
                 .tiling(false)
                 .nIter(1)
@@ -287,11 +288,20 @@ public class StableDiffusionImageGenerator {
      */
     private AIModel saveAIModelToDatabase(StableDiffusionRequest request, GenerationMode mode, Map<String, Object> opts) {
         try {
-            // 모델명 생성 (프롬프트 기반으로 생성하거나 opts에서 가져오기)
-            String modelName = generateModelName(request.getPrompt(), mode, opts);
+            // 모델명 추출 (요청에서 제공된 값 우선, 없으면 자동 생성)
+            String modelName = getModelNameFromOpts(opts);
+            if (modelName == null || modelName.trim().isEmpty()) {
+                modelName = generateModelName(request.getPrompt(), mode, opts);
+            }
             
             // 소유자 ID 추출 (opts에서 가져오거나 기본값 사용)
-            Long ownerId = getOwnerId(opts);
+            Long ownerId = getUserIdFromOpts(opts);
+            
+            // 가격 추출 (opts에서 가져오거나 기본값 0)
+            java.math.BigDecimal price = getPriceFromOpts(opts);
+            
+            // 공개 여부 추출 (opts에서 가져오거나 기본값 false)
+            boolean isPublic = getIsPublicFromOpts(opts);
             
             // Sampler 문자열을 SamplerType enum으로 변환
             SamplerType samplerType = convertToSamplerType(request.getSamplerIndex());
@@ -309,18 +319,22 @@ public class StableDiffusionImageGenerator {
                     .batchSize(request.getBatchSize())
                     .build();
             
-            // AIModel 생성 및 저장
+            // AIModel 생성
             AIModel aiModel = AIModel.createUserModel(modelName, metadata, ownerId);
             
-            // 공개 여부 설정 (opts에서 가져오거나 기본값 false)
-            boolean isPublic = (Boolean) opts.getOrDefault("isPublic", false);
+            // 가격 설정
+            if (price != null) {
+                aiModel.updatePrice(price);
+            }
+            
+            // 공개 여부 설정
             aiModel.updateVisibility(isPublic);
             
             // 데이터베이스에 저장
             AIModel savedModel = aiModelRepository.save(aiModel);
             
-            log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}", 
-                    savedModel.getId(), savedModel.getModelName());
+            log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}, Price: {}, IsPublic: {}", 
+                    savedModel.getId(), savedModel.getModelName(), savedModel.getPrice(), savedModel.isPublic());
             
             return savedModel;
             
@@ -331,15 +345,54 @@ public class StableDiffusionImageGenerator {
     }
     
     /**
+     * opts에서 모델명 추출
+     */
+    private String getModelNameFromOpts(Map<String, Object> opts) {
+        Object modelName = opts.get("modelName");
+        if (modelName instanceof String) {
+            return (String) modelName;
+        }
+        return null;
+    }
+    
+    /**
+     * opts에서 사용자 ID 추출
+     */
+    private Long getUserIdFromOpts(Map<String, Object> opts) {
+        Object userId = opts.get("userId");
+        if (userId instanceof Number) {
+            return ((Number) userId).longValue();
+        }
+        // 기본값으로 1L 반환 (실제 환경에서는 현재 로그인한 사용자 ID 사용)
+        return 1L;
+    }
+    
+    /**
+     * opts에서 가격 추출
+     */
+    private java.math.BigDecimal getPriceFromOpts(Map<String, Object> opts) {
+        Object price = opts.get("price");
+        if (price instanceof Number) {
+            return java.math.BigDecimal.valueOf(((Number) price).doubleValue());
+        }
+        return java.math.BigDecimal.ZERO; // 기본값 0
+    }
+    
+    /**
+     * opts에서 공개 여부 추출
+     */
+    private boolean getIsPublicFromOpts(Map<String, Object> opts) {
+        Object isPublic = opts.get("isPublic");
+        if (isPublic instanceof Boolean) {
+            return (Boolean) isPublic;
+        }
+        return false; // 기본값 false (비공개)
+    }
+    
+    /**
      * 모델명 생성
      */
     private String generateModelName(String prompt, GenerationMode mode, Map<String, Object> opts) {
-        // opts에서 모델명이 제공된 경우 사용
-        Object providedName = opts.get("modelName");
-        if (providedName instanceof String && !((String) providedName).trim().isEmpty()) {
-            return (String) providedName;
-        }
-        
         // 프롬프트 기반으로 모델명 생성
         String basePrompt = prompt != null ? prompt : "Generated Model";
         String truncatedPrompt = basePrompt.length() > 30 ? basePrompt.substring(0, 30) + "..." : basePrompt;
@@ -351,17 +404,7 @@ public class StableDiffusionImageGenerator {
         return modePrefix + truncatedPrompt.replaceAll("[^a-zA-Z0-9\\s]", "").trim() + "_" + timestamp;
     }
     
-    /**
-     * 소유자 ID 추출
-     */
-    private Long getOwnerId(Map<String, Object> opts) {
-        Object ownerId = opts.get("ownerId");
-        if (ownerId instanceof Number) {
-            return ((Number) ownerId).longValue();
-        }
-        // 기본값으로 1L 반환 (실제 환경에서는 현재 로그인한 사용자 ID 사용)
-        return 1L;
-    }
+
     
     /**
      * Sampler 문자열을 SamplerType enum으로 변환

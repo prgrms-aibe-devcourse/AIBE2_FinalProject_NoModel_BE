@@ -99,4 +99,15 @@ public class AIModelSearchController {
         return ResponseEntity.ok(ApiUtils.success(suggestions));
     }
 
+    @Operation(summary = "추천 AI 모델 조회", description = "추천 모델 목록 조회")
+    @GetMapping("/recommended")
+    public ResponseEntity<?> getRecommendedModels(
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "3") int size) {
+
+        // 추천 로직 구현 - 예시로 일반 검색 결과 반환
+        PageResponse<AIModelSearchResponse> result = cachedSearchService.search(null, null, page, size);
+        return ResponseEntity.ok(ApiUtils.success(result));
+    }
+
 }

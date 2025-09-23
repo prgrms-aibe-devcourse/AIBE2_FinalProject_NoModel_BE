@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * AI 모델 검색 서비스
@@ -189,6 +190,19 @@ public class AIModelSearchService {
             log.error("자동완성 검색 중 오류 발생: prefix={}", prefix, e);
             // 오류 발생 시 빈 리스트 반환
             return List.of();
+        }
+    }
+    /**
+     * 모델의 리뷰 생성시 ID 조회(문자열 documentID를 숫자 modelId로 변환)
+     */
+    public Long getModelIdByDocumentId(String documentId) {
+        // findById는 상속받은 메서드라서 바로 사용 가능
+        Optional<AIModelDocument> document = searchRepository.findById(documentId);
+
+        if (document.isPresent()) {
+            return document.get().getModelId();
+        } else {
+            throw new RuntimeException("모델을 찾을 수 없습니다: " + documentId);
         }
     }
 }

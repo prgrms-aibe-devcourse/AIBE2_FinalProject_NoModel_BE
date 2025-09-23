@@ -4,8 +4,10 @@ import com.example.nomodel.file.domain.model.File;
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +17,8 @@ import java.util.List;
  * AI 모델 상세 조회 응답 DTO
  */
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class AIModelDetailResponse {
     
