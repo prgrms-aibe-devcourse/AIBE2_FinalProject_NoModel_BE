@@ -53,11 +53,6 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            docker network create nomodel_network || true
-            docker network create elastic || true
-            docker network create monitoring-network || true
-            docker network create nomodel_k6_network || true
-
             mkdir -p secrets/firebase
             if [ -z "${{ secrets.FIREBASE_KEY_JSON }}" ]; then
               echo "[deploy] FIREBASE_KEY_JSON secret is required." >&2
@@ -73,29 +68,11 @@ jobs:
             fi
             printf '%s' "${{ secrets.APP_ENV_FILE }}" | base64 -d > .env
 
-            if [ -z "${{ secrets.APPLICATION_PROD_YML }}" ]; then
-              echo "[deploy] APPLICATION_PROD_YML secret is required." >&2
+            if [ -z "${{ secrets.APPLICATION_DEPLOY_YML }}" ]; then
+              echo "[deploy] APPLICATION_DEPLOY_YML secret is required." >&2
               exit 1
             fi
-            printf '%s' "${{ secrets.APPLICATION_PROD_YML }}" | base64 -d > secrets/application-prod.yml
-
-            if [ -z "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" ]; then
-              echo "[deploy] APPLICATION_STABLEDIFFUSION_YML secret is required." >&2
-              exit 1
-            fi
-            printf '%s' "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" | base64 -d > secrets/application-stablediffusion.yml
-
-            if [ -z "${{ secrets.APPLICATION_DOCKER_YML }}" ]; then
-              echo "[deploy] APPLICATION_DOCKER_YML secret is required." >&2
-              exit 1
-            fi
-            printf '%s' "${{ secrets.APPLICATION_DOCKER_YML }}" | base64 -d > secrets/application-docker.yml
-
-            if [ -z "${{ secrets.EXTERNAL_SERVICES_YML }}" ]; then
-              echo "[deploy] EXTERNAL_SERVICES_YML secret is required." >&2
-              exit 1
-            fi
-            printf '%s' "${{ secrets.EXTERNAL_SERVICES_YML }}" | base64 -d > secrets/external-services.yml
+            printf '%s' "${{ secrets.APPLICATION_DEPLOY_YML }}" | base64 -d > secrets/application-deploy.yml
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}

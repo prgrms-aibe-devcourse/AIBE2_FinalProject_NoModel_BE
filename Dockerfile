@@ -36,8 +36,8 @@ RUN apt-get update \
 # Copy the boot jar from the builder stage
 COPY --from=builder /workspace/build/libs/*.jar app.jar
 
-# Default to prod profile; override with -e SPRING_PROFILES_ACTIVE=<profile>
-ENV SPRING_PROFILES_ACTIVE=prod
+# Default to deploy profile
+ENV SPRING_PROFILES_ACTIVE=deploy
 
 # Expose application port (update if service runs on a different port)
 EXPOSE 8080

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.18.1
@@ -46,5 +44,11 @@ volumes:
     driver: local
 
 networks:
+  nomodel-network:
+    external: true
   elastic:
-    driver: bridge
+    external: true
+  monitoring:
+    external: true
+  k6-network:
+    external: true
