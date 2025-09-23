@@ -53,22 +53,6 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            REPO_URL=${{ github.repositoryUrl }}
-            if [ -n "${{ secrets.GITHUB_DEPLOY_TOKEN }}" ]; then
-              REPO_URL="https://${{ secrets.GITHUB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git"
-            fi
-
-            if [ -d .git ]; then
-              git remote set-url origin "$REPO_URL"
-            fi
-
-            if [ -d .git ]; then
-              git fetch origin
-              git reset --hard origin/main
-            else
-              git clone "$REPO_URL" .
-            fi
-
             docker network create nomodel_network || true
             docker network create elastic || true
             docker network create monitoring-network || true
