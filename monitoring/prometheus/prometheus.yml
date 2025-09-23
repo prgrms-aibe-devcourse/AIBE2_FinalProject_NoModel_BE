@@ -28,7 +28,7 @@ scrape_configs:
   # Spring Boot 애플리케이션 메트릭 (Actuator)
   - job_name: 'spring-boot-app'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      - targets: ['nomodel-app:8080']
     scrape_interval: 10s
     metrics_path: /api/actuator/prometheus
     scrape_timeout: 5s
