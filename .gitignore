@@ -80,7 +80,6 @@ Thumbs.db
 uploads/
 downloads/
 tmp/
-secrets/
 
 ### k6 Performance Testing ###
 k6/results/
@@ -88,3 +87,7 @@ k6/results/
 ### Firebase ###
 src/main/resources/key/FirebaseKey.json
 **/FirebaseKey.json
+
+# Local override configs and secrets
+secrets/
+*.local.yml

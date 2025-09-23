@@ -6,13 +6,15 @@ services:
     container_name: nomodel-app
     env_file:
       - .env
-    environment:
-      - FIREBASE_KEY=${FIREBASE_KEY:-file:/app/secrets/FirebaseKey.json}
     ports:
       - "8080:8080"
     volumes:
       - ./logs:/app/logs
       - ./secrets/firebase/FirebaseKey.json:/app/secrets/FirebaseKey.json:ro
+      - ./secrets/application-prod.yml:/app/config/application-prod.yml:ro
+      - ./secrets/application-stablediffusion.yml:/app/config/application-stablediffusion.yml:ro
+      - ./secrets/application-docker.yml:/app/config/application-docker.yml:ro
+      - ./secrets/external-services.yml:/app/config/external-services.yml:ro
     networks:
       - nomodel-network
       - elastic
