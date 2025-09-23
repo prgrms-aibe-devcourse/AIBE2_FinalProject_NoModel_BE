@@ -10,7 +10,6 @@ COPY gradle gradle
 COPY build.gradle settings.gradle ./
 COPY src src
 COPY docs docs
-COPY init-scripts init-scripts
 COPY compose.yml compose.yml
 
 # Ensure the wrapper is executable and build the application jar
