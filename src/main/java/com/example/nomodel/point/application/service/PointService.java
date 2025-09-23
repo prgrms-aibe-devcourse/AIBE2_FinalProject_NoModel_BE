@@ -64,9 +64,13 @@ public class PointService {
             throw new ApplicationException(ErrorCode.DUPLICATE_REVIEW_REWARD);
         }
 
-        // 2. 회원 포인트 잔액 조회
+        //2. 회원 포인트 잔액 조회 또는 생성
         MemberPointBalance balance = pointBalanceRepository.findByMemberId(reviewerId)
-                .orElseThrow(() -> new ApplicationException(ErrorCode.MEMBER_NOT_FOUND));
+                .orElseGet(() -> {
+                    // 잔액이 없으면 새로 생성
+                    MemberPointBalance newBalance = new MemberPointBalance(reviewerId);
+                    return pointBalanceRepository.save(newBalance);
+                });
 
         // 3. 거래 내역 생성
         BigDecimal before = balance.getTotalPoints();

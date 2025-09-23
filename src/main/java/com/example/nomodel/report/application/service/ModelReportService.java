@@ -2,7 +2,7 @@ package com.example.nomodel.report.application.service;
 
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
-import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
+import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.report.application.dto.request.ModelReportRequest;
 import com.example.nomodel.report.application.dto.response.ModelReportResponse;
 import com.example.nomodel.report.domain.model.Report;

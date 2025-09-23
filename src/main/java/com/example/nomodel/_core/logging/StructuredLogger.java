@@ -168,8 +168,8 @@ public class StructuredLogger {
             .build();
 
         switch (severity) {
-            case "CRITICAL" -> logger.error("BUSINESS_LOG {}", toJson(logEntry));
-            case "HIGH" -> logger.warn("BUSINESS_LOG {}", toJson(logEntry));
+            case "CRITICAL" -> logger.info("BUSINESS_LOG {}", toJson(logEntry));
+            case "HIGH" -> logger.info("BUSINESS_LOG {}", toJson(logEntry));
             case "MEDIUM" -> logger.info("BUSINESS_LOG {}", toJson(logEntry));
             case "LOW" -> logger.debug("BUSINESS_LOG {}", toJson(logEntry));
             default -> logger.info("BUSINESS_LOG {}", toJson(logEntry));

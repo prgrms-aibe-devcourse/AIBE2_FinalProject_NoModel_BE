@@ -76,6 +76,7 @@ public class JWTTokenProvider {
                 // 권한 주입
                 .claim(AUTHORITIES_KEY, authorities)
                 .claim(CLAIM_TYPE, TYPE_ACCESS)
+                .claim(MEMBER_ID_KEY, memberId)
                 // 토큰 발행 시간 정보
                 .setIssuedAt(now)
                 // 만료시간 주입
