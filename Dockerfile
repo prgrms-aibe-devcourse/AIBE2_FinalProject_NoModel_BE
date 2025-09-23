@@ -20,6 +20,9 @@ RUN chmod +x gradlew \
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
+# Ensure configuration/secret directories exist for volume mounts
+RUN mkdir -p /app/config /app/secrets
+
 # Install Python virtual environment and genAI dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-venv python3-pip \
