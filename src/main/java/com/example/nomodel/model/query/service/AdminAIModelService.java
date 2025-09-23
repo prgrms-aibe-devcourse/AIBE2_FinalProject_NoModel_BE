@@ -1,11 +1,11 @@
-package com.example.nomodel.model.application.service;
+package com.example.nomodel.model.query.service;
 
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
-import com.example.nomodel.model.application.dto.response.AdminAIModelResponseDto;
-import com.example.nomodel.model.domain.model.AIModel;
-import com.example.nomodel.model.domain.model.OwnType;
-import com.example.nomodel.model.domain.repository.AIModelJpaRepository;
+import com.example.nomodel.model.command.application.dto.response.AdminAIModelResponseDto;
+import com.example.nomodel.model.command.domain.model.AIModel;
+import com.example.nomodel.model.command.domain.model.OwnType;
+import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

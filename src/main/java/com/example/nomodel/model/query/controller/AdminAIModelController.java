@@ -1,10 +1,10 @@
-package com.example.nomodel.model.application.controller;
+package com.example.nomodel.model.query.controller;
 
 
 import com.example.nomodel._core.utils.ApiUtils;
-import com.example.nomodel.model.application.dto.response.AdminAIModelResponseDto;
-import com.example.nomodel.model.application.service.AdminAIModelService;
-import com.example.nomodel.model.domain.model.AIModel;
+import com.example.nomodel.model.command.application.dto.response.AdminAIModelResponseDto;
+import com.example.nomodel.model.query.service.AdminAIModelService;
+import com.example.nomodel.model.command.domain.model.AIModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;

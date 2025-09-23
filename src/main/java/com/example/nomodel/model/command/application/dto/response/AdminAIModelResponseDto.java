@@ -1,6 +1,7 @@
-package com.example.nomodel.model.application.dto.response;
+package com.example.nomodel.model.command.application.dto.response;
 
-import com.example.nomodel.model.domain.model.OwnType;
+
+import com.example.nomodel.model.command.domain.model.OwnType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
