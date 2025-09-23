@@ -21,7 +21,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Ensure configuration/secret directories exist for volume mounts
-RUN mkdir -p /app/config /app/secrets
+RUN mkdir -p /app/resources/config /app/resources/firebase
 
 # Install Python virtual environment and genAI dependencies
 RUN apt-get update \
