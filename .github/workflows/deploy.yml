@@ -46,24 +46,24 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE_SHA_TAG,FIREBASE_KEY_JSON_B64,APP_ENV_FILE_B64,APPLICATION_PROD_YML_B64,APPLICATION_STABLEDIFFUSION_YML_B64,APPLICATION_DOCKER_YML_B64,EXTERNAL_SERVICES_YML_B64
+          envs: IMAGE_SHA_TAG,FIREBASE_KEY_JSON,APP_ENV_FILE_B64,APPLICATION_PROD_YML_B64,APPLICATION_STABLEDIFFUSION_YML_B64,APPLICATION_DOCKER_YML_B64,EXTERNAL_SERVICES_YML_B64
           script: |
             set -e
             APP_DIR=${{ secrets.EC2_APP_PATH }}
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
-
+            
             docker network create nomodel_network || true
             docker network create elastic || true
             docker network create monitoring-network || true
             docker network create nomodel_k6_network || true
-
+            
             mkdir -p secrets/firebase
-            if [ -n "$FIREBASE_KEY_JSON_B64" ]; then
-              echo "$FIREBASE_KEY_JSON_B64" | base64 -d > secrets/firebase/FirebaseKey.json
+            if [ -n "$FIREBASE_KEY_JSON" ]; then
+              printf '%s' "$FIREBASE_KEY_JSON" > secrets/firebase/FirebaseKey.json
               chmod 600 secrets/firebase/FirebaseKey.json
             fi
-
+            
             mkdir -p secrets
             if [ -n "$APP_ENV_FILE_B64" ]; then
               echo "$APP_ENV_FILE_B64" | base64 -d > .env
@@ -80,15 +80,15 @@ jobs:
             if [ -n "$EXTERNAL_SERVICES_YML_B64" ]; then
               echo "$EXTERNAL_SERVICES_YML_B64" | base64 -d > secrets/external-services.yml
             fi
-
+            
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-
+            
             COMPOSE_CMD="docker compose -f compose.yml -f docker-compose-elasticsearch.yml -f docker-compose-monitoring.yml -f docker-compose-k6.yml -f docker-compose-app.yml"
-
+            
             $COMPOSE_CMD pull app
             $COMPOSE_CMD up -d --remove-orphans
-
+            
             docker image prune -f
 
       - name: Show deployed image tag
