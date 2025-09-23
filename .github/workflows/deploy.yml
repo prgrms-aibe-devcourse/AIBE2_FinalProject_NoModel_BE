@@ -58,6 +58,17 @@ jobs:
             docker network create monitoring-network || true
             docker network create nomodel_k6_network || true
 
+            if [ -n "${{ secrets.APP_ENV_FILE }}" ]; then
+              printf '%s\n' "${{ secrets.APP_ENV_FILE }}" > .env
+            fi
+
+            mkdir -p secrets/firebase
+            printf '%s' "${{ secrets.FIREBASE_KEY_JSON }}" > secrets/firebase/FirebaseKey.json
+            chmod 600 secrets/firebase/FirebaseKey.json
+
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+              | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
             COMPOSE_CMD="docker compose -f compose.yml -f docker-compose-elasticsearch.yml -f docker-compose-monitoring.yml -f docker-compose-k6.yml -f docker-compose-app.yml"
 
             $COMPOSE_CMD pull app

@@ -6,10 +6,13 @@ services:
     container_name: nomodel-app
     env_file:
       - .env
+    environment:
+      - FIREBASE_CONFIG_KEY_PATH=${FIREBASE_CONFIG_KEY_PATH:-file:/app/secrets/FirebaseKey.json}
     ports:
       - "8080:8080"
     volumes:
       - ./logs:/app/logs
+      - ./secrets/firebase/FirebaseKey.json:/app/secrets/FirebaseKey.json:ro
     networks:
       - nomodel-network
       - elastic
