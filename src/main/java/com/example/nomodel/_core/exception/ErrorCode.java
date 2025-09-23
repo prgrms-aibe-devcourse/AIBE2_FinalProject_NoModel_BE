@@ -82,7 +82,10 @@ public enum ErrorCode {
     SUBSCRIPTION_ALREADY_CANCELLED("SUB005", HttpStatus.CONFLICT, "Subscription is already cancelled"),
     SUBSCRIPTION_RENEWAL_NOT_ALLOWED("SUB006", HttpStatus.BAD_REQUEST, "Subscription renewal not allowed for the current status"),
     SUBSCRIPTION_PAYMENT_FAILED("SUB007", HttpStatus.INTERNAL_SERVER_ERROR, "Subscription payment failed"),
-    SUBSCRIPTION_INVALID_REQUEST("SUB008", HttpStatus.BAD_REQUEST, "Invalid subscription request")
+    SUBSCRIPTION_INVALID_REQUEST("SUB008", HttpStatus.BAD_REQUEST, "Invalid subscription request"),
+    
+    // ai model 관련 에러
+    AI_MODEL_NOT_FOUND("AM001", HttpStatus.NOT_FOUND, "AI Model not found"),
     ;
 
     private final String errorCode;

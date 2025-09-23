@@ -1,8 +1,11 @@
 package com.example.nomodel.model.domain.repository;
 
 import com.example.nomodel.model.application.dto.ModelWithStatisticsProjection;
+import com.example.nomodel.model.application.dto.response.AdminAIModelResponseDto;
 import com.example.nomodel.model.domain.model.AIModel;
 import com.example.nomodel.model.domain.model.OwnType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -121,4 +124,29 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
         LEFT JOIN Member mem ON mem.id = m.ownerId
         """)
     List<ModelWithStatisticsProjection> findAllModelsWithStatisticsAndOwner();
+    
+    @Query("""
+       select new com.example.nomodel.model.application.dto.response.AdminAIModelResponseDto(
+            cast(am.id as string),
+            am.id,
+            am.modelName,
+            am.modelMetadata.prompt,
+            am.ownType,
+            am.price,
+            am.isPublic,
+            m.username,
+            ms.usageCount,
+            ms.viewCount,
+            am.createdAt
+       )
+       from AIModel am
+       left join Member m on am.ownerId = m.id
+       left join ModelStatistics ms on am.id = ms.model.id
+       where am.ownType = 'ADMIN'
+            and (:searchKeyword is null or am.modelName like concat('%', :searchKeyword,'%'))
+       """)
+    Page<List<AdminAIModelResponseDto>> getAdminAIModel(
+            @Param(value="searchKeyword")String searchKeyword,
+            Pageable pageable);
+    
 }
