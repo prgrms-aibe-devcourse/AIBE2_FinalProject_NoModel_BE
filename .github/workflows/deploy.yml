@@ -46,7 +46,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: IMAGE_SHA_TAG
+          envs: IMAGE_SHA_TAG,FIREBASE_KEY_JSON_B64,APP_ENV_FILE_B64,APPLICATION_PROD_YML_B64,APPLICATION_STABLEDIFFUSION_YML_B64,APPLICATION_DOCKER_YML_B64,EXTERNAL_SERVICES_YML_B64
           script: |
             set -e
             APP_DIR=${{ secrets.EC2_APP_PATH }}
@@ -59,24 +59,26 @@ jobs:
             docker network create nomodel_k6_network || true
 
             mkdir -p secrets/firebase
-            printf '%s' "${{ secrets.FIREBASE_KEY_JSON }}" > secrets/firebase/FirebaseKey.json
-            chmod 600 secrets/firebase/FirebaseKey.json
+            if [ -n "$FIREBASE_KEY_JSON_B64" ]; then
+              echo "$FIREBASE_KEY_JSON_B64" | base64 -d > secrets/firebase/FirebaseKey.json
+              chmod 600 secrets/firebase/FirebaseKey.json
+            fi
 
             mkdir -p secrets
-            if [ -n "${{ secrets.APP_ENV_FILE }}" ]; then
-              printf '%s\n' "${{ secrets.APP_ENV_FILE }}" > .env
+            if [ -n "$APP_ENV_FILE_B64" ]; then
+              echo "$APP_ENV_FILE_B64" | base64 -d > .env
             fi
-            if [ -n "${{ secrets.APPLICATION_PROD_YML }}" ]; then
-              printf '%s\n' "${{ secrets.APPLICATION_PROD_YML }}" > secrets/application-prod.yml
+            if [ -n "$APPLICATION_PROD_YML_B64" ]; then
+              echo "$APPLICATION_PROD_YML_B64" | base64 -d > secrets/application-prod.yml
             fi
-            if [ -n "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" ]; then
-              printf '%s\n' "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" > secrets/application-stablediffusion.yml
+            if [ -n "$APPLICATION_STABLEDIFFUSION_YML_B64" ]; then
+              echo "$APPLICATION_STABLEDIFFUSION_YML_B64" | base64 -d > secrets/application-stablediffusion.yml
             fi
-            if [ -n "${{ secrets.APPLICATION_DOCKER_YML }}" ]; then
-              printf '%s\n' "${{ secrets.APPLICATION_DOCKER_YML }}" > secrets/application-docker.yml
+            if [ -n "$APPLICATION_DOCKER_YML_B64" ]; then
+              echo "$APPLICATION_DOCKER_YML_B64" | base64 -d > secrets/application-docker.yml
             fi
-            if [ -n "${{ secrets.EXTERNAL_SERVICES_YML }}" ]; then
-              printf '%s\n' "${{ secrets.EXTERNAL_SERVICES_YML }}" > secrets/external-services.yml
+            if [ -n "$EXTERNAL_SERVICES_YML_B64" ]; then
+              echo "$EXTERNAL_SERVICES_YML_B64" | base64 -d > secrets/external-services.yml
             fi
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
