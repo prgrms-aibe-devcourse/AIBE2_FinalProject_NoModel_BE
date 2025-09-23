@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # InfluxDB v1.8 for k6 metrics (k6 native support)
   influxdb:
@@ -9,7 +7,7 @@ services:
       - "8086:8086"
     networks:
       - k6-network
-      - monitoring-network
+      - monitoring
     volumes:
       - influxdb_data:/var/lib/influxdb
     environment:
@@ -51,8 +49,11 @@ volumes:
     name: nomodel_influxdb_data
 
 networks:
+  nomodel-network:
+    external: true
+  elastic:
+    external: true
+  monitoring:
+    external: true
   k6-network:
-    driver: bridge
-    name: nomodel_k6_network
-  monitoring-network:
     external: true
