@@ -42,6 +42,37 @@ public class FileController {
                 .body(bytes);
     }
 
+    /** 파일 다운로드 (attachment로 다운로드) */
+    @GetMapping("/{fileId}/download")
+    public ResponseEntity<byte[]> download(@PathVariable Long fileId) throws Exception {
+        File meta = fileService.getMeta(fileId);
+        byte[] bytes = fileService.loadAsBytes(fileId);
+
+        String contentType = meta.getContentType() != null
+                ? meta.getContentType()
+                : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        String fileName = meta.getFileName() != null ? meta.getFileName() : (fileId + "");
+        
+        // 파일명에서 경로 부분 제거 (마지막 / 이후만 사용)
+        String downloadFileName = fileName;
+        if (fileName.contains("/")) {
+            downloadFileName = fileName.substring(fileName.lastIndexOf("/") + 1);
+        }
+        
+        // 파일명이 UUID나 경로 형태일 경우 확장자 추가
+        if (!downloadFileName.contains(".") && meta.getContentType() != null) {
+            String extension = getFileExtensionFromContentType(meta.getContentType());
+            if (extension != null) {
+                downloadFileName = downloadFileName + extension;
+            }
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadFileName + "\"")
+                .body(bytes);
+    }
+
     /** 파일 메타데이터만 JSON으로 조회 (디버깅/프론트 용) */
     @GetMapping("/{fileId}/meta")
     public ResponseEntity<?> meta(@PathVariable Long fileId) {
@@ -57,5 +88,36 @@ public class FileController {
                 "createdAt", meta.getCreatedAt(),
                 "updatedAt", meta.getUpdatedAt()
         ));
+    }
+
+    /**
+     * Content-Type에서 파일 확장자를 추출하는 헬퍼 메서드
+     */
+    private String getFileExtensionFromContentType(String contentType) {
+        if (contentType == null) return null;
+        
+        switch (contentType.toLowerCase()) {
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/png":
+                return ".png";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/svg+xml":
+                return ".svg";
+            case "application/pdf":
+                return ".pdf";
+            case "text/plain":
+                return ".txt";
+            case "application/json":
+                return ".json";
+            case "text/csv":
+                return ".csv";
+            default:
+                return null;
+        }
     }
 }
