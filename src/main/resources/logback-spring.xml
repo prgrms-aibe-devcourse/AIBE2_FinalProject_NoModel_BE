@@ -39,6 +39,21 @@
         </root>
     </springProfile>
 
+    <springProfile name="deploy">
+        <!-- Deployment environment logging -->
+        <include resource="log/console-appender.xml"/>
+        <include resource="log/loki-appender.xml"/>
+
+        <logger name="nomodel" level="INFO" />
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+        <logger name="com.zaxxer.hikari" level="WARN" />
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI-FILE"/>
+        </root>
+    </springProfile>
+
     <springProfile name="prod">
         <!-- Use Loki appender for structured logging in production -->
         <include resource="log/console-appender.xml"/>
