@@ -11,10 +11,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./secrets/firebase/FirebaseKey.json:/app/resources/firebase/FirebaseKey.json:ro
-      - ./secrets/application-prod.yml:/app/resources/config/application-prod.yml:ro
-      - ./secrets/application-stablediffusion.yml:/app/resources/config/application-stablediffusion.yml:ro
-      - ./secrets/application-docker.yml:/app/resources/config/application-docker.yml:ro
-      - ./secrets/external-services.yml:/app/resources/config/external-services.yml:ro
+      - ./secrets/application-deploy.yml:/app/resources/config/application-deploy.yml:ro
     networks:
       - nomodel-network
       - elastic

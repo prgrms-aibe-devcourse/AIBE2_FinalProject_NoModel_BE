@@ -59,39 +59,25 @@ jobs:
             docker network create nomodel_k6_network || true
 
             mkdir -p secrets/firebase
-            printf '%s' "${{ secrets.FIREBASE_KEY_JSON }}" > secrets/firebase/FirebaseKey.json
+            if [ -z "${{ secrets.FIREBASE_KEY_JSON }}" ]; then
+              echo "[deploy] FIREBASE_KEY_JSON secret is required." >&2
+              exit 1
+            fi
+            printf '%s' "${{ secrets.FIREBASE_KEY_JSON }}" | base64 -d > secrets/firebase/FirebaseKey.json
             chmod 600 secrets/firebase/FirebaseKey.json
 
             mkdir -p secrets
-            if [ -n "${{ secrets.APP_ENV_FILE }}" ]; then
-              printf '%s' "${{ secrets.APP_ENV_FILE }}" > .env
-            fi
-            if [ ! -f .env ]; then
-              echo "[deploy] .env not found and APP_ENV_FILE secret is empty." >&2
+            if [ -z "${{ secrets.APP_ENV_FILE }}" ]; then
+              echo "[deploy] APP_ENV_FILE secret is required." >&2
               exit 1
             fi
-            if [ -n "${{ secrets.APPLICATION_PROD_YML }}" ]; then
-              printf '%s' "${{ secrets.APPLICATION_PROD_YML }}" > secrets/application-prod.yml
-            fi
-            if [ ! -f secrets/application-prod.yml ]; then
-              echo "[deploy] application-prod.yml missing. Provide APPLICATION_PROD_YML secret or upload file." >&2
+            printf '%s' "${{ secrets.APP_ENV_FILE }}" | base64 -d > .env
+
+            if [ -z "${{ secrets.APPLICATION_DEPLOY_YML }}" ]; then
+              echo "[deploy] APPLICATION_DEPLOY_YML secret is required." >&2
               exit 1
             fi
-            if [ -n "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" ]; then
-              printf '%s' "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" > secrets/application-stablediffusion.yml
-            fi
-            if [ -n "${{ secrets.APPLICATION_DOCKER_YML }}" ]; then
-              printf '%s' "${{ secrets.APPLICATION_DOCKER_YML }}" > secrets/application-docker.yml
-            fi
-            if [ -n "${{ secrets.EXTERNAL_SERVICES_YML }}" ]; then
-              printf '%s' "${{ secrets.EXTERNAL_SERVICES_YML }}" > secrets/external-services.yml
-            fi
-            for file in secrets/application-stablediffusion.yml secrets/application-docker.yml secrets/external-services.yml; do
-              if [ ! -f "$file" ]; then
-                echo "[deploy] $file missing. Provide corresponding secret." >&2
-                exit 1
-              fi
-            done
+            printf '%s' "${{ secrets.APPLICATION_DEPLOY_YML }}" | base64 -d > secrets/application-deploy.yml
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
