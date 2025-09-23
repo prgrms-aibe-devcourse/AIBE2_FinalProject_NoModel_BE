@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    image: 495264909330.dkr.ecr.ap-northeast-2.amazonaws.com/nomodel-server:latest
+    container_name: nomodel-app
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - nomodel-network
+      - elastic
+      - monitoring-network
+      - k6-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  nomodel-network:
+    external: true
+  elastic:
+    external: true
+  monitoring-network:
+    external: true
+  k6-network:
+    external: true

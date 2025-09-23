@@ -1,0 +1,37 @@
+<included>
+    <!-- Loki JSON File Appender - Structured logs for Promtail to collect -->
+    <appender name="LOKI-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.json</file>
+
+        <!-- Rolling policy for log rotation -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/application.%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+
+        <!-- JSON encoder for Loki compatibility -->
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- Application metadata -->
+            <customFields>{"application":"nomodel","environment":"local","service":"spring-boot","version":"1.0.0"}</customFields>
+
+            <!-- Field name mapping optimized for Loki -->
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <message>message</message>
+                <level>level</level>
+                <thread>thread</thread>
+                <logger>logger</logger>
+            </fieldNames>
+
+            <!-- Include MDC for method-level tracking -->
+            <includeMdc>true</includeMdc>
+            <includeStructuredArguments>true</includeStructuredArguments>
+            <includeContext>true</includeContext>
+
+            <!-- Include caller data for method information -->
+            <includeCallerData>true</includeCallerData>
+        </encoder>
+    </appender>
+</included>

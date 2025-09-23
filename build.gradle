@@ -27,6 +27,7 @@ repositories {
 ext {
     set('snippetsDir', file("build/generated-snippets"))
     set('springModulithVersion', "1.4.1")
+    set('elasticsearchVersion', "8.18.1")
 }
 
 dependencies {
@@ -34,24 +35,43 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    
+
+    // 외부 API 호출을 위해 WebClient 불러오기용
+    implementation 'org.springframework:spring-webflux'
+
+
     // Security & Authentication
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // JWT 토큰 관련
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     
     // Data Access & Persistence
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     
     // Messaging & Events
     implementation 'org.springframework.boot:spring-boot-starter-batch'
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     
+    // Firebase
+    implementation 'com.google.firebase:firebase-admin:9.4.1'
+    
     // Spring Modulith
     implementation 'org.springframework.modulith:spring-modulith-starter-core'
     implementation 'org.springframework.modulith:spring-modulith-starter-jpa'
     implementation 'org.springframework.modulith:spring-modulith-events-api'
+
+    // WebClient
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Netty HttpClient
+    implementation 'io.projectreactor.netty:reactor-netty-http'
     
     // Code Generation & Processing
     compileOnly 'org.projectlombok:lombok'
@@ -84,11 +104,24 @@ dependencies {
     testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+    // TestContainers
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:elasticsearch'
+    testImplementation 'org.testcontainers:kafka'
 }
 
 dependencyManagement {
     imports {
         mavenBom "org.springframework.modulith:spring-modulith-bom:${springModulithVersion}"
+    }
+    dependencies {
+        // Elasticsearch 클라이언트 버전을 최신 호환 버전으로 설정 (8.18.1)
+        // Spring Data Elasticsearch 5.5.x와 호환되는 조합
+        dependency "co.elastic.clients:elasticsearch-java:${elasticsearchVersion}"
+        dependency "org.elasticsearch.client:elasticsearch-rest-client:${elasticsearchVersion}"
     }
 }
 
@@ -100,4 +133,15 @@ tasks.named('test') {
 tasks.named('asciidoctor') {
     inputs.dir snippetsDir
     dependsOn test
+    attributes 'snippets': snippetsDir
+}
+
+// build 태스크가 asciidoctor를 포함하도록 설정
+build {
+    dependsOn asciidoctor
+}
+
+// Plain JAR 생성 비활성화
+jar {
+    enabled = false
 }

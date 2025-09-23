@@ -30,3 +30,23 @@ providers:
     allowUiUpdates: true
     options:
       path: /var/lib/grafana/dashboards/infrastructure
+
+  - name: 'BusinessMetrics'
+    orgId: 1
+    folder: 'Business Intelligence'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/business
+
+  - name: 'Loki'
+    orgId: 1
+    folder: 'Logging'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/loki

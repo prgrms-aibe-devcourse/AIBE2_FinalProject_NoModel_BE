@@ -1,0 +1,86 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+            | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+      - name: Build Docker image
+        run: |
+          IMAGE_SHA_TAG=${GITHUB_SHA::8}
+          docker build \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ secrets.ECR_LATEST_TAG }} \
+            -t ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:$IMAGE_SHA_TAG \
+            .
+          echo "IMAGE_SHA_TAG=$IMAGE_SHA_TAG" >> $GITHUB_ENV
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ secrets.ECR_LATEST_TAG }}
+          docker push ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${IMAGE_SHA_TAG}
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE_SHA_TAG
+          script: |
+            set -e
+            APP_DIR=${{ secrets.EC2_APP_PATH }}
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            REPO_URL=${{ github.repositoryUrl }}
+            if [ -n "${{ secrets.GITHUB_DEPLOY_TOKEN }}" ]; then
+              REPO_URL="https://${{ secrets.GITHUB_DEPLOY_TOKEN }}@github.com/${{ github.repository }}.git"
+            fi
+
+            if [ -d .git ]; then
+              git remote set-url origin "$REPO_URL"
+            fi
+
+            if [ -d .git ]; then
+              git fetch origin
+              git reset --hard origin/main
+            else
+              git clone "$REPO_URL" .
+            fi
+
+            docker network create nomodel_network || true
+            docker network create elastic || true
+            docker network create monitoring-network || true
+            docker network create nomodel_k6_network || true
+
+            COMPOSE_CMD="docker compose -f compose.yml -f docker-compose-elasticsearch.yml -f docker-compose-monitoring.yml -f docker-compose-k6.yml -f docker-compose-app.yml"
+
+            $COMPOSE_CMD pull app
+            $COMPOSE_CMD up -d --remove-orphans
+
+            docker image prune -f
+
+      - name: Show deployed image tag
+        run: |
+          echo "Deployed image tag: $IMAGE_SHA_TAG"

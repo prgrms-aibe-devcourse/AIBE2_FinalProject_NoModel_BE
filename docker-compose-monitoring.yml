@@ -1,24 +1,6 @@
 version: '3.8'
 
 services:
-  # k6 Performance Testing Tool
-  k6:
-    image: grafana/k6:latest
-    container_name: k6-performance
-    networks:
-      - monitoring
-    volumes:
-      - ./k6:/scripts
-      - ./k6/results:/results
-    environment:
-      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
-      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true
-    command: run --out experimental-prometheus-rw /scripts/load-test.js
-    depends_on:
-      - prometheus
-    profiles:
-      - test
-
   # Prometheus Metrics Collection
   prometheus:
     image: prom/prometheus:latest
@@ -85,6 +67,38 @@ services:
       - /:/rootfs:ro
     restart: unless-stopped
 
+  # Loki for Log Aggregation
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki-server
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  # Promtail for Log Collection
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail-agent
+    ports:
+      - "9080:9080"
+    networks:
+      - monitoring
+    volumes:
+      - ./monitoring/loki/promtail-config.yml:/etc/promtail/config.yml
+      - ./logs:/logs:ro
+      - /var/log:/host/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
 networks:
   monitoring:
     driver: bridge
@@ -94,4 +108,6 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  loki_data:
     driver: local

@@ -155,7 +155,8 @@ ELASTICSEARCH_PASSWORD=[팀에서 전달받은 값 사용]
 - **H2 Console** (local 프로필): http://localhost:8080/api/h2-console
 
 ### 모니터링 & 로깅
-- **Kibana**: http://localhost:5601 (인증 정보는 팀에서 전달받은 값 사용)
+- **Kibana**: http://localhost:5601 (개발환경 - 인증 없음)
+- **Elasticsearch**: http://localhost:9200 (개발환경 - 인증 없음)
 - **Grafana**: http://localhost:3000 (인증 정보는 팀에서 전달받은 값 사용)
 - **Prometheus**: http://localhost:9090
 

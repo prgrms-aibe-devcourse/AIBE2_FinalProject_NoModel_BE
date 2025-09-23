@@ -7,25 +7,32 @@
     <property name="FILE_LOG_PATTERN"
               value="[%d{yyyy-MM-dd HH:mm:ss}:%-4relative] [%thread] %-5level [%C.%M:%L] - %msg%n"/>
 
-    <springProfile name="!prod">
+    <springProfile name="local">
         <include resource="log/console-appender.xml"/>
-        <include resource="log/logstash-appender.xml"/>
+        <include resource="log/loki-appender.xml"/>
 
         <logger name="nomodel" level="DEBUG" />
+        <logger name="org.springframework.web" level="INFO" />
+        <logger name="org.springframework.security" level="INFO" />
+        <logger name="org.springframework" level="INFO" />
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="LOGSTASH"/>
+            <appender-ref ref="LOKI-FILE"/>
         </root>
     </springProfile>
 
     <springProfile name="dev">
+        <include resource="log/console-appender.xml"/>
         <include resource="log/file-info-appender.xml"/>
         <include resource="log/file-warn-appender.xml"/>
         <include resource="log/file-error-appender.xml"/>
-        <include resource="log/logstash-appender.xml"/>
+        <include resource="log/loki-appender.xml"/>
 
+        <logger name="nomodel" level="DEBUG" />
+        <logger name="org.springframework" level="INFO" />
         <root level="INFO">
-            <appender-ref ref="LOGSTASH"/>
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI-FILE"/>
             <appender-ref ref="FILE-INFO"/>
             <appender-ref ref="FILE-WARN"/>
             <appender-ref ref="FILE-ERROR"/>
@@ -33,10 +40,17 @@
     </springProfile>
 
     <springProfile name="prod">
-        <include resource="log/logstash-appender.xml"/>
+        <!-- Use Loki appender for structured logging in production -->
+        <include resource="log/console-appender.xml"/>
+        <include resource="log/loki-appender.xml"/>
 
+        <logger name="nomodel" level="INFO" />
+        <logger name="org.springframework" level="WARN" />
+        <logger name="org.hibernate" level="WARN" />
+        <logger name="com.zaxxer.hikari" level="WARN" />
         <root level="INFO">
-            <appender-ref ref="LOGSTASH"/>
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI-FILE"/>
         </root>
     </springProfile>
 </configuration>

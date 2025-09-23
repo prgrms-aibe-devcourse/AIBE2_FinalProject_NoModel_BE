@@ -1,0 +1,3 @@
+ALTER TABLE file_tb
+    MODIFY COLUMN relation_type
+    ENUM('MODEL','REVIEW','PROFILE','AD','REMOVE_BG') NOT NULL;

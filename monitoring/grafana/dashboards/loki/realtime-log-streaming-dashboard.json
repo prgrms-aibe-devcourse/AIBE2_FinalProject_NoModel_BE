@@ -1,0 +1,283 @@
+{
+  "id": null,
+  "uid": "realtime-logs",
+  "title": "Real-time Log Streaming Dashboard",
+  "tags": ["loki", "logging", "streaming", "realtime"],
+  "style": "dark",
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 0,
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "🔴 Live Error Stream",
+      "type": "logs",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "{job=\"spring-boot\"} | json | level=\"ERROR\" | line_format \"[{{.class_name}}.{{.method_name}}] {{.error_message}}\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 2,
+      "title": "⚠️ Warning Messages",
+      "type": "logs",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "{job=\"spring-boot\"} | json | level=\"WARN\" | line_format \"[{{.method_name}}] {{.message}}\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 3,
+      "title": "📊 All Application Logs (Live)",
+      "type": "logs",
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "{job=\"spring-boot\"} | json | line_format \"[{{.level}}] [{{.layer}}:{{.class_name}}.{{.method_name}}] {{.message}}\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 4,
+      "title": "🐌 Slow API Calls (>1000ms)",
+      "type": "logs",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+      "targets": [
+        {
+          "expr": "{layer=\"Controller\"} | json | execution_time_ms > 1000 | line_format \"{{.http_method}} {{.request_uri}} - {{.execution_time_ms}}ms\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 5,
+      "title": "💼 Business Logic Logs (Service Layer)",
+      "type": "logs",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+      "targets": [
+        {
+          "expr": "{layer=\"Service\"} | json | line_format \"[{{.status}}] {{.full_method_name}}: {{.message}}\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 6,
+      "title": "🔍 Filtered Log Search",
+      "type": "logs",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 26},
+      "targets": [
+        {
+          "expr": "{job=\"spring-boot\"} |= \"$search_text\" | json",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "id": 7,
+      "title": "📈 Log Volume (Last 5 minutes)",
+      "type": "graph",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 34},
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({job=\"spring-boot\"} | json [1m]))",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "legendFormat": "{{level}}"
+        }
+      ],
+      "yaxes": [
+        {"format": "short", "show": true},
+        {"format": "short", "show": false}
+      ],
+      "xaxis": {"show": true}
+    },
+    {
+      "id": 8,
+      "title": "🎯 HTTP Request Logs",
+      "type": "logs",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 34},
+      "targets": [
+        {
+          "expr": "{layer=\"Controller\"} | json | http_method != \"\" | line_format \"{{.http_method}} {{.request_uri}} [{{.status}}] {{.execution_time_ms}}ms\"",
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          }
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": false,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": false,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {"text": "", "value": ""},
+        "hide": 0,
+        "label": "Search Text",
+        "name": "search_text",
+        "options": [{"text": "", "value": ""}],
+        "query": "",
+        "type": "textbox"
+      },
+      {
+        "allValue": null,
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "hide": 0,
+        "includeAll": true,
+        "label": "Log Level",
+        "multi": false,
+        "name": "log_level",
+        "options": [
+          {"selected": true, "text": "All", "value": "$__all"},
+          {"selected": false, "text": "ERROR", "value": "ERROR"},
+          {"selected": false, "text": "WARN", "value": "WARN"},
+          {"selected": false, "text": "INFO", "value": "INFO"},
+          {"selected": false, "text": "DEBUG", "value": "DEBUG"}
+        ],
+        "query": "ERROR,WARN,INFO,DEBUG",
+        "type": "custom"
+      },
+      {
+        "allValue": null,
+        "current": {"selected": true, "text": "All", "value": "$__all"},
+        "hide": 0,
+        "includeAll": true,
+        "label": "Layer",
+        "multi": false,
+        "name": "layer",
+        "options": [
+          {"selected": true, "text": "All", "value": "$__all"},
+          {"selected": false, "text": "Controller", "value": "Controller"},
+          {"selected": false, "text": "Service", "value": "Service"}
+        ],
+        "query": "Controller,Service",
+        "type": "custom"
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "datasource": "Loki",
+        "enable": true,
+        "expr": "{level=\"ERROR\"}",
+        "iconColor": "red",
+        "name": "Errors",
+        "titleFormat": "Error"
+      }
+    ]
+  },
+  "schemaVersion": 30,
+  "version": 1,
+  "links": []
+}
