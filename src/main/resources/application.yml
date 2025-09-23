@@ -14,6 +14,7 @@ spring:
       - optional:classpath:config/application-monitoring.yml
       - optional:classpath:config/external-services.yml
       - optional:classpath:config/application-stablediffusion.yml
+      - optional:file:/app/resources/config/application-deploy.yml
   batch:
     jdbc:
       initialize-schema: always  # 배치 테이블 자동 생성
