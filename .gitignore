@@ -80,6 +80,7 @@ Thumbs.db
 uploads/
 downloads/
 tmp/
+secrets/
 
 ### k6 Performance Testing ###
 k6/results/
