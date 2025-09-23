@@ -58,13 +58,26 @@ jobs:
             docker network create monitoring-network || true
             docker network create nomodel_k6_network || true
 
-            if [ -n "${{ secrets.APP_ENV_FILE }}" ]; then
-              printf '%s\n' "${{ secrets.APP_ENV_FILE }}" > .env
-            fi
-
             mkdir -p secrets/firebase
             printf '%s' "${{ secrets.FIREBASE_KEY_JSON }}" > secrets/firebase/FirebaseKey.json
             chmod 600 secrets/firebase/FirebaseKey.json
+
+            mkdir -p secrets
+            if [ -n "${{ secrets.APP_ENV_FILE }}" ]; then
+              printf '%s\n' "${{ secrets.APP_ENV_FILE }}" > .env
+            fi
+            if [ -n "${{ secrets.APPLICATION_PROD_YML }}" ]; then
+              printf '%s\n' "${{ secrets.APPLICATION_PROD_YML }}" > secrets/application-prod.yml
+            fi
+            if [ -n "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" ]; then
+              printf '%s\n' "${{ secrets.APPLICATION_STABLEDIFFUSION_YML }}" > secrets/application-stablediffusion.yml
+            fi
+            if [ -n "${{ secrets.APPLICATION_DOCKER_YML }}" ]; then
+              printf '%s\n' "${{ secrets.APPLICATION_DOCKER_YML }}" > secrets/application-docker.yml
+            fi
+            if [ -n "${{ secrets.EXTERNAL_SERVICES_YML }}" ]; then
+              printf '%s\n' "${{ secrets.EXTERNAL_SERVICES_YML }}" > secrets/external-services.yml
+            fi
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
               | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
