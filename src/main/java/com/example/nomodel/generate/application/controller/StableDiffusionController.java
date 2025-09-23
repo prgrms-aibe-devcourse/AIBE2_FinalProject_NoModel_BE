@@ -41,6 +41,7 @@ public class StableDiffusionController {
             @RequestParam(defaultValue = "7.0") double cfgScale,
             @RequestParam(defaultValue = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark") 
             String negativePrompt,
+            @RequestParam(defaultValue = "Euler a") String samplingMethod,
             @RequestParam(defaultValue = "0") Long relationId,
             @RequestParam(defaultValue = "MODEL") String relationType,
             @RequestParam(required = false) Long inputFileId) {
@@ -55,6 +56,7 @@ public class StableDiffusionController {
             options.put("steps", steps);
             options.put("cfg_scale", cfgScale);
             options.put("negative_prompt", negativePrompt);
+            options.put("sampling_method", samplingMethod);
             options.put("relationId", relationId);
             options.put("relationType", relationType);
             options.put("inputFileId", inputFileId);
@@ -92,9 +94,14 @@ public class StableDiffusionController {
             options.put("steps", request.getSteps());
             options.put("cfg_scale", request.getCfgScale());
             options.put("negative_prompt", request.getNegativePrompt());
+            options.put("sampling_method", request.getSamplingMethod());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
+            options.put("userId", request.getUserId());
+            options.put("modelName", request.getModelName());
+            options.put("price", request.getPrice());
+            options.put("isPublic", request.getIsPublic());
 
             // 파일 ID를 받아서 실제 바이트 데이터 로드
             Long fileId = stableDiffusionImageGenerator.generate(request.getMode(), request.getPrompt(), options);
@@ -131,9 +138,14 @@ public class StableDiffusionController {
             options.put("steps", request.getSteps());
             options.put("cfg_scale", request.getCfgScale());
             options.put("negative_prompt", request.getNegativePrompt());
+            options.put("sampling_method", request.getSamplingMethod());
             options.put("relationId", request.getRelationId());
             options.put("relationType", request.getRelationType());
             options.put("inputFileId", request.getInputFileId());
+            options.put("userId", request.getUserId());
+            options.put("modelName", request.getModelName());
+            options.put("price", request.getPrice());
+            options.put("isPublic", request.getIsPublic());
 
             StableDiffusionImageGenerator.GenerationJobResponse jobResponse = 
                 stableDiffusionImageGenerator.generateWithJobResponse(request.getMode(), request.getPrompt(), options);
@@ -198,10 +210,17 @@ public class StableDiffusionController {
         private int height = 512;
         private int steps = 25;
         private double cfgScale = 7.0;
-        private String negativePrompt = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark";
+        private String negativePrompt = "(worst quality:2),(low quality:2),(normal quality:2),lowres,watermark,nsfw";
+        private String samplingMethod = "Euler a";
         private Long relationId = 0L;
         private String relationType = "MODEL";
         private Long inputFileId; // 입력 파일 ID 추가
+        private Long userId = 1L; // 사용자 ID 추가
+        
+        // 추가된 필드들
+        private String modelName; // 모델 이름
+        private Double price; // 판매 가격
+        private Boolean isPublic; // 공개 설정
     }
 
     /**
