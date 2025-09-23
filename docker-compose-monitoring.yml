@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Prometheus Metrics Collection
   prometheus:
@@ -99,11 +97,6 @@ services:
       - loki
     restart: unless-stopped
 
-networks:
-  monitoring:
-    driver: bridge
-    name: monitoring-network
-
 volumes:
   prometheus_data:
     driver: local
@@ -111,3 +104,13 @@ volumes:
     driver: local
   loki_data:
     driver: local
+
+networks:
+  nomodel-network:
+    external: true
+  elastic:
+    external: true
+  monitoring:
+    external: true
+  k6-network:
+    external: true

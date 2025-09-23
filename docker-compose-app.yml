@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     image: 495264909330.dkr.ecr.ap-northeast-2.amazonaws.com/nomodel-server:latest
@@ -15,7 +13,7 @@ services:
     networks:
       - nomodel-network
       - elastic
-      - monitoring-network
+      - monitoring
       - k6-network
     depends_on:
       mysql:
@@ -29,7 +27,7 @@ networks:
     external: true
   elastic:
     external: true
-  monitoring-network:
+  monitoring:
     external: true
   k6-network:
     external: true

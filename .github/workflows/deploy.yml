@@ -53,11 +53,6 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            docker network create nomodel_network || true
-            docker network create elastic || true
-            docker network create monitoring-network || true
-            docker network create nomodel_k6_network || true
-
             mkdir -p secrets/firebase
             if [ -z "${{ secrets.FIREBASE_KEY_JSON }}" ]; then
               echo "[deploy] FIREBASE_KEY_JSON secret is required." >&2

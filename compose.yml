@@ -58,5 +58,4 @@ volumes:
 
 networks:
   nomodel-network:
-    driver: bridge
-    name: nomodel_network
+    external: true
