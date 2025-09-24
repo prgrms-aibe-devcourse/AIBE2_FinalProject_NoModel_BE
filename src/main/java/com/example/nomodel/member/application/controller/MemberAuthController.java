@@ -2,6 +2,7 @@ package com.example.nomodel.member.application.controller;
 
 import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
+import com.example.nomodel._core.security.CookieProperties;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.member.application.dto.request.LoginRequestDto;
 import com.example.nomodel.member.application.dto.request.SignUpRequestDto;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberAuthController {
 
     private final MemberAuthService memberAuthService;
+    private final CookieProperties cookieProperties;
 
     /**
      * 회원 가입
@@ -109,8 +111,8 @@ public class MemberAuthController {
     private void addCookie(HttpServletResponse response, String name, String value, int maxAgeInSeconds) {
         ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true)            // JS 접근 불가
-                .secure(false)              // HTTPS 전용 (배포 환경에서는 반드시 true)
-                .sameSite("Lax")          // 크로스 도메인 허용
+                .secure(cookieProperties.isSecure())              // HTTPS 전용 (배포 환경에서는 반드시 true)
+                .sameSite(cookieProperties.getSameSite())          // 크로스 도메인 허용
                 .path("/")                 // 모든 경로에서 사용 가능
                 .maxAge(maxAgeInSeconds)   // 만료 시간 설정
                 .build();
