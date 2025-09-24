@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +36,7 @@ public class MemberAuthController {
      */
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequestDto requestDto, BindingResult bindingResult) {
-        
+
         if (bindingResult.hasErrors()) {
             throw new ApplicationException(ErrorCode.INVALID_REQUEST);
         }
@@ -53,17 +55,11 @@ public class MemberAuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto requestDto, HttpServletResponse response) {
         AuthTokenDTO authTokenDTO = memberAuthService.login(requestDto);
-        
-        // Access Token 쿠키 설정 (HttpOnly, Secure, SameSite)
-        Cookie accessTokenCookie = createTokenCookie("accessToken", authTokenDTO.accessToken(), 
-                (int) (authTokenDTO.accessTokenValidTime() / 1000));
-        response.addCookie(accessTokenCookie);
-        
-        // Refresh Token 쿠키 설정 (HttpOnly, Secure, SameSite)
-        Cookie refreshTokenCookie = createTokenCookie("refreshToken", authTokenDTO.refreshToken(), 
-                (int) (authTokenDTO.refreshTokenValidTime() / 1000));
-        response.addCookie(refreshTokenCookie);
-        
+
+        // Access Token 쿠키 설정
+        addCookie(response, "accessToken", authTokenDTO.accessToken(), (int) (authTokenDTO.accessTokenValidTime() / 1000));
+        addCookie(response, "refreshToken", authTokenDTO.refreshToken(), (int) (authTokenDTO.refreshTokenValidTime() / 1000));
+
         // 응답에는 토큰 값 제외하고 성공 메시지만 포함
         return ResponseEntity.ok().body(ApiUtils.success("로그인 성공"));
     }
@@ -77,17 +73,12 @@ public class MemberAuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         AuthTokenDTO authTokenDTO = memberAuthService.refreshToken(request);
-        
+
         // 새로운 Access Token 쿠키 설정
-        Cookie accessTokenCookie = createTokenCookie("accessToken", authTokenDTO.accessToken(), 
-                (int) (authTokenDTO.accessTokenValidTime() / 1000));
-        response.addCookie(accessTokenCookie);
-        
-        // 새로운 Refresh Token 쿠키 설정
-        Cookie refreshTokenCookie = createTokenCookie("refreshToken", authTokenDTO.refreshToken(), 
-                (int) (authTokenDTO.refreshTokenValidTime() / 1000));
-        response.addCookie(refreshTokenCookie);
-        
+        // Access Token 쿠키 설정
+        addCookie(response, "accessToken", authTokenDTO.accessToken(), (int) (authTokenDTO.accessTokenValidTime() / 1000));
+        addCookie(response, "refreshToken", authTokenDTO.refreshToken(), (int) (authTokenDTO.refreshTokenValidTime() / 1000));
+
         return ResponseEntity.ok().body(ApiUtils.success("토큰 재발급 성공"));
     }
 
@@ -100,32 +91,29 @@ public class MemberAuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         memberAuthService.logout(request);
-        
+
         // Access Token 쿠키 삭제
-        Cookie accessTokenCookie = createTokenCookie("accessToken", "", 0);
-        response.addCookie(accessTokenCookie);
-        
-        // Refresh Token 쿠키 삭제
-        Cookie refreshTokenCookie = createTokenCookie("refreshToken", "", 0);
-        response.addCookie(refreshTokenCookie);
-        
+        addCookie(response, "accessToken", "", 0);
+        addCookie(response, "refreshToken", "", 0);
+
         return ResponseEntity.ok().body(ApiUtils.success("로그아웃 성공"));
     }
 
     /**
-     * 보안이 적용된 토큰 쿠키 생성 헬퍼 메서드
+     * 보안이 적용된 토큰 쿠키 생성 헬퍼 메서드 (ResponseCookie 기반)
      * @param name 쿠키 이름
      * @param value 쿠키 값
      * @param maxAgeInSeconds 만료 시간 (초)
-     * @return 설정된 쿠키
+     * @return ResponseCookie
      */
-    private Cookie createTokenCookie(String name, String value, int maxAgeInSeconds) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setHttpOnly(true);           // XSS 공격 방지
-        cookie.setSecure(false);            // TODO: HTTPS 환경에서는 true로 변경
-        cookie.setPath("/");                // 모든 경로에서 사용 가능
-        cookie.setMaxAge(maxAgeInSeconds);  // 만료 시간 설정
-        // cookie.setSameSite("Strict");    // CSRF 공격 방지 (Servlet 6.0+에서 지원)
-        return cookie;
+    private void addCookie(HttpServletResponse response, String name, String value, int maxAgeInSeconds) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
+                .httpOnly(true)            // JS 접근 불가
+                .secure(false)              // HTTPS 전용 (배포 환경에서는 반드시 true)
+                .sameSite("Lax")          // 크로스 도메인 허용
+                .path("/")                 // 모든 경로에서 사용 가능
+                .maxAge(maxAgeInSeconds)   // 만료 시간 설정
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
