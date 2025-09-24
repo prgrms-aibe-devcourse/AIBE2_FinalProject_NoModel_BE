@@ -5,6 +5,7 @@ import com.example.nomodel.model.command.application.dto.response.AIModelSearchR
 import com.example.nomodel.model.command.application.dto.PageResponse;
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -21,6 +22,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class CachedModelSearchService {
 
     private final AIModelSearchService searchService;
@@ -37,6 +39,7 @@ public class CachedModelSearchService {
             unless = "#result == null || #result.empty()"
     )
     public PageResponse<AIModelSearchResponse> search(String keyword, Boolean isFree, int page, int size) {
+        log.debug("[CACHE MISS] modelSearch -> keyword:{}, isFree:{}, page:{}, size:{}", keyword, isFree, page, size);
         // 1. 모델 검색
         Page<AIModelDocument> models = searchService.search(keyword, isFree, page, size);
 
@@ -55,6 +58,7 @@ public class CachedModelSearchService {
             unless = "#result == null || #result.empty()"
     )
     public PageResponse<AIModelSearchResponse> getAdminModels(String keyword, Boolean isFree, int page, int size) {
+        log.debug("[CACHE MISS] adminModels -> keyword:{}, isFree:{}, page:{}, size:{}", keyword, isFree, page, size);
         Page<AIModelDocument> models = searchService.getAdminModels(keyword, isFree, page, size);
         return toPageResponse(models);
     }

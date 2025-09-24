@@ -7,6 +7,7 @@ import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepo
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,7 @@ public class SubscriptionScheduler {
      * 매 정시마다 실행
      */
     @Scheduled(cron = "0 0 * * * *")
+    @Transactional
     public void processRenewals() {
         List<MemberSubscription> expiringSubs =
                 memberSubscriptionRepository.findByStatusAndExpiresAtBefore(
@@ -49,6 +51,7 @@ public class SubscriptionScheduler {
      * 매일 새벽 3시 실행
      */
     @Scheduled(cron = "0 0 3 * * *")
+    @Transactional
     public void processPastDueToExpired() {
         List<MemberSubscription> pastDueSubs =
                 memberSubscriptionRepository.findByStatusAndExpiresAtBefore(

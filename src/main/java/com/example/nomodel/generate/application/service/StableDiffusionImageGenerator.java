@@ -10,6 +10,7 @@ import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.model.command.domain.model.ModelMetadata;
 import com.example.nomodel.model.command.domain.model.SamplerType;
 import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
+import com.example.nomodel.model.command.domain.service.ModelStatisticsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class StableDiffusionImageGenerator {
     private final ObjectMapper objectMapper;
     private final FileService fileService;
     private final AIModelJpaRepository aiModelRepository;
+    private final ModelStatisticsService modelStatisticsService;
 
     @Value("${STABLE_DIFFUSION_API_URL:http://220.127.239.150:7860}")
     private String apiUrl;
@@ -332,6 +334,9 @@ public class StableDiffusionImageGenerator {
             
             // 데이터베이스에 저장
             AIModel savedModel = aiModelRepository.save(aiModel);
+
+            // 초기 통계 생성 및 저장
+            modelStatisticsService.createInitialStatistics(savedModel);
             
             log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}, Price: {}, IsPublic: {}", 
                     savedModel.getId(), savedModel.getModelName(), savedModel.getPrice(), savedModel.isPublic());

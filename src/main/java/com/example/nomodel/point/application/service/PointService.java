@@ -168,11 +168,6 @@ public class PointService {
 
         return new PointUseResponse(transaction);
     }
-
-
-
-
-
 }
 
 
