@@ -34,9 +34,6 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    @Value("${app.auth.oauth2.enabled:false}")
-    private boolean oauth2Enabled;
-
     private static final String[] WHITE_LIST = {
             "/",
             "/error",
@@ -128,15 +125,10 @@ public class SecurityConfig {
                     ex.accessDeniedHandler(accessDeniedHandler());
                 })
                 // JWT 필터 활성화
-                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
-
-        if (oauth2Enabled) {
-            httpSecurity.oauth2Login(oauth -> oauth
+                .addFilterBefore(new JWTTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth -> oauth
                     .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
-                    .successHandler(oAuth2SuccessHandler)
-            );
-        }
-
+                    .successHandler(oAuth2SuccessHandler));
         return httpSecurity.build();
     }
 
