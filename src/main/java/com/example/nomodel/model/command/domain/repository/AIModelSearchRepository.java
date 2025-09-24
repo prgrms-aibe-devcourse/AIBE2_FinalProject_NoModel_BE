@@ -130,7 +130,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
     /**
      * 무료 모델 검색
      */
-    @Query("{\"bool\": {\"should\": [{\"bool\": {\"must_not\": {\"exists\": {\"field\": \"price\"}}}}, {\"term\": {\"price\": 0}}], \"filter\": [{\"term\": {\"isPublic\": true}}]}}")
+    @Query("{\"bool\": {\"should\": [{\"bool\": {\"must_not\": {\"exists\": {\"field\": \"price\"}}}}, {\"term\": {\"price\": 0}}], \"filter\": [{\"term\": {\"isPublic\": true}}], \"minimum_should_match\": 1}}")
     Page<AIModelDocument> findFreeModels(Pageable pageable);
 
     /**
@@ -407,6 +407,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                       }
                     }
                   ]
+                  , "minimum_should_match": 1
                 }
               }
             ]
@@ -450,6 +451,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                       }
                     }
                   ]
+                  , "minimum_should_match": 1
                 }
               }
             ]
@@ -539,6 +541,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                       }
                     }
                   ]
+                  , "minimum_should_match": 1
                 }
               }
             ],
@@ -578,6 +581,7 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                       }
                     }
                   ]
+                  , "minimum_should_match": 1
                 }
               }
             ]
@@ -662,11 +666,12 @@ public interface AIModelSearchRepository extends ElasticsearchRepository<AIModel
                       }
                     }
                   ]
+                  , "minimum_should_match": 1
                 }
               }
             ],
             "minimum_should_match": 1
-          }
+         }
         }
         """)
     Page<AIModelDocument> searchFreeUserModelsWithKeyword(String keyword, Long userId, Pageable pageable);
