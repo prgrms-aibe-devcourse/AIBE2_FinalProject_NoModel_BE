@@ -96,7 +96,7 @@ public class UserInfoService {
      * @return 보유 포인트 (기본값: 0)
      */
     private Integer getCurrentPoints(Long memberId) {
-        return Optional.ofNullable(memberPointBalanceRepository.findById(memberId).orElse(null))
+        return memberPointBalanceRepository.findById(memberId)
                 .map(MemberPointBalance::getAvailablePoints)
                 .map(BigDecimal::intValue)
                 .orElse(0);

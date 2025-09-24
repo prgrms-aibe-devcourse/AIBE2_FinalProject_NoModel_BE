@@ -45,6 +45,8 @@ public class AIModelDetailResponse {
 
     @Getter
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class FileInfo {
         private Long fileId;
         private String fileUrl;
