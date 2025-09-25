@@ -95,7 +95,7 @@ public class ImageCompositor {
                 productImagePath, modelImagePath, promptArg, outputImagePath);
         
         // python3 먼저 시도, 실패하면 python 시도
-        String[] pythonCommands = {"python3", "python"};
+        String[] pythonCommands = {"/opt/genai-env/bin/python", "python3", "python"};
         Exception lastException = null;
         
         for (String pythonCommand : pythonCommands) {
