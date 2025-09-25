@@ -28,8 +28,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-venv python3-pip \
     && python3 -m venv /opt/genai-env \
     && /opt/genai-env/bin/pip install --no-cache-dir google-genai Pillow \
-    && ln -sf /opt/genai-env/bin/python /usr/bin/python3 \
-    && ln -sf /opt/genai-env/bin/pip /usr/bin/pip3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
