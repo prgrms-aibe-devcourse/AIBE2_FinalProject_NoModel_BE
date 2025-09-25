@@ -27,9 +27,9 @@ RUN mkdir -p /app/resources/config /app/resources/firebase
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 python3-venv python3-pip \
     && python3 -m venv /opt/genai-env \
-    && /opt/genai-env/bin/pip install --no-cache-dir google-genai pillow \
-    && ln -s /opt/genai-env/bin/python /usr/local/bin/python-genai \
-    && ln -s /opt/genai-env/bin/pip /usr/local/bin/pip-genai \
+    && /opt/genai-env/bin/pip install --no-cache-dir google-genai Pillow \
+    && ln -sf /opt/genai-env/bin/python /usr/bin/python3 \
+    && ln -sf /opt/genai-env/bin/pip /usr/bin/pip3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
