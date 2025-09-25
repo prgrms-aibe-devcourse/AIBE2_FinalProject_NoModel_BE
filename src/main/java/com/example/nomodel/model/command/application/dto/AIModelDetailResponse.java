@@ -54,14 +54,14 @@ public class AIModelDetailResponse {
         private String fileName;
 
         @JsonProperty("isPrimary")
-        private boolean isPrimary;
+        private boolean primary;
 
         public static FileInfo from(File file) {
             return FileInfo.builder()
                     .fileId(file.getId())
                     .fileUrl(file.getFileUrl())
                     .fileName(file.getFileName())
-                    .isPrimary(file.isPrimary())
+                    .primary(file.isPrimary())
                     .build();
         }
     }
