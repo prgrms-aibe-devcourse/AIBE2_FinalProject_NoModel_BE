@@ -36,6 +36,9 @@ RUN apt-get update \
 # Copy the boot jar from the builder stage
 COPY --from=builder /workspace/build/libs/*.jar app.jar
 
+# Copy the Python service file to the runtime image
+COPY src/compose/application/service/UseGeminiApi.py /app/compose/application/service/
+
 # Default to deploy profile
 ENV SPRING_PROFILES_ACTIVE=deploy
 
