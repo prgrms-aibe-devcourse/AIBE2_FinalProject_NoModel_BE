@@ -4,6 +4,7 @@ import com.example.nomodel.file.domain.model.File;
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -51,6 +52,8 @@ public class AIModelDetailResponse {
         private Long fileId;
         private String fileUrl;
         private String fileName;
+
+        @JsonProperty("isPrimary")
         private boolean isPrimary;
 
         public static FileInfo from(File file) {
