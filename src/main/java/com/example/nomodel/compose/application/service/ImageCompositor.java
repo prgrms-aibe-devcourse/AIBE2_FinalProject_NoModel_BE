@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -21,8 +22,8 @@ public class ImageCompositor {
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     // Python 스크립트 경로
-    private static final String PYTHON_SCRIPT_PATH = 
-        "src/main/java/com/example/nomodel/compose/application/service/UseGeminiApi.py";
+    @Value("${python.script.path:/app/compose/application/service/UseGeminiApi.py}")
+    private String pythonScriptPath;
     
     // 임시 파일 저장 디렉토리
     private static final String TEMP_DIR = "temp";
@@ -103,8 +104,8 @@ public class ImageCompositor {
                 
                 // Python 명령어 구성
                 ProcessBuilder processBuilder = new ProcessBuilder(
-                    pythonCommand, 
-                    PYTHON_SCRIPT_PATH,
+                    pythonCommand,
+                    pythonScriptPath,
                     productImagePath,
                     modelImagePath,
                     promptArg,
