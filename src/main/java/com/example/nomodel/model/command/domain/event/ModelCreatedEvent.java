@@ -1,5 +1,6 @@
 package com.example.nomodel.model.command.domain.event;
 
+import com.example.nomodel.model.command.domain.model.AIModel;
 import lombok.Getter;
 
 /**
@@ -8,13 +9,13 @@ import lombok.Getter;
 @Getter
 public class ModelCreatedEvent extends ModelEvent {
     private final boolean isPublic;
-    private final boolean isFree;
+    private final int price;
     private final String ownType;
 
-    public ModelCreatedEvent(Long modelId, boolean isPublic, boolean isFree, String ownType) {
-        super(modelId);
-        this.isPublic = isPublic;
-        this.isFree = isFree;
-        this.ownType = ownType;
+    public ModelCreatedEvent(AIModel model) {
+        super(model.getId());
+        this.isPublic = model.isPublic();
+        this.price = model.getPrice().intValue();
+        this.ownType = model.getOwnType().name();
     }
 }

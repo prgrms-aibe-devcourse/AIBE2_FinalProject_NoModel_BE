@@ -36,7 +36,7 @@ public class AIModelIndexScheduler {
      * 최근 5분 이내 수정된 모델 처리 (BaseTimeEntity 특성상 새 모델도 포함)
      * 실시간 검색을 위해 짧은 간격으로 동기화
      */
-    @Scheduled(fixedRate = 300000) // 5분 = 5 * 60 * 1000ms
+    @Scheduled(fixedRate = 120000) // 2분 = 5 * 60 * 1000ms
     public void runIncrementalSync() {
         try {
             LocalDateTime fromDateTime = LocalDateTime.now().minusMinutes(5);
