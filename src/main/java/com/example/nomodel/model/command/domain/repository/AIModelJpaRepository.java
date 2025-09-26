@@ -136,7 +136,7 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
         FROM AIModel m
         LEFT JOIN ModelStatistics s ON s.model.id = m.id
         LEFT JOIN Member mem ON mem.id = m.ownerId
-        WHERE m.updatedAt >= :fromDateTime
+        WHERE (m.updatedAt >= :fromDateTime OR s.updatedAt >= :fromDateTime)
         ORDER BY m.updatedAt ASC
         """)
     org.springframework.data.domain.Page<ModelIndexProjection> findModelIndexesUpdatedAfter(
