@@ -1,6 +1,7 @@
 package com.example.nomodel.model.command.application.cache.service;
 
 import com.example.nomodel.model.command.application.dto.AIModelDetailResponse;
+import com.example.nomodel.model.command.application.dto.response.AIModelStaticDetail;
 import com.example.nomodel.model.command.application.dto.response.cache.ModelCacheStatusResponse;
 import com.example.nomodel.model.query.service.AIModelDetailService;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,8 @@ public class ModelCacheService {
     public void updateModelDetailCache(Long modelId) {
         log.debug("모델 상세 캐시 갱신: modelId={}", modelId);
 
-        // 1. 최신 데이터 조회
-        AIModelDetailResponse freshData = modelDetailService.getModelDetail(modelId);
+        // 1. 최신 정적 데이터 조회
+        AIModelStaticDetail freshData = modelDetailService.getModelStaticDetail(modelId);
 
         // 2. 캐시에 즉시 업데이트
         Cache cache = cacheManager.getCache("modelDetail");
@@ -60,8 +61,8 @@ public class ModelCacheService {
             return;
         }
 
-        AIModelDetailResponse freshData = modelDetailService.getModelDetail(modelId);
-        AIModelDetailResponse cachedData = (AIModelDetailResponse) cachedValue.get();
+        AIModelStaticDetail freshData = modelDetailService.getModelStaticDetail(modelId);
+        AIModelStaticDetail cachedData = (AIModelStaticDetail) cachedValue.get();
 
         // 간단한 버전 체크 (수정 시간 비교)
         if (freshData != null && cachedData != null) {
@@ -70,7 +71,6 @@ public class ModelCacheService {
                 cache.put(modelId, freshData);
             }
         }
-
     }
 
     /**

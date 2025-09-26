@@ -1,8 +1,8 @@
 package com.example.nomodel.model.command.application.dto;
 
 import com.example.nomodel.file.domain.model.File;
-import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
-import com.example.nomodel.model.command.domain.model.AIModel;
+import com.example.nomodel.model.command.application.dto.response.AIModelDynamicStats;
+import com.example.nomodel.model.command.application.dto.response.AIModelStaticDetail;
 import com.example.nomodel.review.application.dto.response.ReviewResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -14,15 +14,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * AI 모델 상세 조회 응답 DTO
- */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class AIModelDetailResponse {
-    
+
     private Long modelId;
     private String modelName;
     private String description;
@@ -34,13 +31,8 @@ public class AIModelDetailResponse {
     private Long reviewCount;
     private Long usageCount;
     private Long viewCount;
-    
-    // 파일 정보
     private List<FileInfo> files;
-    
-    // 리뷰 정보
     private List<ReviewResponse> reviews;
-    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -66,33 +58,25 @@ public class AIModelDetailResponse {
         }
     }
 
-    public static AIModelDetailResponse from(AIModel model, String ownerName, 
-                                           AIModelDocument document, List<File> files, 
+    public static AIModelDetailResponse of(AIModelStaticDetail staticDetail,
+                                           AIModelDynamicStats dynamicStats,
                                            List<ReviewResponse> reviews) {
         return AIModelDetailResponse.builder()
-                .modelId(model.getId())
-                .modelName(model.getModelName())
-                .description(extractDescription(model))
-                .ownType(model.getOwnType().name())
-                .ownerName(ownerName)
-                .ownerId(model.getOwnerId())
-                .price(model.getPrice())
-                .avgRating(document != null ? document.getRating() : 0.0)
-                .reviewCount(document != null ? document.getReviewCount() : 0L)
-                .usageCount(document != null ? document.getUsageCount() : 0L) // 사용량
-                .viewCount(document != null ? document.getViewCount() : 0L) // 올바른 viewCount 사용
-                .files(files.stream().map(FileInfo::from).toList())
+                .modelId(staticDetail.getModelId())
+                .modelName(staticDetail.getModelName())
+                .description(staticDetail.getDescription())
+                .ownType(staticDetail.getOwnType())
+                .ownerName(staticDetail.getOwnerName())
+                .ownerId(staticDetail.getOwnerId())
+                .price(staticDetail.getPrice())
+                .files(staticDetail.getFiles())
+                .createdAt(staticDetail.getCreatedAt())
+                .updatedAt(staticDetail.getUpdatedAt())
+                .avgRating(dynamicStats.getAvgRating())
+                .reviewCount(dynamicStats.getReviewCount())
+                .usageCount(dynamicStats.getUsageCount())
+                .viewCount(dynamicStats.getViewCount())
                 .reviews(reviews != null ? reviews : List.of())
-                .createdAt(model.getCreatedAt())
-                .updatedAt(model.getUpdatedAt())
                 .build();
-    }
-
-    private static String extractDescription(AIModel model) {
-        // ModelMetadata에서 prompt를 description으로 사용
-        if (model.getModelMetadata() != null && model.getModelMetadata().getPrompt() != null) {
-            return model.getModelMetadata().getPrompt();
-        }
-        return model.getModelName(); // 기본값으로 모델명 사용
     }
 }

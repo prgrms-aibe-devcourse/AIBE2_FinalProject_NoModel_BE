@@ -3,6 +3,7 @@ package com.example.nomodel.model.query.controller;
 import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel._core.utils.ApiUtils;
 import com.example.nomodel.model.command.application.dto.AIModelDetailResponse;
+import com.example.nomodel.model.query.service.AIModelDetailFacadeService;
 import com.example.nomodel.model.query.service.CachedModelDetailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "AI Model Detail", description = "AI 모델 상세 조회 API")
 public class AIModelDetailController {
 
-    private final CachedModelDetailService cachedModelDetailService;
+    private final AIModelDetailFacadeService modelDetailFacadeService;
 
     @Operation(summary = "AI 모델 상세 조회",
                description = "모델 ID로 상세 정보 조회 (캐싱 적용, 비동기 조회수 증가)")
@@ -39,7 +40,7 @@ public class AIModelDetailController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         // 캐시된 상세 정보 조회 + 비동기 조회수 증가 (중복 방지 포함)
-        AIModelDetailResponse response = cachedModelDetailService.getModelDetailWithView(
+        AIModelDetailResponse response = modelDetailFacadeService.getModelDetail(
                 modelId,
                 userDetails.getMemberId()
         );
