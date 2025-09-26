@@ -38,7 +38,7 @@ public class SmartCacheEvictionService {
                 event.getModelId(), event.isPublic());
 
         if (event.isPublic()) {
-            lazyInvalidationService.markSearchCacheDirty("modelSearch");
+            cacheEvictionService.evictCache("modelSearch");
 
             if ("ADMIN".equalsIgnoreCase(event.getOwnType())) {
                 lazyInvalidationService.markSearchCacheDirty("adminModels");

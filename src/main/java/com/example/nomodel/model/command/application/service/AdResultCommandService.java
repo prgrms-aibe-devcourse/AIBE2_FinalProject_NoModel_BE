@@ -15,6 +15,15 @@ public class AdResultCommandService {
     private final AdResultJpaRepository adResultRepository;
 
     /**
+     * 새로운 AdResult 생성 및 저장
+     */
+    @Transactional
+    public AdResult createAdResult(Long modelId, Long memberId, String prompt, String adResultName) {
+        AdResult adResult = AdResult.create(modelId, memberId, prompt, adResultName);
+        return adResultRepository.save(adResult);
+    }
+
+    /**
      * 회원의 AdResult 평점 업데이트
      */
     @Transactional
@@ -23,6 +32,15 @@ public class AdResultCommandService {
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
 
         adResult.updateRating(rating);
+        adResultRepository.save(adResult);
+    }
+
+    /**
+     * AdResult의 결과 이미지 URL 업데이트
+     */
+    @Transactional
+    public void updateResultImageUrl(AdResult adResult, String resultFileUrl) {
+        adResult.updateResultImageUrl(resultFileUrl);
         adResultRepository.save(adResult);
     }
 }

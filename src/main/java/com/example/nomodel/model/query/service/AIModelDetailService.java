@@ -9,6 +9,7 @@ import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.member.domain.model.Member;
 import com.example.nomodel.member.domain.repository.MemberJpaRepository;
 import com.example.nomodel.model.command.application.dto.AIModelDetailResponse;
+import com.example.nomodel.model.command.application.dto.response.AIModelStaticDetail;
 import com.example.nomodel.model.command.domain.model.document.AIModelDocument;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
@@ -51,25 +52,29 @@ public class AIModelDetailService {
      * AI 모델 상세 조회
      */
     @Transactional(readOnly = true)
-    public AIModelDetailResponse getModelDetail(Long modelId) {
-        // 1. AI 모델 기본 정보 조회
+    public AIModelStaticDetail getModelStaticDetail(Long modelId) {
         AIModel model = aiModelRepository.findById(modelId)
                 .orElseThrow(() -> new ApplicationException(ErrorCode.MODEL_NOT_FOUND));
-        
-        // 2. Elasticsearch 문서에서 통계 정보 조회
-        AIModelDocument document = findModelDocument(modelId);
-        
-        // 3. 소유자 정보 조회
+
         String ownerName = getOwnerName(model);
-        
-        // 4. 파일 정보 조회
-        List<File> files = fileRepository.findImageFilesByRelation(RelationType.MODEL, modelId);
-        
-        // 5. 리뷰 정보 조회 (예외 발생하지 않도록 처리)
-        List<ReviewResponse> reviews = getModelReviews(modelId);
-        
-        // 6. 응답 DTO 생성
-        return AIModelDetailResponse.from(model, ownerName, document, files, reviews);
+        List<AIModelDetailResponse.FileInfo> files = fileRepository
+                .findImageFilesByRelation(RelationType.MODEL, modelId)
+                .stream()
+                .map(AIModelDetailResponse.FileInfo::from)
+                .toList();
+
+        return AIModelStaticDetail.builder()
+                .modelId(model.getId())
+                .modelName(model.getModelName())
+                .description(model.getModelMetadata() != null ? model.getModelMetadata().getPrompt() : model.getModelName())
+                .ownType(model.getOwnType().name())
+                .ownerName(ownerName)
+                .ownerId(model.getOwnerId())
+                .price(model.getPrice())
+                .files(files)
+                .createdAt(model.getCreatedAt())
+                .updatedAt(model.getUpdatedAt())
+                .build();
     }
 
     /**

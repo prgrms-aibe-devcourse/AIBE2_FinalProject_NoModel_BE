@@ -6,6 +6,7 @@ import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generate.application.dto.StableDiffusionRequest;
 import com.example.nomodel.generate.application.dto.StableDiffusionResponse;
+import com.example.nomodel.model.command.domain.event.ModelCreatedEvent;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.model.command.domain.model.ModelMetadata;
 import com.example.nomodel.model.command.domain.model.SamplerType;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,8 @@ public class StableDiffusionImageGenerator {
     private final FileService fileService;
     private final AIModelJpaRepository aiModelRepository;
     private final ModelStatisticsService modelStatisticsService;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${STABLE_DIFFUSION_API_URL:http://220.127.239.150:7860}")
     private String apiUrl;
@@ -337,6 +341,8 @@ public class StableDiffusionImageGenerator {
 
             // 초기 통계 생성 및 저장
             modelStatisticsService.createInitialStatistics(savedModel);
+
+            eventPublisher.publishEvent(new ModelCreatedEvent(savedModel));
             
             log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}, Price: {}, IsPublic: {}", 
                     savedModel.getId(), savedModel.getModelName(), savedModel.getPrice(), savedModel.isPublic());

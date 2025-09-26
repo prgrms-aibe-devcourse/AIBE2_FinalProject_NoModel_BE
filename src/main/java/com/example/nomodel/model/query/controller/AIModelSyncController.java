@@ -1,7 +1,7 @@
 package com.example.nomodel.model.query.controller;
 
 import com.example.nomodel._core.utils.ApiUtils;
-import com.example.nomodel.model.command.application.service.ElasticsearchIndexService;
+import com.example.nomodel.model.command.infrastructure.service.ElasticsearchIndexService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

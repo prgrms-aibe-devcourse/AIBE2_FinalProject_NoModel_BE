@@ -1,5 +1,6 @@
 package com.example.nomodel.compose.application.controller;
 
+import com.example.nomodel._core.security.CustomUserDetails;
 import com.example.nomodel.compose.application.dto.ComposeRequest;
 import com.example.nomodel.compose.application.dto.ComposeResponse;
 import com.example.nomodel.compose.application.service.ImageCompositor;
@@ -10,12 +11,16 @@ import com.example.nomodel.generationjob.application.service.GenerationJobServic
 import com.example.nomodel.generationjob.domain.model.GenerationJob;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generationjob.domain.model.JobStatus;
+import com.example.nomodel.model.command.application.service.AdResultCommandService;
+import com.example.nomodel.model.command.domain.model.AdResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +37,7 @@ public class ComposeController {
     private final ImageCompositor imageCompositor;
     private final FileService fileService;
     private final GenerationJobService generationJobService;
+    private final AdResultCommandService adResultCommandService;
 
     /**
      * 파일 ID를 사용한 이미지 합성
@@ -45,7 +51,8 @@ public class ComposeController {
     @PostMapping("/compose")
     public ResponseEntity<ComposeResponse> composeWithFileIds(
             @Valid @RequestBody ComposeRequest request,
-            @RequestHeader(name = "X-User-Id", required = false, defaultValue = "1") Long userId) {
+            @RequestHeader(name = "X-User-Id", required = false, defaultValue = "1") Long userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         try {
             log.info("Received composition request for product file ID: {} and model file ID: {}", 
@@ -79,18 +86,22 @@ public class ComposeController {
                 byte[] compositeResult = imageCompositor.composite(productImage, modelImage, request.customPrompt());
                 
                 log.info("Image composition completed - Result: {} bytes", compositeResult.length);
-                
+
+                Long modelId = fileService.getModelId(request.modelFileId().longValue());
+                AdResult adResult = adResultCommandService.createAdResult(modelId, userDetails.getMemberId(), request.customPrompt(), null); // TODO: ad_result 생성 후 ID 할당
+
                 // 합성 결과를 Firebase에 저장 (임시로 PREVIEW 사용)
                 Long resultFileId = fileService.saveBytes(
                     compositeResult,
                     "image/png",
                     RelationType.AD,
-                    request.productFileId().longValue(),
+                    adResult.getId(), // ad_result_id를 relation_id로 사용
                     FileType.PREVIEW // RESULT 대신 PREVIEW 사용 (마이그레이션 적용 전까지 임시)
                 );
-                
+
                 // 결과 파일 URL 가져오기
                 String resultFileUrl = fileService.getMeta(resultFileId).getFileUrl();
+                adResultCommandService.updateResultImageUrl(adResult, resultFileUrl);
                 
                 // Job 성공 처리
                 job.succeed(resultFileId);

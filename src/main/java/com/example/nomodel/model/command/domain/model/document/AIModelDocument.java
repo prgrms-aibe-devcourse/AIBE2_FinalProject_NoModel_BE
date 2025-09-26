@@ -149,7 +149,8 @@ public class AIModelDocument {
     public static AIModelDocument from(AIModel aiModel, String ownerName, 
                                      Long usageCount, Long viewCount, 
                                      Double rating, Long reviewCount) {
-        return AIModelDocument.builder()
+
+        AIModelDocument aiModelDocument = AIModelDocument.builder()
                 .modelId(aiModel.getId())
                 .modelName(aiModel.getModelName())
                 .suggest(buildSuggestions(aiModel.getModelName()))
@@ -167,6 +168,10 @@ public class AIModelDocument {
                 .createdAt(aiModel.getCreatedAt())
                 .updatedAt(aiModel.getUpdatedAt())
                 .build();
+
+        aiModelDocument.id = String.valueOf(aiModel.getId());
+
+        return aiModelDocument;
     }
 
 
