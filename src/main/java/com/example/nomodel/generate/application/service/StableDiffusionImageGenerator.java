@@ -6,6 +6,7 @@ import com.example.nomodel.file.domain.model.RelationType;
 import com.example.nomodel.generationjob.domain.model.GenerationMode;
 import com.example.nomodel.generate.application.dto.StableDiffusionRequest;
 import com.example.nomodel.generate.application.dto.StableDiffusionResponse;
+import com.example.nomodel.model.command.domain.event.ModelCreatedEvent;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.model.command.domain.model.ModelMetadata;
 import com.example.nomodel.model.command.domain.model.SamplerType;
@@ -341,7 +342,7 @@ public class StableDiffusionImageGenerator {
             // 초기 통계 생성 및 저장
             modelStatisticsService.createInitialStatistics(savedModel);
 
-            eventPublisher.publishEvent(aiModel);
+            eventPublisher.publishEvent(new ModelCreatedEvent(savedModel));
             
             log.info("✅ AI Model saved to database. ModelId: {}, ModelName: {}, Price: {}, IsPublic: {}", 
                     savedModel.getId(), savedModel.getModelName(), savedModel.getPrice(), savedModel.isPublic());
