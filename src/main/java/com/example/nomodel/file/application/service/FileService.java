@@ -149,4 +149,10 @@ public class FileService {
             return null;
         }
     }
+
+    public Long getModelId(long modelFileId) {
+        return fileJpaRepository.findById(modelFileId)
+                .orElseThrow(() -> new ApplicationException(ErrorCode.FILE_NOT_FOUND))
+                .getRelationId();
+    }
 }
