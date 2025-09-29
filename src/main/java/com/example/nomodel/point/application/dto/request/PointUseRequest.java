@@ -18,7 +18,7 @@ public class PointUseRequest {
     private BigDecimal amount;
 
     // 어디서 사용했는지 참조 ID (예: 주문 ID)
-    @NotNull(message = "참조 ID는 필수입니다.")   // ⭐ 필수 추가
+    @NotNull(message = "참조 ID는 필수입니다.")
     @Positive(message = "참조 ID는 양수여야 합니다.")
     private Long refererId;
 }
