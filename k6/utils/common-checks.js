@@ -2,73 +2,56 @@
 
 import { check } from 'k6';
 
+function parseJson(response) {
+  try {
+    return response.json();
+  } catch (e) {
+    return null;
+  }
+}
+
 // 기본 HTTP 응답 검증
 export function checkBasicResponse(response, expectedStatus = 200, maxDuration = 1000) {
   return check(response, {
     [`Status is ${expectedStatus}`]: (r) => r.status === expectedStatus,
     [`Response time < ${maxDuration}ms`]: (r) => r.timings.duration < maxDuration,
-    'Response has body': (r) => r.body.length > 0
+    'Response has body': (r) => r.body && r.body.length > 0
   });
 }
 
 // API 성공 응답 검증
 export function checkApiSuccess(response, maxDuration = 1000) {
+  const payload = parseJson(response);
+
   return check(response, {
     'Status is 200': (r) => r.status === 200,
     [`Response time < ${maxDuration}ms`]: (r) => r.timings.duration < maxDuration,
-    'Response is valid JSON': (r) => {
-      try {
-        JSON.parse(r.body);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    },
-    'Response has success=true': (r) => {
-      try {
-        const data = r.json();
-        return data.success === true;
-      } catch (e) {
-        return false;
-      }
-    }
+    'Response is valid JSON': () => payload !== null,
+    'Response has success=true': () => payload?.success === true,
+    'Response field is present': () => payload?.response !== undefined
   });
 }
 
 // 페이지네이션 응답 검증
 export function checkPaginationResponse(response, maxDuration = 1000) {
+  const payload = parseJson(response);
   const basicCheck = checkApiSuccess(response, maxDuration);
 
+  if (!payload || payload.response === undefined) {
+    return false;
+  }
+
+  const pageData = payload.response;
+
   const paginationCheck = check(response, {
-    'Has pagination info': (r) => {
-      try {
-        const data = r.json();
-        const pageData = data.data;
-        return pageData.hasOwnProperty('content') &&
-               pageData.hasOwnProperty('totalElements') &&
-               pageData.hasOwnProperty('totalPages') &&
-               pageData.hasOwnProperty('number') &&
-               pageData.hasOwnProperty('size');
-      } catch (e) {
-        return false;
-      }
-    },
-    'Content is array': (r) => {
-      try {
-        const data = r.json();
-        return Array.isArray(data.data.content);
-      } catch (e) {
-        return false;
-      }
-    },
-    'Page number is valid': (r) => {
-      try {
-        const data = r.json();
-        return typeof data.data.number === 'number' && data.data.number >= 0;
-      } catch (e) {
-        return false;
-      }
-    }
+    'Has pagination info': () => pageData &&
+      Object.prototype.hasOwnProperty.call(pageData, 'content') &&
+      Object.prototype.hasOwnProperty.call(pageData, 'totalElements') &&
+      Object.prototype.hasOwnProperty.call(pageData, 'totalPages') &&
+      Object.prototype.hasOwnProperty.call(pageData, 'number') &&
+      Object.prototype.hasOwnProperty.call(pageData, 'size'),
+    'Content is array': () => Array.isArray(pageData?.content),
+    'Page number is valid': () => typeof pageData?.number === 'number' && pageData.number >= 0
   });
 
   return basicCheck && paginationCheck;
@@ -78,26 +61,23 @@ export function checkPaginationResponse(response, maxDuration = 1000) {
 export function checkSearchResponse(response, options = {}) {
   const { maxDuration = 300, validatePriceFilter = false, expectedFree = null } = options;
 
+  const payload = parseJson(response);
+  const pageData = payload?.response;
   const basicCheck = checkPaginationResponse(response, maxDuration);
 
   let priceFilterCheck = true;
-  if (validatePriceFilter && expectedFree !== null) {
+  if (validatePriceFilter && expectedFree !== null && Array.isArray(pageData?.content)) {
     priceFilterCheck = check(response, {
-      'Price filter is correctly applied': (r) => {
-        try {
-          const data = r.json();
-          const models = data.data.content;
-
-          if (models.length === 0) return true; // 결과가 없으면 통과
-
-          return models.every(model => {
-            const modelIsFree = model.price === 0 || model.price === null || model.price === undefined;
-            return expectedFree ? modelIsFree : !modelIsFree;
-          });
-        } catch (e) {
-          console.error('Price filter validation error:', e);
-          return false;
+      'Price filter is correctly applied': () => {
+        const models = pageData.content;
+        if (models.length === 0) {
+          return true;
         }
+
+        return models.every((model) => {
+          const modelIsFree = model.price === 0 || model.price === null || model.price === undefined;
+          return expectedFree ? modelIsFree : !modelIsFree;
+        });
       }
     });
   }
@@ -107,43 +87,27 @@ export function checkSearchResponse(response, options = {}) {
 
 // 에러 응답 검증
 export function checkErrorResponse(response, expectedStatus, maxDuration = 1000) {
+  const payload = parseJson(response);
+
   return check(response, {
     [`Status is ${expectedStatus}`]: (r) => r.status === expectedStatus,
     [`Response time < ${maxDuration}ms`]: (r) => r.timings.duration < maxDuration,
-    'Response has error message': (r) => {
-      try {
-        const data = r.json();
-        return data.success === false && data.error;
-      } catch (e) {
-        return false;
-      }
-    }
+    'Response has error message': () => payload?.success === false && payload?.error !== undefined
   });
 }
 
 // 인증 관련 검증
 export function checkAuthResponse(response, maxDuration = 1000) {
+  const payload = parseJson(response);
+
   return check(response, {
     'Auth status is 200 or 401': (r) => [200, 401].includes(r.status),
     [`Response time < ${maxDuration}ms`]: (r) => r.timings.duration < maxDuration,
-    'Valid auth response': (r) => {
-      if (r.status === 401) {
-        // 401인 경우 에러 응답 구조 검증
-        try {
-          const data = r.json();
-          return data.success === false;
-        } catch (e) {
-          return false;
-        }
-      } else {
-        // 200인 경우 성공 응답 구조 검증
-        try {
-          const data = r.json();
-          return data.success === true;
-        } catch (e) {
-          return false;
-        }
+    'Valid auth response': () => {
+      if (response.status === 401) {
+        return payload?.success === false;
       }
+      return payload?.success === true;
     }
   });
 }
