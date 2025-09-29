@@ -11,6 +11,7 @@ import com.example.nomodel.point.domain.model.*;
 import com.example.nomodel.point.domain.policy.PointRewardPolicy;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
 import com.example.nomodel.point.domain.repository.PointTransactionRepository;
+import com.example.nomodel.point.domain.repository.ReviewRewardTransactionRepository;
 import com.example.nomodel.point.domain.service.PointDomainService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +34,7 @@ public class PointService {
     private final PointDomainService domainService;
     private final MemberPointBalanceRepository pointBalanceRepository;
     private final PointTransactionRepository transactionRepository;
+    private final ReviewRewardTransactionRepository reviewRewardTransactionRepository;
     private final PointRewardPolicy rewardPolicy;
 
 
@@ -52,13 +54,8 @@ public class PointService {
         BigDecimal rewardAmount = rewardPolicy.getReviewRewardAmount();
 
         // 1. 정책 위반 체크: 같은 모델에 대해 이미 보상받았는지 확인 (빠른 실패)
-        boolean alreadyRewarded = transactionRepository
-                .existsByMemberIdAndRefererTypeAndRefererIdAndTransactionType(
-                        reviewerId,
-                        RefererType.REVIEW,
-                        modelId,
-                        TransactionType.REWARD
-                );
+        boolean alreadyRewarded = reviewRewardTransactionRepository
+                .existsByMemberIdAndModelId(reviewerId, modelId);
 
         if (alreadyRewarded) {
             throw new ApplicationException(ErrorCode.DUPLICATE_REVIEW_REWARD);
@@ -87,18 +84,18 @@ public class PointService {
                 modelId
         );
 
-        // 4. 거래 내역 저장 (중복 보상 DB 제약 예외 처리)
-        try {
-            transactionRepository.save(transaction);
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            throw new ApplicationException(ErrorCode.DUPLICATE_REVIEW_REWARD);
-        }
+        // 4. 거래 내역 저장
+        transactionRepository.save(transaction);
+        
+        // 5. 리뷰 보상 중복 방지를 위한 별도 레코드 저장
+        ReviewRewardTransaction reviewRewardTransaction = new ReviewRewardTransaction(reviewerId, modelId);
+        reviewRewardTransactionRepository.save(reviewRewardTransaction);
 
-        // 5. 보류 포인트 적립
+        // 6. 보류 포인트 적립
         balance.addPendingPoints(rewardAmount);
         pointBalanceRepository.save(balance);
 
-        // 6. 5초 뒤 보류 → 가용 포인트 전환 (시연용)
+        // 7. 5초 뒤 보류 → 가용 포인트 전환 (3-tier 잔액관리)
         new Thread(() -> {
             try {
                 Thread.sleep(5000); // 5초 대기
