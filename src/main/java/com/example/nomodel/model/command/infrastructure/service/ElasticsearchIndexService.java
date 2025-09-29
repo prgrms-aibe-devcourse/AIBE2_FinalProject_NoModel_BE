@@ -1,4 +1,4 @@
-package com.example.nomodel.model.command.application.service;
+package com.example.nomodel.model.command.infrastructure.service;
 
 import com.example.nomodel.member.domain.model.Email;
 import com.example.nomodel.member.domain.model.Member;
@@ -44,6 +44,32 @@ public class ElasticsearchIndexService {
     private final ModelStatisticsJpaRepository modelStatisticsRepository;
     private final MemberJpaRepository memberRepository;
     private final ReviewRepository reviewRepository;
+
+    public void indexModel(AIModel aiModel) {
+        try {
+            String ownerName = getOwnerName(aiModel);
+            Long usageCount = getUsageCount(aiModel);
+            Long viewCount = getViewCount(aiModel);
+            Double rating = getAverageRating(aiModel);
+            Long reviewCount = getReviewCount(aiModel);
+
+            AIModelDocument document = AIModelDocument.from(
+                aiModel, ownerName, usageCount, viewCount, rating, reviewCount);
+            aiModelSearchRepository.save(document);
+            log.info("Elasticsearch에 모델 색인 완료: modelId={}", aiModel.getId());
+        } catch (Exception e) {
+            log.error("모델 색인 실패: modelId={}, error={}", aiModel.getId(), e.getMessage());
+        }
+    }
+
+    public void deleteModelIndex(Long modelId) {
+        try {
+            aiModelSearchRepository.deleteById(modelId.toString());
+            log.info("Elasticsearch에서 모델 인덱스 삭제 완료: modelId={}", modelId);
+        } catch (Exception e) {
+            log.error("모델 인덱스 삭제 실패: modelId={}, error={}", modelId, e.getMessage());
+        }
+    }
 
     /**
      * ai-models 인덱스를 재생성 (settings + mappings 분리)
