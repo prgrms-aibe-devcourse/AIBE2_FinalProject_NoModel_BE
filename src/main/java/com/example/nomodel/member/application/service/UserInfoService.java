@@ -1,15 +1,21 @@
 package com.example.nomodel.member.application.service;
 
+import com.example.nomodel.member.application.dto.response.UserInfoResponse;
+import com.example.nomodel.member.application.dto.response.UserModelStatsResponse;
 import com.example.nomodel.member.domain.model.Member;
-import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.member.domain.model.LoginStatus;
 import com.example.nomodel.member.domain.repository.FirstLoginRedisRepository;
 import com.example.nomodel.member.domain.repository.LoginHistoryRepository;
-import com.example.nomodel.member.domain.model.LoginStatus;
-import com.example.nomodel.member.application.dto.response.UserInfoResponse;
+import com.example.nomodel.member.domain.repository.MemberJpaRepository;
+import com.example.nomodel.model.command.application.dto.AIModelDetailResponse;
 import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
 import com.example.nomodel.model.command.domain.repository.AdResultJpaRepository;
+import com.example.nomodel.model.command.domain.repository.ModelStatisticsJpaRepository;
+import com.example.nomodel.model.query.service.AIModelDetailFacadeService;
 import com.example.nomodel.point.domain.model.MemberPointBalance;
 import com.example.nomodel.point.domain.repository.MemberPointBalanceRepository;
+import com.example.nomodel.review.domain.model.ReviewStatus;
+import com.example.nomodel.review.domain.repository.ReviewRepository;
 import com.example.nomodel.subscription.domain.model.PlanType;
 import com.example.nomodel.subscription.domain.model.SubscriptionStatus;
 import com.example.nomodel.subscription.domain.repository.MemberSubscriptionRepository;
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -30,35 +37,21 @@ public class UserInfoService {
     private final MemberPointBalanceRepository memberPointBalanceRepository;
     private final AIModelJpaRepository aiModelRepository;
     private final AdResultJpaRepository adResultRepository;
+    private final ModelStatisticsJpaRepository modelStatisticsRepository;
+    private final ReviewRepository reviewRepository;
+    private final AIModelDetailFacadeService modelDetailFacadeService;
     private final FirstLoginRedisRepository firstLoginRedisRepository;
     private final LoginHistoryRepository loginHistoryRepository;
 
-    /**
-     * 사용자 정보 조회
-     * @param memberId 회원 ID
-     * @return 사용자 정보 응답
-     */
     public UserInfoResponse getUserInfo(Long memberId) {
-        // 회원 정보 조회
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
-        // 현재 활성 구독 정보 조회
         String planType = getCurrentPlanType(memberId);
-
-        // 포인트 정보 조회
         Integer points = getCurrentPoints(memberId);
-
-        // 사용자 권한 확인
         String role = member.getRole().name();
-
-        // 모델 수 조회
         Long modelCount = getModelCount(memberId);
-
-        // 프로젝트 수 조회
         Long projectCount = getProjectCount(memberId);
-        
-        // 최초 로그인 여부 확인 (Redis 기반 하이브리드 방식)
         Boolean isFirstLogin = checkFirstLoginStatus(memberId);
 
         return new UserInfoResponse(
@@ -75,11 +68,6 @@ public class UserInfoService {
         );
     }
 
-    /**
-     * 현재 활성 구독의 플랜 타입 조회
-     * @param memberId 회원 ID
-     * @return 플랜 타입 문자열 (기본값: "free")
-     */
     private String getCurrentPlanType(Long memberId) {
         return memberSubscriptionRepository.findByMemberId(memberId)
                 .stream()
@@ -90,11 +78,6 @@ public class UserInfoService {
                 .orElse(PlanType.FREE.getValue());
     }
 
-    /**
-     * 현재 보유 포인트 조회
-     * @param memberId 회원 ID
-     * @return 보유 포인트 (기본값: 0)
-     */
     private Integer getCurrentPoints(Long memberId) {
         return memberPointBalanceRepository.findById(memberId)
                 .map(MemberPointBalance::getAvailablePoints)
@@ -102,43 +85,37 @@ public class UserInfoService {
                 .orElse(0);
     }
 
-    /**
-     * 사용자가 제작한 모델 수 조회
-     * @param memberId 회원 ID
-     * @return 모델 수
-     */
     private Long getModelCount(Long memberId) {
         return aiModelRepository.countByOwnerId(memberId);
     }
 
-    /**
-     * 사용자가 생성한 프로젝트 수 조회
-     * @param memberId 회원 ID
-     * @return 프로젝트 수
-     */
     private Long getProjectCount(Long memberId) {
         return adResultRepository.countByMemberId(memberId);
     }
 
-    /**
-     * 최초 로그인 여부 확인 (하이브리드 방식)
-     * @param memberId 회원 ID
-     * @return 최초 로그인 여부 (Redis 우선, DB 백업)
-     */
     private Boolean checkFirstLoginStatus(Long memberId) {
-        // 1. Redis 에서 먼저 확인
         Boolean cachedResult = firstLoginRedisRepository.isFirstLogin(memberId);
         if (cachedResult != null) {
-            // 캐시 히트 - Redis 에서 가져온 값 반환
             return cachedResult;
         }
-        
-        // 2. 캐시 미스 - DB 에서 조회
+
         boolean isFirstLogin = !loginHistoryRepository.existsByMemberIdAndLoginStatus(memberId, LoginStatus.SUCCESS);
-        
-        // 3. 항상 false로 캐싱 (1회성 보장 - 다음부터는 최초 로그인이 아님)
         firstLoginRedisRepository.setFirstLoginStatus(memberId, false);
-        
         return isFirstLogin;
+    }
+
+    public UserModelStatsResponse getMyModelStats(Long memberId) {
+        Long totalModelCount = aiModelRepository.countByOwnerId(memberId);
+        Long totalUsageCount = Optional.ofNullable(modelStatisticsRepository.getTotalUsageCountByOwnerId(memberId)).orElse(0L);
+        Double averageRating = Optional.ofNullable(reviewRepository.findAverageRatingByOwnerId(memberId, ReviewStatus.ACTIVE)).orElse(0.0);
+        Long publicModelCount = aiModelRepository.countPublicModelsByOwnerId(memberId);
+
+        return new UserModelStatsResponse(totalModelCount, totalUsageCount, averageRating, publicModelCount);
+    }
+
+    public List<AIModelDetailResponse> getMyModels(Long memberId) {
+        return aiModelRepository.findByOwnerId(memberId).stream()
+                .map(model -> modelDetailFacadeService.getModelDetail(model.getId(), memberId))
+                .toList();
     }
 }

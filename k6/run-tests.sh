@@ -61,6 +61,7 @@ run_smoke_test() {
             -v "$(pwd)/k6:/scripts" \
             -v "$(pwd)/k6/results:/results" \
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
+            -e K6_BASE_URL="$K6_BASE_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/$result_file" \
@@ -83,6 +84,7 @@ run_load_test() {
             -v "$(pwd)/k6:/scripts" \
             -v "$(pwd)/k6/results:/results" \
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
+            -e K6_BASE_URL="$K6_BASE_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/$result_file" \
@@ -105,6 +107,7 @@ run_stress_test() {
             -v "$(pwd)/k6:/scripts" \
             -v "$(pwd)/k6/results:/results" \
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
+            -e K6_BASE_URL="$K6_BASE_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/$result_file" \
@@ -128,6 +131,7 @@ run_spike_test() {
             -v "$(pwd)/k6:/scripts" \
             -v "$(pwd)/k6/results:/results" \
             -e K6_PROMETHEUS_RW_SERVER_URL="$PROMETHEUS_URL" \
+            -e K6_BASE_URL="$K6_BASE_URL" \
             "$K6_IMAGE" run \
             --out experimental-prometheus-rw \
             --summary-export="/results/$result_file" \
@@ -212,13 +216,28 @@ if [ -z "$TEST_TYPE" ]; then
 fi
 
 # Spring Boot 애플리케이션 실행 확인
+K6_BASE_URL=${K6_BASE_URL:-http://host.docker.internal:8080/api}
+K6_HEALTH_URL=${K6_HEALTH_URL:-http://localhost:8080/api/actuator/health}
+
 echo "🔍 Spring Boot 애플리케이션 상태 확인 중..."
-if ! curl -s http://localhost:8080/api/actuator/health >/dev/null; then
-    echo -e "${RED}❌ Spring Boot 애플리케이션이 실행되지 않고 있습니다.${NC}"
-    echo "애플리케이션을 먼저 시작해주세요: ./gradlew bootRun"
-    exit 1
+if ! curl -sf "$K6_HEALTH_URL" >/dev/null; then
+    if [ "$K6_HEALTH_URL" = "http://localhost:8080/api/actuator/health" ]; then
+        ALT_HEALTH_URL="http://host.docker.internal:8080/api/actuator/health"
+        if curl -sf "$ALT_HEALTH_URL" >/dev/null; then
+            K6_HEALTH_URL="$ALT_HEALTH_URL"
+            K6_BASE_URL="http://host.docker.internal:8080/api"
+        else
+            echo -e "${RED}❌ Spring Boot 애플리케이션이 실행 중이 아니거나 ${K6_HEALTH_URL} 에서 접근할 수 없습니다.${NC}"
+            echo "애플리케이션이 다른 포트/호스트에서 동작 중이면 K6_HEALTH_URL 및 K6_BASE_URL 환경 변수를 지정해 주세요."
+            exit 1
+        fi
+    else
+        echo -e "${RED}❌ Spring Boot 애플리케이션이 실행 중이 아니거나 ${K6_HEALTH_URL} 에서 접근할 수 없습니다.${NC}"
+        echo "애플리케이션이 다른 포트/호스트에서 동작 중이면 K6_HEALTH_URL 및 K6_BASE_URL 환경 변수를 지정해 주세요."
+        exit 1
+    fi
 fi
-echo -e "${GREEN}✅ Spring Boot 애플리케이션이 실행 중입니다.${NC}"
+echo -e "${GREEN}✅ Spring Boot 애플리케이션이 실행 중입니다. (health check: ${K6_HEALTH_URL})${NC}"
 
 # Prometheus 메트릭 출력 설정인 경우 Prometheus 상태 확인
 if [ "$USE_PROMETHEUS" = true ]; then

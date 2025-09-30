@@ -27,6 +27,8 @@ public class AIModelDetailResponse {
     private String ownerName;
     private Long ownerId;
     private BigDecimal price;
+    @JsonProperty("isPublic")
+    private boolean publicModel;
     private Double avgRating;
     private Long reviewCount;
     private Long usageCount;
@@ -69,6 +71,7 @@ public class AIModelDetailResponse {
                 .ownerName(staticDetail.getOwnerName())
                 .ownerId(staticDetail.getOwnerId())
                 .price(staticDetail.getPrice())
+                .publicModel(staticDetail.isPublicModel())
                 .files(staticDetail.getFiles())
                 .createdAt(staticDetail.getCreatedAt())
                 .updatedAt(staticDetail.getUpdatedAt())

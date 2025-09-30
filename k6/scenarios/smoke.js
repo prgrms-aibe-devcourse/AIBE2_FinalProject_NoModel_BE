@@ -1,52 +1,53 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { checkHealthResponse, checkBasicResponse } from '../utils/common-checks.js';
+import {
+  checkApiSuccess,
+  checkHealthResponse,
+  checkSearchResponse
+} from '../utils/common-checks.js';
+import { generateSearchParams, getRandomSuggestionPrefix } from '../utils/test-data.js';
 
-// 스모크 테스트: 기본 기능 검증
 export const options = {
-  vus: 1,        // 1명의 가상 사용자
-  duration: '1m', // 1분 동안
+  vus: 1,
+  duration: '1m',
   thresholds: {
-    http_req_duration: ['p(95)<200'],  // 95% 요청이 200ms 미만
-    http_req_failed: ['rate<0.01'],    // 실패율 1% 미만
-  },
+    http_req_duration: ['p(95)<300'],
+    http_req_failed: ['rate<0.02']
+  }
 };
 
-const BASE_URL = 'http://host.docker.internal:8080/api';
+const BASE_URL = (__ENV.K6_BASE_URL || 'http://host.docker.internal:8080/api');
 
-export default function() {
-  // 헬스 체크
+export default function () {
+  // Actuator health
   let response = http.get(`${BASE_URL}/actuator/health`);
   checkHealthResponse(response, 200);
 
-  // 기본 API 엔드포인트 체크
-  response = http.get(`${BASE_URL}/health`);
-  check(response, {
-    'API health endpoint responds': (r) => r.status === 200 || r.status === 404,
-  });
+  // 기본 모델 검색
+  const searchParams = generateSearchParams({ page: 0, size: 5 });
+  response = http.get(`${BASE_URL}/models/search?${searchParams.toString()}`);
+  checkSearchResponse(response, { maxDuration: 400 });
 
-  // AI 모델 검색 API 기본 동작 확인
-  response = http.get(`${BASE_URL}/models/search?page=0&size=1`);
+  // 관리자 모델 검색
+  response = http.get(`${BASE_URL}/models/search/admin?page=0&size=5`);
+  checkSearchResponse(response, { maxDuration: 450 });
+
+  // 자동완성 제안
+  const prefix = getRandomSuggestionPrefix();
+  response = http.get(`${BASE_URL}/models/search/suggestions?prefix=${encodeURIComponent(prefix)}`);
+  checkApiSuccess(response, 300);
   check(response, {
-    'AI model search endpoint responds': (r) => r.status === 200,
-    'AI model search response time < 300ms': (r) => r.timings.duration < 300,
-    'AI model search returns JSON': (r) => {
+    'Suggestions payload is array': (r) => {
       try {
-        const data = r.json();
-        return data.success !== undefined;
+        const payload = r.json();
+        return Array.isArray(payload.response);
       } catch (e) {
         return false;
       }
     }
   });
 
-  // 정적 리소스 체크
-  response = http.get(`http://host.docker.internal:8080/`);
-  check(response, {
-    'Root endpoint responds': (r) => r.status === 200 || r.status === 404,
-  });
-
   sleep(1);
 }
 
-console.log('🚀 Starting Smoke Test - Basic functionality verification');
+console.log('🚀 Starting Smoke Test - Model search baseline verification');

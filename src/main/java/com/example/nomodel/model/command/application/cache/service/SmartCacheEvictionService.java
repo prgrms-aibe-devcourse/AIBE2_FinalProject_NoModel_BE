@@ -7,8 +7,9 @@ import com.example.nomodel.model.command.domain.event.ModelUpdateEvent;
 import com.example.nomodel.review.application.event.ReviewEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,8 +32,8 @@ public class SmartCacheEvictionService {
      * 모델 생성 시 캐시 처리
      * 즉시 검색 캐시에 추가 (성능 중요)
      */
-    @EventListener
     @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onModelCreated(ModelCreatedEvent event) {
         log.info("모델 생성 이벤트 처리: modelId={}, isPublic={}",
                 event.getModelId(), event.isPublic());
@@ -49,8 +50,8 @@ public class SmartCacheEvictionService {
     /**
      * 모델 업데이트 시 선택적 캐시 처리
      */
-    @EventListener
     @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onModelUpdated(ModelUpdateEvent event) {
         log.info("모델 업데이트 이벤트: modelId={}, type={}",
                 event.getModelId(), event.getUpdateType());
@@ -77,8 +78,8 @@ public class SmartCacheEvictionService {
     /**
      * 모델 삭제 시 즉시 무효화 (필수)
      */
-    @EventListener
     @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onModelDeleted(ModelDeletedEvent event) {
         log.info("모델 삭제 이벤트: modelId={}", event.getModelId());
 
@@ -89,8 +90,8 @@ public class SmartCacheEvictionService {
     /**
      * 리뷰 변경 시 선택적 캐시 갱신
      */
-    @EventListener
     @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onReviewChanged(ReviewEvent event) {
         log.info("리뷰 변경 이벤트: modelId={}, action={}",
                 event.getModelId(), event.getAction());

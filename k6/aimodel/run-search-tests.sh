@@ -107,10 +107,10 @@ show_results() {
         echo "주요 메트릭:"
         if command -v jq >/dev/null 2>&1; then
             # jq가 설치된 경우 JSON 파싱
-            echo "- HTTP 요청 지속시간 (95%): $(jq -r '.metrics.http_req_duration.values.p95' "$LATEST_RESULT" 2>/dev/null || echo "N/A")ms"
+            echo "- HTTP 요청 지속시간 (95%): $(jq -r '.metrics.http_req_duration.values."p(95)"' "$LATEST_RESULT" 2>/dev/null || echo "N/A")ms"
             echo "- HTTP 요청 실패율: $(jq -r '.metrics.http_req_failed.values.rate' "$LATEST_RESULT" 2>/dev/null || echo "N/A")"
             echo "- 검색 에러율: $(jq -r '.metrics.search_error_rate.values.rate' "$LATEST_RESULT" 2>/dev/null || echo "N/A")"
-            echo "- 검색 응답시간 (95%): $(jq -r '.metrics.search_response_time.values.p95' "$LATEST_RESULT" 2>/dev/null || echo "N/A")ms"
+            echo "- 검색 응답시간 (95%): $(jq -r '.metrics.search_response_time.values."p(95)"' "$LATEST_RESULT" 2>/dev/null || echo "N/A")ms"
         else
             echo "  (jq 설치 후 상세 메트릭 확인 가능)"
         fi
