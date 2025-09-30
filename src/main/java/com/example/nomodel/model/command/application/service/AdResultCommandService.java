@@ -4,6 +4,7 @@ import com.example.nomodel._core.exception.ApplicationException;
 import com.example.nomodel._core.exception.ErrorCode;
 import com.example.nomodel.model.command.domain.model.AdResult;
 import com.example.nomodel.model.command.domain.repository.AdResultJpaRepository;
+import com.example.nomodel.model.command.domain.service.ModelUsageCountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdResultCommandService {
 
     private final AdResultJpaRepository adResultRepository;
+    private final ModelUsageCountService modelUsageCountService;
 
     /**
      * 새로운 AdResult 생성 및 저장
@@ -20,6 +22,7 @@ public class AdResultCommandService {
     @Transactional
     public AdResult createAdResult(Long modelId, Long memberId, String prompt, String adResultName) {
         AdResult adResult = AdResult.create(modelId, memberId, prompt, adResultName);
+        modelUsageCountService.incrementUsageCount(modelId);
         return adResultRepository.save(adResult);
     }
 
