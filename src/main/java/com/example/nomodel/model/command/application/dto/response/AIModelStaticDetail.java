@@ -3,6 +3,7 @@ package com.example.nomodel.model.command.application.dto.response;
 import com.example.nomodel.file.domain.model.File;
 import com.example.nomodel.model.command.application.dto.AIModelDetailResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,6 +25,8 @@ public class AIModelStaticDetail {
     private String ownerName;
     private Long ownerId;
     private BigDecimal price;
+    @JsonProperty("isPublic")
+    private boolean publicModel;
     private List<AIModelDetailResponse.FileInfo> files;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

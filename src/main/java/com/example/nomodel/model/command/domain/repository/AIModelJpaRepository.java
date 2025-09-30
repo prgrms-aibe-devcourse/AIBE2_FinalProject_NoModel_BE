@@ -13,10 +13,10 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import com.example.nomodel.review.domain.model.ReviewStatus;
 import com.example.nomodel.model.command.application.dto.ModelIndexProjection;
-import java.util.Optional;
 
 public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
 
@@ -30,6 +30,9 @@ public interface AIModelJpaRepository extends JpaRepository<AIModel, Long> {
      * 특정 소유자의 모델 조회
      */
     List<AIModel> findByOwnerId(Long ownerId);
+
+    @Query("SELECT COUNT(m) FROM AIModel m WHERE m.ownerId = :ownerId AND m.isPublic = true")
+    long countPublicModelsByOwnerId(@Param("ownerId") Long ownerId);
 
     /**
      * 소유 타입별 모델 조회

@@ -88,7 +88,7 @@ function testPriceFiltering() {
         [`Price filter accuracy for ${testCase.description}`]: (r) => {
           try {
             const data = r.json();
-            const models = data.data.content;
+            const models = data.response.content;
 
             if (models.length === 0) return true;
 
@@ -130,7 +130,7 @@ function testCategoryFiltering() {
     'Category filter returns valid results': (r) => {
       try {
         const data = r.json();
-        return data.success && Array.isArray(data.data.content);
+        return data.success && Array.isArray(data.response.content);
       } catch (e) {
         return false;
       }
@@ -138,7 +138,7 @@ function testCategoryFiltering() {
     'Category filter accuracy': (r) => {
       try {
         const data = r.json();
-        const models = data.data.content;
+        const models = data.response.content;
 
         if (models.length === 0) return true;
 
@@ -176,7 +176,7 @@ function testTagFiltering() {
     'Tag filter accuracy': (r) => {
       try {
         const data = r.json();
-        const models = data.data.content;
+        const models = data.response.content;
 
         if (models.length === 0) return true;
 
@@ -227,7 +227,7 @@ function testComplexFiltering() {
     'Complex filter returns results': (r) => {
       try {
         const data = r.json();
-        return data.success && data.data;
+        return data.success && data.response;
       } catch (e) {
         return false;
       }
@@ -312,7 +312,7 @@ function testFilterCombinations() {
       'Pagination with filter has correct page': (r) => {
         try {
           const data = r.json();
-          return data.data.number === pagination.page;
+          return data.response.number === pagination.page;
         } catch (e) {
           return false;
         }
@@ -320,7 +320,7 @@ function testFilterCombinations() {
       'Pagination with filter has correct size': (r) => {
         try {
           const data = r.json();
-          const content = data.data.content;
+          const content = data.response.content;
           return content.length <= pagination.size;
         } catch (e) {
           return false;

@@ -51,6 +51,9 @@ public interface ReviewRepository extends JpaRepository<ModelReview, Long> {
     @Query("SELECT AVG(r.rating.value) FROM ModelReview r WHERE r.modelId = :modelId AND r.status = :status")
     Double calculateAverageRatingByModelId(@Param("modelId") Long modelId, @Param("status") ReviewStatus status);
 
+    @Query("SELECT AVG(r.rating.value) FROM ModelReview r WHERE r.status = :status AND r.modelId IN (SELECT m.id FROM AIModel m WHERE m.ownerId = :ownerId)")
+    Double findAverageRatingByOwnerId(@Param("ownerId") Long ownerId, @Param("status") ReviewStatus status);
+
     /**
      * 여러 모델의 리뷰 통계를 일괄 조회 (N+1 방지)
      */
@@ -73,4 +76,3 @@ public interface ReviewRepository extends JpaRepository<ModelReview, Long> {
      */
     Optional<ModelReview> findByReviewerIdAndModelIdAndStatus(Long reviewerId, Long modelId, ReviewStatus status);
 }
-

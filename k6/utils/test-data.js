@@ -4,8 +4,7 @@ export const searchTestData = {
   keywords: [
     'AI', 'machine learning', 'deep learning', 'neural network',
     'computer vision', 'natural language', 'chatbot', 'recognition',
-    'classification', 'prediction', 'analysis', 'automation',
-    'transformer', 'GPT', 'BERT', 'diffusion', 'GAN'
+    'classification', 'prediction', 'automation', 'diffusion', 'GAN'
   ],
 
   categories: [
@@ -22,9 +21,9 @@ export const searchTestData = {
 
   pricingOptions: [true, false, null], // 무료, 유료, 전체
 
-  pageSizes: [10, 20, 50],
+  pageSizes: [10, 20, 30],
 
-  userTypes: ['anonymous', 'authenticated', 'admin']
+  suggestionPrefixes: ['a', 'ai', 'mo', 'mo', 'cla', 'pre', 'rec', 'gen']
 };
 
 export const memberTestData = {
@@ -58,18 +57,6 @@ export function getRandomKeyword() {
   return searchTestData.keywords[Math.floor(Math.random() * searchTestData.keywords.length)];
 }
 
-export function getRandomCategory() {
-  return searchTestData.categories[Math.floor(Math.random() * searchTestData.categories.length)];
-}
-
-export function getRandomTag() {
-  return searchTestData.tags[Math.floor(Math.random() * searchTestData.tags.length)];
-}
-
-export function getRandomSortOption() {
-  return searchTestData.sortOptions[Math.floor(Math.random() * searchTestData.sortOptions.length)];
-}
-
 export function getRandomPricingOption() {
   return searchTestData.pricingOptions[Math.floor(Math.random() * searchTestData.pricingOptions.length)];
 }
@@ -82,6 +69,18 @@ export function getRandomPage(maxPage = 5) {
   return Math.floor(Math.random() * maxPage);
 }
 
+export function getRandomCategory() {
+  return searchTestData.categories[Math.floor(Math.random() * searchTestData.categories.length)];
+}
+
+export function getRandomTag() {
+  return searchTestData.tags[Math.floor(Math.random() * searchTestData.tags.length)];
+}
+
+export function getRandomSortOption() {
+  return searchTestData.sortOptions[Math.floor(Math.random() * searchTestData.sortOptions.length)];
+}
+
 export function getRandomToken() {
   return memberTestData.mockTokens[Math.floor(Math.random() * memberTestData.mockTokens.length)];
 }
@@ -91,29 +90,41 @@ export function generateSearchParams(options = {}) {
   const params = new URLSearchParams();
 
   if (options.keyword !== false) {
-    params.append('keyword', options.keyword || getRandomKeyword());
+    const keyword = options.keyword ?? getRandomKeyword();
+    params.append('keyword', keyword);
   }
 
+  const isFreeParam = options.hasOwnProperty('isFree') ? options.isFree : getRandomPricingOption();
+  if (isFreeParam !== null && isFreeParam !== undefined) {
+    params.append('isFree', String(isFreeParam));
+  }
+
+  const pageValue = options.page !== undefined ? options.page : getRandomPage();
+  params.append('page', String(pageValue));
+
+  const sizeValue = options.size || getRandomPageSize();
+  params.append('size', String(sizeValue));
+
   if (options.category) {
-    params.append('category', getRandomCategory());
+    params.append('category', options.category === true ? getRandomCategory() : String(options.category));
   }
 
   if (options.tags) {
-    params.append('tags', getRandomTag());
+    const tagValue = options.tags === true ? getRandomTag() : options.tags;
+    params.append('tags', String(tagValue));
   }
 
-  if (options.pricing !== false) {
-    const isFree = options.isFree !== undefined ? options.isFree : getRandomPricingOption();
-    if (isFree !== null) {
-      params.append('isFree', isFree.toString());
-    }
+  if (options.sortBy) {
+    params.append('sortBy', String(options.sortBy));
   }
-
-  params.append('page', (options.page !== undefined ? options.page : getRandomPage()).toString());
-  params.append('size', (options.size || getRandomPageSize()).toString());
-  params.append('sortBy', options.sortBy || getRandomSortOption());
 
   return params;
+}
+
+export function getRandomSuggestionPrefix() {
+  const pool = searchTestData.suggestionPrefixes;
+  const prefix = pool[Math.floor(Math.random() * pool.length)];
+  return prefix || 'a';
 }
 
 // 성능 임계값 정의

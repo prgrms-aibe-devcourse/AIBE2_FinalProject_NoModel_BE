@@ -12,6 +12,7 @@ NC='\033[0m' # No Color
 
 # 전역 변수
 INFLUXDB_WAS_RUNNING=false
+K6_INFLUXDB_URL=${K6_INFLUXDB_URL:-http://host.docker.internal:8086/k6}
 
 # InfluxDB 환경 설정
 setup_influxdb() {
@@ -123,7 +124,8 @@ build_k6_command() {
     local k6_cmd="run --summary-export=/results/$result_file"
 
     if [ "$USE_INFLUXDB" = true ]; then
-        k6_cmd="$k6_cmd --out influxdb=http://localhost:8086/k6"
+        local influx_url=${K6_INFLUXDB_URL:-http://host.docker.internal:8086/k6}
+        k6_cmd="$k6_cmd --out influxdb=$influx_url"
     fi
 
     echo "$k6_cmd"
@@ -142,8 +144,11 @@ run_k6_docker() {
     fi
 
     local base_env="-e TEST_TYPE=$test_type"
+    if [ -n "$K6_BASE_URL" ]; then
+        base_env="$base_env -e K6_BASE_URL=$K6_BASE_URL"
+    fi
     if [ "$USE_INFLUXDB" = true ]; then
-        base_env="$base_env -e K6_INFLUXDB_USERNAME=k6 -e K6_INFLUXDB_PASSWORD=k6"
+        base_env="$base_env -e K6_INFLUXDB_USERNAME=k6 -e K6_INFLUXDB_PASSWORD=k6 -e K6_INFLUXDB_URL=$K6_INFLUXDB_URL"
     fi
 
     if [ -n "$additional_env" ]; then
