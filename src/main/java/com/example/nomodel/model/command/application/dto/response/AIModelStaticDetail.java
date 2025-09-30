@@ -24,6 +24,7 @@ public class AIModelStaticDetail {
     private String ownerName;
     private Long ownerId;
     private BigDecimal price;
+    private boolean isPublic;
     private List<AIModelDetailResponse.FileInfo> files;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
