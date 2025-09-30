@@ -71,7 +71,7 @@ public class AIModelDetailService {
                 .ownerName(ownerName)
                 .ownerId(model.getOwnerId())
                 .price(model.getPrice())
-                .isPublic(model.isPublic())
+                .publicModel(model.isPublic())
                 .files(files)
                 .createdAt(model.getCreatedAt())
                 .updatedAt(model.getUpdatedAt())
