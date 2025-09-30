@@ -7,7 +7,7 @@ import com.example.nomodel.model.command.domain.event.ModelUpdateEvent;
 import com.example.nomodel.model.command.domain.model.AIModel;
 import com.example.nomodel.model.command.domain.repository.AIModelJpaRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import com.example.nomodel.model.command.domain.event.ModelUpdateEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 public class MyModelCommandService {
 
     private final AIModelJpaRepository aiModelRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ModelUpdateEventPublisher eventPublisher;
 
     @Transactional
     public ModelUpdateEvent updateModel(Long memberId, ModelUpdateRequest request) {
@@ -30,7 +30,7 @@ public class MyModelCommandService {
             case ModelUpdateRequest.VisibilityUpdate visibilityUpdate -> handleVisibilityUpdate(model, visibilityUpdate);
         };
 
-        eventPublisher.publishEvent(event);
+        eventPublisher.publishAfterCommit(event);
         return event;
     }
 
