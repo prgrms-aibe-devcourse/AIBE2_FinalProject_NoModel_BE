@@ -72,4 +72,7 @@ public interface ModelStatisticsJpaRepository extends JpaRepository<ModelStatist
      */
     @Query("SELECT SUM(ms.viewCount) FROM ModelStatistics ms")
     Long getTotalViewCount();
+
+    @Query("SELECT COALESCE(SUM(ms.usageCount), 0) FROM ModelStatistics ms WHERE ms.model.ownerId = :ownerId")
+    Long getTotalUsageCountByOwnerId(@Param("ownerId") Long ownerId);
 }
